@@ -1,0 +1,43 @@
+{
+  "name": "smart-traffic-control-center",
+  "version": "2.0.0",
+  "description": "ESP32 Smart Traffic Light Native Control Center & Logging Dashboard",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:linux": "electron-builder --linux",
+    "build:win": "electron-builder --win"
+  },
+  "keywords": [
+    "esp32",
+    "traffic-control",
+    "smart-traffic-lights",
+    "iot",
+    "control-center"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^34.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.smarttraffic.controlcenter",
+    "productName": "TrafficControlCenter",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron-main.js",
+      "preload.js",
+      "tools/demo_dashboard.html"
+    ],
+    "win": {
+      "target": ["nsis", "portable"]
+    },
+    "linux": {
+      "target": ["AppImage", "tar.gz"]
+    }
+  }
+}
+
