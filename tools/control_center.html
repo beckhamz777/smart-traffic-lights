@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Traffic Control Center — Remote MQTT System</title>
+  <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+  <style>
+    :root {
+      --bg-page: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --text-primary: #17212B;
+      --text-secondary: #64748B;
+      --border-sep: #E2E8F0;
+      --teal-primary: #0F766E;
+      --teal-hover: #115E59;
+      --teal-light: #F0FDFA;
+      --teal-border: #99F6E4;
+      --sig-red: #DC2626;
+      --sig-yellow: #EAB308;
+      --sig-green: #16A34A;
+      --sig-off: #CBD5E1;
+      --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+      --font-mono: "Cascadia Mono", "Consolas", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg-page);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    header {
+      background: #FFFFFF;
+      border-bottom: 2px solid var(--teal-border);
+      padding: 1rem 1.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .brand-title { font-size: 1.15rem; font-weight: 800; }
+    .brand-sub { font-size: 0.82rem; color: var(--text-secondary); }
+    .conn-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    input[type="text"] {
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      padding: 0.45rem 0.7rem;
+      border: 1.5px solid var(--border-sep);
+      border-radius: 8px;
+      min-width: 220px;
+    }
+    .btn {
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.48rem 0.9rem;
+      border-radius: 8px;
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary { background: var(--teal-primary); color: #FFF; }
+    .btn-primary:hover:not(:disabled) { background: var(--teal-hover); }
+    .btn-outline { background: #FFF; border-color: var(--border-sep); color: var(--text-primary); }
+    .btn-outline:hover:not(:disabled) { background: var(--bg-page); }
+    .btn-warn { background: #F59E0B; color: #FFF; border-color: #D97706; }
+    .btn-warn:hover:not(:disabled) { background: #D97706; }
+    .btn-danger { background: #FFF; color: #DC2626; border-color: #FECACA; }
+    .btn-danger:hover:not(:disabled) { background: #FEF2F2; }
+
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      padding: 0.3rem 0.7rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border-sep);
+      background: var(--bg-page);
+    }
+    .badge.ok { background: #F0FDF4; border-color: #BBF7D0; color: #15803D; }
+    .badge.err { background: #FEF2F2; border-color: #FECACA; color: #DC2626; }
+
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.25rem 1.5rem 2rem;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 1.25rem;
+    }
+    @media (max-width: 1024px) { main { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--bg-card);
+      border: 1.5px solid var(--border-sep);
+      border-radius: 12px;
+      padding: 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 800;
+      border-bottom: 1px solid var(--border-sep);
+      padding-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 0.75rem;
+    }
+    .metric-box {
+      background: var(--bg-page);
+      border: 1px solid var(--border-sep);
+      border-radius: 8px;
+      padding: 0.65rem 0.8rem;
+    }
+    .metric-lbl { font-size: 0.72rem; color: var(--text-secondary); font-weight: 600; }
+    .metric-val { font-family: var(--font-mono); font-size: 1rem; font-weight: 800; margin-top: 0.2rem; }
+
+    .signals-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    .signal-group {
+      background: var(--bg-page);
+      border: 1px solid var(--border-sep);
+      border-radius: 8px;
+      padding: 0.75rem;
+      text-align: center;
+    }
+    .signal-name { font-size: 0.78rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .lamps { display: flex; justify-content: center; gap: 0.5rem; }
+    .lamp {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--sig-off);
+      border: 2px solid #94A3B8;
+    }
+    .lamp.on-r { background: var(--sig-red); border-color: #991B1B; box-shadow: 0 0 10px rgba(220,38,38,0.5); }
+    .lamp.on-y { background: var(--sig-yellow); border-color: #A16207; box-shadow: 0 0 10px rgba(234,179,8,0.6); }
+    .lamp.on-g { background: var(--sig-green); border-color: #166534; box-shadow: 0 0 10px rgba(22,163,74,0.5); }
+
+    .density-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    .density-box {
+      background: var(--bg-page);
+      border: 1px solid var(--border-sep);
+      border-radius: 8px;
+      padding: 0.7rem;
+    }
+    .density-bar {
+      height: 10px;
+      background: var(--border-sep);
+      border-radius: 9999px;
+      overflow: hidden;
+      margin: 0.45rem 0;
+    }
+    .density-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--teal-primary);
+      transition: width 0.25s ease;
+    }
+
+    .cmd-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+    .log-box {
+      background: #0F172A;
+      color: #E2E8F0;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      border-radius: 8px;
+      padding: 0.75rem;
+      height: 360px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-line { margin-bottom: 0.25rem; }
+    .log-ts { color: #64748B; }
+    .log-topic { color: #5EEAD4; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <div class="brand-title">TRAFFIC CONTROL CENTER (MQTT CLIENT)</div>
+        <div class="brand-sub">Remote Operations, Telemetry &amp; Log Collector &bull; Junction 1</div>
+      </div>
+      <div class="conn-bar">
+        <span id="mqttBadge" class="badge">DISCONNECTED</span>
+        <input id="brokerUrl" type="text" value="ws://localhost:9001" placeholder="ws://localhost:9001" />
+        <button id="btnConnect" class="btn btn-primary" type="button">Connect MQTT</button>
+        <button id="btnDisconnect" class="btn btn-outline" type="button" disabled>Disconnect</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- LEFT COLUMN: LIVE INTERSECTION STATE & DENSITY -->
+    <div style="display:flex; flex-direction:column; gap:1.25rem;">
+      <section class="card">
+        <div class="card-title">
+          <span>Live Intersection State</span>
+          <span id="lastSeen" style="font-family:var(--font-mono); font-size:0.74rem; color:var(--text-secondary);">Last update: N/A</span>
+        </div>
+
+        <div class="metrics-row">
+          <div class="metric-box">
+            <div class="metric-lbl">FSM STATE</div>
+            <div id="valState" class="metric-val">N/A</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-lbl">OPERATING MODE</div>
+            <div id="valMode" class="metric-val">N/A</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-lbl">ELAPSED TIME</div>
+            <div id="valElapsed" class="metric-val">N/A</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-lbl">NEXT TARGET</div>
+            <div id="valNext" class="metric-val">N/A</div>
+          </div>
+        </div>
+
+        <div class="signals-row">
+          <div class="signal-group">
+            <div class="signal-name">MAIN ROAD</div>
+            <div class="lamps">
+              <div id="lampMainR" class="lamp" title="Red"></div>
+              <div id="lampMainY" class="lamp" title="Yellow"></div>
+              <div id="lampMainG" class="lamp" title="Green"></div>
+            </div>
+          </div>
+          <div class="signal-group">
+            <div class="signal-name">SIDE ROAD</div>
+            <div class="lamps">
+              <div id="lampSideR" class="lamp" title="Red"></div>
+              <div id="lampSideY" class="lamp" title="Yellow"></div>
+              <div id="lampSideG" class="lamp" title="Green"></div>
+            </div>
+          </div>
+          <div class="signal-group">
+            <div class="signal-name">PEDESTRIAN</div>
+            <div class="lamps">
+              <div id="lampPedDW" class="lamp" title="Don't Walk"></div>
+              <div id="lampPedW" class="lamp" title="Walk"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <span>Traffic Density &amp; Green Time Allocation</span>
+          <span style="font-size:0.74rem; color:var(--text-secondary);">100% = 20s | 50% = 10s</span>
+        </div>
+        <div class="density-row">
+          <div class="density-box">
+            <div class="metric-lbl">MAIN ROAD</div>
+            <div id="densMainPct" class="metric-val">0% (0s)</div>
+            <div class="density-bar"><div id="densMainFill" class="density-fill"></div></div>
+          </div>
+          <div class="density-box">
+            <div class="metric-lbl">SIDE ROAD</div>
+            <div id="densSidePct" class="metric-val">0% (0s)</div>
+            <div class="density-bar"><div id="densSideFill" class="density-fill"></div></div>
+          </div>
+          <div class="density-box">
+            <div class="metric-lbl">TURN LANE</div>
+            <div id="densTurnPct" class="metric-val">0% (0s)</div>
+            <div class="density-bar"><div id="densTurnFill" class="density-fill"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">
+          <span>Remote Traffic Control Commands (<code>traffic/junction1/command</code>)</span>
+        </div>
+        <div class="cmd-grid">
+          <button class="btn btn-primary cmd-btn" data-cmd="MODE AUTO" disabled>MODE AUTO</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="MODE FIXED" disabled>MODE FIXED</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="MODE ACTUATED" disabled>MODE ACTUATED</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="MODE ADAPTIVE" disabled>MODE ADAPTIVE</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="MODE MANUAL" disabled>MODE MANUAL</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="NEXT" disabled>MANUAL NEXT</button>
+          <button class="btn btn-warn cmd-btn" data-cmd="FLASH_ORANGE" disabled>⚠️ FLASH ORANGE</button>
+          <button class="btn btn-primary cmd-btn" data-cmd="RESUME_AUTO" disabled>RESUME AUTO</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="SIM ON" disabled>SIM ON</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="SIM OFF" disabled>SIM OFF</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="CAR MAIN ON" disabled>CAR MAIN ON</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="CAR MAIN OFF" disabled>CAR MAIN OFF</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="CAR ON" disabled>CAR SIDE ON</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="CAR OFF" disabled>CAR SIDE OFF</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="PED 1" disabled>PED 1 CALL</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="STATUS" disabled>POLL STATUS</button>
+          <button class="btn btn-outline cmd-btn" data-cmd="CLEAR" disabled>CLEAR FAULT/SIM</button>
+          <button class="btn btn-danger cmd-btn" data-cmd="RESET" disabled>RESET ESP32</button>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:0.25rem;">
+          <input id="customCmdInput" type="text" placeholder="Custom command (e.g., CAR TURN ON)" style="flex:1;" />
+          <button id="btnSendCustom" class="btn btn-primary" type="button" disabled>Send</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- RIGHT COLUMN: CENTRAL LOG COLLECTOR -->
+    <section class="card">
+      <div class="card-title">
+        <span>Collected Logs (<code>telemetry</code> &amp; <code>logs</code>)</span>
+        <div style="display:flex; gap:0.4rem;">
+          <button id="btnExportLogs" class="btn btn-outline" type="button" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Download .log</button>
+          <button id="btnClearLogs" class="btn btn-outline" type="button" style="padding:0.25rem 0.6rem; font-size:0.75rem;">Clear</button>
+        </div>
+      </div>
+      <div id="logBox" class="log-box"></div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const TOPICS = {
+        TELEMETRY: "traffic/junction1/telemetry",
+        LOGS: "traffic/junction1/logs",
+        COMMAND: "traffic/junction1/command"
+      };
+
+      let client = null;
+      const recordedLogs = [];
+
+      const el = {
+        mqttBadge: document.getElementById("mqttBadge"),
+        brokerUrl: document.getElementById("brokerUrl"),
+        btnConnect: document.getElementById("btnConnect"),
+        btnDisconnect: document.getElementById("btnDisconnect"),
+        lastSeen: document.getElementById("lastSeen"),
+        valState: document.getElementById("valState"),
+        valMode: document.getElementById("valMode"),
+        valElapsed: document.getElementById("valElapsed"),
+        valNext: document.getElementById("valNext"),
+        lampMainR: document.getElementById("lampMainR"),
+        lampMainY: document.getElementById("lampMainY"),
+        lampMainG: document.getElementById("lampMainG"),
+        lampSideR: document.getElementById("lampSideR"),
+        lampSideY: document.getElementById("lampSideY"),
+        lampSideG: document.getElementById("lampSideG"),
+        lampPedDW: document.getElementById("lampPedDW"),
+        lampPedW: document.getElementById("lampPedW"),
+        densMainPct: document.getElementById("densMainPct"),
+        densMainFill: document.getElementById("densMainFill"),
+        densSidePct: document.getElementById("densSidePct"),
+        densSideFill: document.getElementById("densSideFill"),
+        densTurnPct: document.getElementById("densTurnPct"),
+        densTurnFill: document.getElementById("densTurnFill"),
+        customCmdInput: document.getElementById("customCmdInput"),
+        btnSendCustom: document.getElementById("btnSendCustom"),
+        btnExportLogs: document.getElementById("btnExportLogs"),
+        btnClearLogs: document.getElementById("btnClearLogs"),
+        logBox: document.getElementById("logBox")
+      };
+
+      const cmdButtons = Array.from(document.querySelectorAll(".cmd-btn"));
+
+      function appendLog(topic, text) {
+        const ts = new Date().toISOString();
+        const line = `[${ts}] [${topic}] ${text}`;
+        recordedLogs.push(line);
+        if (recordedLogs.length > 2000) recordedLogs.shift();
+
+        const div = document.createElement("div");
+        div.className = "log-line";
+        div.innerHTML = `<span class="log-ts">[${ts.slice(11, 23)}]</span> <span class="log-topic">[${topic}]</span> `;
+        div.appendChild(document.createTextNode(text));
+        el.logBox.appendChild(div);
+        while (el.logBox.childNodes.length > 400) {
+          el.logBox.removeChild(el.logBox.firstChild);
+        }
+        el.logBox.scrollTop = el.logBox.scrollHeight;
+      }
+
+      function setConnected(connected, text, isErr) {
+        el.mqttBadge.textContent = text;
+        el.mqttBadge.className = "badge" + (connected ? " ok" : (isErr ? " err" : ""));
+        el.btnConnect.disabled = connected;
+        el.btnDisconnect.disabled = !connected;
+        el.brokerUrl.disabled = connected;
+        el.btnSendCustom.disabled = !connected;
+        cmdButtons.forEach(b => { b.disabled = !connected; });
+      }
+
+      function renderTelemetry(t) {
+        el.lastSeen.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+        el.valState.textContent = t.flashOrangeActive ? "FLASH_ORANGE" : (t.currentFsmState || "N/A");
+        el.valMode.textContent = t.operatingMode || "N/A";
+        el.valElapsed.textContent = t.stateElapsedMs != null ? `${t.stateElapsedMs} ms` : "N/A";
+        el.valNext.textContent = t.nextTargetPhase || "N/A";
+
+        if (t.outputs) {
+          el.lampMainR.className = "lamp" + (t.outputs.mainR ? " on-r" : "");
+          el.lampMainY.className = "lamp" + (t.outputs.mainY ? " on-y" : "");
+          el.lampMainG.className = "lamp" + (t.outputs.mainG ? " on-g" : "");
+          el.lampSideR.className = "lamp" + (t.outputs.sideR ? " on-r" : "");
+          el.lampSideY.className = "lamp" + (t.outputs.sideY ? " on-y" : "");
+          el.lampSideG.className = "lamp" + (t.outputs.sideG ? " on-g" : "");
+          el.lampPedDW.className = "lamp" + (t.outputs.pedDontWalk ? " on-r" : "");
+          el.lampPedW.className = "lamp" + (t.outputs.pedWalk ? " on-g" : "");
+        }
+
+        if (t.density) {
+          if (t.density.main) {
+            el.densMainPct.textContent = `${t.density.main.pct}% (${t.density.main.allocatedSec}s)`;
+            el.densMainFill.style.width = `${t.density.main.pct}%`;
+          }
+          if (t.density.side) {
+            el.densSidePct.textContent = `${t.density.side.pct}% (${t.density.side.allocatedSec}s)`;
+            el.densSideFill.style.width = `${t.density.side.pct}%`;
+          }
+          if (t.density.turn) {
+            el.densTurnPct.textContent = `${t.density.turn.pct}% (${t.density.turn.allocatedSec}s)`;
+            el.densTurnFill.style.width = `${t.density.turn.pct}%`;
+          }
+        }
+      }
+
+      function sendCommand(cmd) {
+        if (!client || !client.connected || !cmd) return;
+        client.publish(TOPICS.COMMAND, cmd);
+        appendLog("TX -> CMD", cmd);
+      }
+
+      el.btnConnect.addEventListener("click", () => {
+        const url = el.brokerUrl.value.trim() || "ws://localhost:9001";
+        setConnected(false, "CONNECTING...", false);
+        appendLog("SYSTEM", `Connecting to ${url}...`);
+
+        client = mqtt.connect(url, {
+          clientId: `control-center-${Math.random().toString(16).slice(2, 8)}`,
+          clean: true,
+          reconnectPeriod: 3000
+        });
+
+        client.on("connect", () => {
+          setConnected(true, "CONNECTED", false);
+          client.subscribe([TOPICS.TELEMETRY, TOPICS.LOGS]);
+          appendLog("SYSTEM", `Subscribed to ${TOPICS.TELEMETRY} & ${TOPICS.LOGS}`);
+        });
+
+        client.on("message", (topic, payload) => {
+          const text = payload.toString();
+          if (topic === TOPICS.TELEMETRY) {
+            try {
+              const obj = JSON.parse(text);
+              renderTelemetry(obj);
+              appendLog("TELEMETRY", `${obj.currentFsmState} | Mode=${obj.operatingMode} | Main=${obj.density?.main?.pct ?? 0}% Side=${obj.density?.side?.pct ?? 0}%`);
+            } catch (_) {
+              appendLog("TELEMETRY", text);
+            }
+          } else if (topic === TOPICS.LOGS) {
+            try {
+              const obj = JSON.parse(text);
+              appendLog("ESP32 LOG", obj.message || text);
+            } catch (_) {
+              appendLog("ESP32 LOG", text);
+            }
+          }
+        });
+
+        client.on("error", (err) => {
+          setConnected(false, "ERROR", true);
+          appendLog("ERROR", err.message);
+        });
+
+        client.on("close", () => {
+          setConnected(false, "DISCONNECTED", false);
+        });
+      });
+
+      el.btnDisconnect.addEventListener("click", () => {
+        if (client) {
+          client.end(true);
+          client = null;
+        }
+        setConnected(false, "DISCONNECTED", false);
+        appendLog("SYSTEM", "Disconnected.");
+      });
+
+      cmdButtons.forEach(btn => {
+        btn.addEventListener("click", () => sendCommand(btn.dataset.cmd));
+      });
+
+      el.btnSendCustom.addEventListener("click", () => {
+        const cmd = el.customCmdInput.value.trim();
+        if (cmd) {
+          sendCommand(cmd);
+          el.customCmdInput.value = "";
+        }
+      });
+
+      el.customCmdInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") el.btnSendCustom.click();
+      });
+
+      el.btnClearLogs.addEventListener("click", () => {
+        recordedLogs.length = 0;
+        el.logBox.innerHTML = "";
+      });
+
+      el.btnExportLogs.addEventListener("click", () => {
+        const blob = new Blob([recordedLogs.join("\n") + "\n"], { type: "text/plain" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `traffic_control_logs_${new Date().toISOString().replace(/[:.]/g, "-")}.log`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+    })();
+  </script>
+</body>
+</html>
+

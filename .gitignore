@@ -3,7 +3,6 @@
 .pio
 build/
 dist/
-node_modules/
 compile_commands.json
 *.o
 *.a
@@ -20,7 +19,12 @@ compile_commands.json
 .vscode/ipch
 .idea/
 
+# Desktop Control Center App
+control-center-app/node_modules/
+control-center-app/dist/
+
 # Temporary Files & Local Snapshots
+scratch/
 *.tmp
 *.temp
 *.log
