@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -61,7 +62,8 @@
       padding: 0;
     }
 
-    html, body {
+    html,
+    body {
       width: 100%;
       max-width: 100vw;
       overflow-x: hidden;
@@ -168,9 +170,20 @@
 
     /* Connection Status Badge Variants */
     @keyframes pulseDot {
-      0% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.35; transform: scale(0.85); }
-      100% { opacity: 1; transform: scale(1); }
+      0% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.35;
+        transform: scale(0.85);
+      }
+
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
     }
 
     .badge[data-status="DISCONNECTED"] {
@@ -178,6 +191,7 @@
       color: var(--text-secondary);
       border-color: var(--border-sep);
     }
+
     .badge[data-status="DISCONNECTED"] .badge-dot {
       background-color: #94A3B8;
     }
@@ -187,6 +201,7 @@
       color: var(--status-info);
       border-color: var(--status-info-border);
     }
+
     .badge[data-status="REQUESTING_PORT"] .badge-dot {
       background-color: var(--status-info);
       animation: pulseDot 1s infinite;
@@ -197,6 +212,7 @@
       color: var(--status-warning);
       border-color: var(--status-warning-border);
     }
+
     .badge[data-status="CONNECTING"] .badge-dot {
       background-color: var(--status-warning);
       animation: pulseDot 0.8s infinite;
@@ -208,6 +224,7 @@
       color: var(--status-warning);
       border-color: var(--status-warning-border);
     }
+
     .badge[data-status^="RECONNECTING"] .badge-dot,
     .badge[data-status="RECONNECTING"] .badge-dot {
       background-color: var(--status-warning);
@@ -219,6 +236,7 @@
       color: var(--teal-primary);
       border-color: var(--teal-border);
     }
+
     .badge[data-status="CONNECTED"] .badge-dot {
       background-color: var(--teal-primary);
     }
@@ -228,6 +246,7 @@
       color: var(--status-success);
       border-color: var(--status-success-border);
     }
+
     .badge[data-status="RECEIVING_DATA"] .badge-dot {
       background-color: var(--status-success);
       animation: pulseDot 1.5s infinite;
@@ -240,6 +259,7 @@
       color: var(--status-warning);
       border-color: var(--status-warning-border);
     }
+
     .badge[data-status="STALE"] .badge-dot,
     .badge[data-status="TELEMETRY STALE"] .badge-dot,
     .badge[data-status="STALE TELEMETRY"] .badge-dot {
@@ -252,6 +272,7 @@
       color: var(--text-secondary);
       border-color: var(--border-sep);
     }
+
     .badge[data-status="DISCONNECTING"] .badge-dot {
       background-color: #94A3B8;
       animation: pulseDot 0.5s infinite;
@@ -262,6 +283,7 @@
       color: var(--status-error);
       border-color: var(--status-error-border);
     }
+
     .badge[data-status="CONTROLLER FAULT"] .badge-dot {
       background-color: var(--status-error);
       animation: pulseDot 0.6s infinite;
@@ -273,6 +295,7 @@
       color: var(--status-error);
       border-color: var(--status-error-border);
     }
+
     .badge[data-status="SERIAL LOST"] .badge-dot,
     .badge[data-status="ERROR"] .badge-dot {
       background-color: var(--status-error);
@@ -284,11 +307,13 @@
       color: var(--teal-primary);
       border-color: var(--teal-border);
     }
+
     .badge-mode[data-mode="SERIAL_SIMULATION"] {
       background-color: var(--status-warning-bg);
       color: var(--status-warning);
       border-color: var(--status-warning-border);
     }
+
     .badge-mode[data-mode="FAULT_SAFE"] {
       background-color: var(--status-error-bg);
       color: var(--status-error);
@@ -318,9 +343,11 @@
       white-space: nowrap;
       user-select: none;
     }
+
     .btn:active:not(:disabled) {
       transform: translateY(1px);
     }
+
     .btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
@@ -337,6 +364,7 @@
       background-color: var(--teal-primary);
       color: #FFFFFF;
     }
+
     .btn-primary:hover:not(:disabled) {
       background-color: var(--teal-hover);
     }
@@ -346,6 +374,7 @@
       color: var(--text-primary);
       border-color: var(--border-sep);
     }
+
     .btn-secondary:hover:not(:disabled) {
       background-color: #F1F5F9;
       border-color: #CBD5E1;
@@ -356,6 +385,7 @@
       color: var(--teal-primary);
       border-color: var(--teal-border);
     }
+
     .btn-outline:hover:not(:disabled) {
       background-color: var(--teal-light);
     }
@@ -365,6 +395,7 @@
       color: var(--status-error);
       border-color: var(--status-error-border);
     }
+
     .btn-danger-outline:hover:not(:disabled) {
       background-color: var(--status-error-bg);
       border-color: var(--status-error);
@@ -375,6 +406,7 @@
         min-height: 44px;
         padding: 0.55rem 0.9rem;
       }
+
       .btn-sm {
         min-height: 38px;
         padding: 0.4rem 0.7rem;
@@ -394,6 +426,7 @@
       gap: 1.25rem;
       flex-grow: 1;
     }
+
     @media (max-width: 768px) {
       .main-container {
         padding: 0.85rem 1rem 2rem;
@@ -425,6 +458,7 @@
       color: var(--text-primary);
       line-height: 1.45;
     }
+
     .safety-banner-title {
       font-weight: 700;
       color: var(--teal-primary);
@@ -446,12 +480,14 @@
       font-weight: 600;
       box-shadow: var(--shadow-sm);
     }
+
     .alert-banner-error {
       background-color: var(--status-error-bg);
       border: 1.5px solid var(--status-error-border);
       border-left: 5px solid var(--status-error);
       color: var(--status-error);
     }
+
     .alert-banner-warning {
       background-color: var(--status-warning-bg);
       border: 1.5px solid var(--status-warning-border);
@@ -471,6 +507,7 @@
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+
     @media (max-width: 620px) {
       .metrics-grid {
         grid-template-columns: 1fr;
@@ -489,6 +526,7 @@
       border-top: 3px solid var(--teal-primary);
       transition: opacity 0.2s ease, border-color 0.2s ease;
     }
+
     .metric-card.is-stale {
       opacity: 0.65;
       border-top-color: var(--status-warning);
@@ -530,7 +568,7 @@
       width: 100%;
     }
 
-    .workspace-grid > div {
+    .workspace-grid>div {
       min-width: 0;
       width: 100%;
     }
@@ -634,16 +672,19 @@
       stroke-width: 1.5px;
       transition: fill 0.12s ease, filter 0.12s ease;
     }
+
     .svg-lamp.active-red {
       fill: var(--sig-red-on);
       stroke: #991B1B;
       filter: drop-shadow(0 0 6px var(--sig-red-glow));
     }
+
     .svg-lamp.active-yellow {
       fill: var(--sig-yellow-on);
       stroke: #854D0E;
       filter: drop-shadow(0 0 6px var(--sig-yellow-glow));
     }
+
     .svg-lamp.active-green {
       fill: var(--sig-green-on);
       stroke: #166534;
@@ -657,38 +698,86 @@
       stroke-width: 1.5px;
       transition: fill 0.15s ease, filter 0.15s ease;
     }
+
     .svg-ir-dot.detected {
       fill: #EA580C;
       stroke: #FFF7ED;
       filter: drop-shadow(0 0 6px rgba(234, 88, 12, 0.7));
     }
+
     .svg-ir-dot.active-idle {
       fill: #0F766E;
     }
 
     /* Decorative Vehicle Motion */
     @keyframes flowEast {
-      0% { transform: translateX(-18px); opacity: 0.85; }
-      50% { transform: translateX(18px); opacity: 1; }
-      100% { transform: translateX(-18px); opacity: 0.85; }
-    }
-    @keyframes flowWest {
-      0% { transform: translateX(18px); opacity: 0.85; }
-      50% { transform: translateX(-18px); opacity: 1; }
-      100% { transform: translateX(18px); opacity: 0.85; }
-    }
-    @keyframes flowNorth {
-      0% { transform: translateY(12px); opacity: 0.85; }
-      50% { transform: translateY(-12px); opacity: 1; }
-      100% { transform: translateY(12px); opacity: 0.85; }
+      0% {
+        transform: translateX(-18px);
+        opacity: 0.85;
+      }
+
+      50% {
+        transform: translateX(18px);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(-18px);
+        opacity: 0.85;
+      }
     }
 
-    .veh-moving-east { animation: flowEast 3.2s ease-in-out infinite; }
-    .veh-moving-west { animation: flowWest 3.2s ease-in-out infinite; }
-    .veh-moving-north { animation: flowNorth 2.8s ease-in-out infinite; }
+    @keyframes flowWest {
+      0% {
+        transform: translateX(18px);
+        opacity: 0.85;
+      }
+
+      50% {
+        transform: translateX(-18px);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateX(18px);
+        opacity: 0.85;
+      }
+    }
+
+    @keyframes flowNorth {
+      0% {
+        transform: translateY(12px);
+        opacity: 0.85;
+      }
+
+      50% {
+        transform: translateY(-12px);
+        opacity: 1;
+      }
+
+      100% {
+        transform: translateY(12px);
+        opacity: 0.85;
+      }
+    }
+
+    .veh-moving-east {
+      animation: flowEast 3.2s ease-in-out infinite;
+    }
+
+    .veh-moving-west {
+      animation: flowWest 3.2s ease-in-out infinite;
+    }
+
+    .veh-moving-north {
+      animation: flowNorth 2.8s ease-in-out infinite;
+    }
 
     @media (prefers-reduced-motion: reduce) {
-      .veh-moving-east, .veh-moving-west, .veh-moving-north {
+
+      .veh-moving-east,
+      .veh-moving-west,
+      .veh-moving-north {
         animation: none !important;
       }
     }
@@ -700,6 +789,7 @@
       gap: 0.875rem;
       margin-top: 1rem;
     }
+
     @media (max-width: 880px) {
       .signal-groups-grid {
         grid-template-columns: 1fr;
@@ -759,11 +849,13 @@
       border-color: #991B1B;
       box-shadow: 0 0 8px var(--sig-red-glow);
     }
+
     .lamp-dot.on-yellow {
       background-color: var(--sig-yellow-on);
       border-color: #854D0E;
       box-shadow: 0 0 8px var(--sig-yellow-glow);
     }
+
     .lamp-dot.on-green {
       background-color: var(--sig-green-on);
       border-color: #166534;
@@ -892,27 +984,32 @@
       letter-spacing: 0.02em;
       white-space: nowrap;
     }
+
     .verif-badge.verif-software {
       background-color: var(--status-info-bg);
       color: var(--status-info);
       border: 1px solid var(--status-info-border);
     }
+
     .verif-badge.verif-gpio {
       background-color: var(--teal-light);
       color: var(--teal-primary);
       border: 1px solid var(--teal-border);
     }
+
     .verif-badge.verif-physical {
       background-color: var(--status-success-bg);
       color: var(--status-success);
       border: 1.5px solid var(--status-success-border);
       box-shadow: 0 0 6px rgba(21, 128, 61, 0.2);
     }
+
     .verif-badge.verif-electrical {
       background-color: var(--status-warning-bg);
       color: #B45309;
       border: 1px solid var(--status-warning-border);
     }
+
     .verif-badge.verif-not-verified {
       background-color: var(--bg-neutral);
       color: var(--text-secondary);
@@ -926,11 +1023,13 @@
       gap: 0.75rem;
       margin-top: 0.85rem;
     }
+
     @media (max-width: 1200px) {
       .lamp-test-heads-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
     }
+
     @media (max-width: 768px) {
       .lamp-test-heads-grid {
         grid-template-columns: 1fr;
@@ -981,43 +1080,51 @@
       transition: all 0.15s ease;
       user-select: none;
     }
+
     .lamp-test-btn:hover:not(:disabled) {
       background-color: #F1F5F9;
       border-color: #CBD5E1;
     }
+
     .lamp-test-btn:disabled {
       opacity: 0.45;
       cursor: not-allowed;
       pointer-events: none;
     }
+
     .lamp-test-btn.active-test {
       animation: pulseActiveTest 1.2s infinite;
       font-weight: 800;
     }
+
     .lamp-test-btn.btn-test-red.active-test {
       background-color: #FEF2F2;
       color: #DC2626;
       border-color: #FCA5A5;
       box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
     }
+
     .lamp-test-btn.btn-test-yellow.active-test {
       background-color: #FFFBEB;
       color: #D97706;
       border-color: #FDE68A;
       box-shadow: 0 0 10px rgba(217, 119, 6, 0.4);
     }
+
     .lamp-test-btn.btn-test-green.active-test {
       background-color: #F0FDF4;
       color: #16A34A;
       border-color: #86EFAC;
       box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
     }
+
     .lamp-test-btn.btn-test-walk.active-test {
       background-color: #F0FDF4;
       color: #16A34A;
       border-color: #86EFAC;
       box-shadow: 0 0 10px rgba(22, 163, 74, 0.4);
     }
+
     .lamp-test-btn.btn-test-dontwalk.active-test {
       background-color: #FEF2F2;
       color: #DC2626;
@@ -1026,9 +1133,17 @@
     }
 
     @keyframes pulseActiveTest {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.02); }
-      100% { transform: scale(1); }
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.02);
+      }
+
+      100% {
+        transform: scale(1);
+      }
     }
 
     /* Sequential Progress Banner */
@@ -1042,6 +1157,7 @@
       flex-direction: column;
       gap: 0.5rem;
     }
+
     .seq-progress-header {
       display: flex;
       align-items: center;
@@ -1050,6 +1166,7 @@
       font-weight: 700;
       color: var(--teal-primary);
     }
+
     .seq-progress-track {
       width: 100%;
       height: 8px;
@@ -1057,6 +1174,7 @@
       background-color: #CCFBF1;
       overflow: hidden;
     }
+
     .seq-progress-bar {
       height: 100%;
       background-color: var(--teal-primary);
@@ -1071,11 +1189,13 @@
       gap: 0.85rem;
       margin-top: 0.85rem;
     }
+
     @media (max-width: 980px) {
       .sensor-cards-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
+
     @media (max-width: 620px) {
       .sensor-cards-grid {
         grid-template-columns: 1fr;
@@ -1094,11 +1214,13 @@
       border-top: 3.5px solid var(--teal-primary);
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
+
     .sensor-diag-card.is-active-detected {
       border-top-color: #EA580C;
       background-color: #FFFDF9;
       box-shadow: 0 0 10px rgba(234, 88, 12, 0.15);
     }
+
     .sensor-diag-card.is-faulted {
       border-top-color: var(--status-error);
       background-color: var(--status-error-bg);
@@ -1111,6 +1233,7 @@
       border-bottom: 1px solid var(--border-sep);
       padding-bottom: 0.35rem;
     }
+
     .sensor-diag-title {
       font-size: 0.88rem;
       font-weight: 800;
@@ -1144,12 +1267,14 @@
       gap: 0.85rem;
       box-shadow: var(--shadow-sm);
     }
+
     .wizard-step-row {
       display: flex;
       gap: 0.5rem;
       align-items: center;
       flex-wrap: wrap;
     }
+
     .wizard-step-pill {
       display: inline-flex;
       align-items: center;
@@ -1162,12 +1287,14 @@
       background-color: #FFFFFF;
       color: var(--text-secondary);
     }
+
     .wizard-step-pill.is-active {
       background-color: var(--teal-primary);
       color: #FFFFFF;
       border-color: var(--teal-primary);
       box-shadow: 0 0 8px rgba(15, 118, 110, 0.35);
     }
+
     .wizard-step-pill.is-passed {
       background-color: var(--status-success-bg);
       color: var(--status-success);
@@ -1180,6 +1307,7 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 1rem;
     }
+
     @media (max-width: 1100px) {
       .approaches-grid {
         grid-template-columns: 1fr;
@@ -1197,6 +1325,7 @@
       border-top: 3.5px solid var(--teal-primary);
       transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
+
     .approach-card.has-demand {
       border-top-color: #EA580C;
       box-shadow: 0 0 12px rgba(234, 88, 12, 0.2);
@@ -1242,6 +1371,7 @@
       gap: 0.35rem;
       white-space: nowrap;
     }
+
     .approach-demand-badge[data-demand="YES"] {
       background-color: #FFF7ED;
       color: #EA580C;
@@ -1272,6 +1402,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 0.65rem;
     }
+
     @media (max-width: 600px) {
       .approach-sensors-pair {
         grid-template-columns: 1fr;
@@ -1288,15 +1419,18 @@
       gap: 0.45rem;
       transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     }
+
     .sensor-subpanel.is-detected {
       background-color: #FFFBEB;
       border-color: #F59E0B;
       box-shadow: 0 0 8px rgba(245, 158, 11, 0.2);
     }
+
     .sensor-subpanel.is-faulty {
       background-color: var(--status-error-bg);
       border-color: var(--status-error);
     }
+
     .sensor-subpanel.is-commissioned {
       border-top: 3px solid var(--status-success);
     }
@@ -1309,31 +1443,37 @@
       letter-spacing: 0.02em;
       text-transform: uppercase;
     }
+
     .sensor-reading-badge[data-state="CLEAR"] {
       background-color: var(--status-success-bg);
       color: var(--status-success);
       border: 1px solid var(--status-success-border);
     }
+
     .sensor-reading-badge[data-state="DETECTED"] {
       background-color: #FFF7ED;
       color: #EA580C;
       border: 1px solid #FDBA74;
     }
+
     .sensor-reading-badge[data-state="FAULT"] {
       background-color: var(--status-error-bg);
       color: var(--status-error);
       border: 1px solid var(--status-error-border);
     }
+
     .sensor-reading-badge[data-state="DISCONNECTED"] {
       background-color: #F1F5F9;
       color: #94A3B8;
       border: 1px solid #CBD5E1;
     }
+
     .sensor-reading-badge[data-state="STALE"] {
       background-color: var(--status-warning-bg);
       color: var(--status-warning);
       border: 1px solid var(--status-warning-border);
     }
+
     .sensor-reading-badge[data-state="UNVALIDATED"] {
       background-color: #F1F5F9;
       color: #475569;
@@ -1351,6 +1491,7 @@
       font-family: var(--font-mono);
       line-height: 1.35;
     }
+
     .approach-card.has-demand .approach-demand-detail {
       color: #C2410C;
       background-color: #FFF7ED;
@@ -1368,6 +1509,7 @@
       color: var(--text-secondary);
       letter-spacing: 0.02em;
     }
+
     .ped-pending-badge[data-pending="YES"] {
       background-color: #FFF7ED;
       color: #EA580C;
@@ -1389,6 +1531,7 @@
       font-weight: 800;
       color: var(--text-primary);
     }
+
     .sensor-road-tag {
       font-size: 0.68rem;
       font-weight: 700;
@@ -1417,33 +1560,57 @@
       color: var(--text-secondary);
       text-transform: uppercase;
     }
+
     .sensor-status-badge[data-status="DETECTED"] {
-      background-color: #FFF7ED; color: #EA580C; border-color: #FDBA74;
+      background-color: #FFF7ED;
+      color: #EA580C;
+      border-color: #FDBA74;
     }
+
     .sensor-status-badge[data-status="CLEAR"],
     .sensor-status-badge[data-status="ONLINE"] {
-      background-color: var(--teal-light); color: var(--teal-primary); border-color: var(--teal-border);
+      background-color: var(--teal-light);
+      color: var(--teal-primary);
+      border-color: var(--teal-border);
     }
+
     .sensor-status-badge[data-status="VALIDATED"] {
-      background-color: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE;
+      background-color: #EFF6FF;
+      color: #1D4ED8;
+      border-color: #BFDBFE;
     }
+
     .sensor-status-badge[data-status="COMMISSIONED"] {
-      background-color: var(--status-success-bg); color: var(--status-success); border-color: var(--status-success-border);
+      background-color: var(--status-success-bg);
+      color: var(--status-success);
+      border-color: var(--status-success-border);
     }
+
     .sensor-status-badge[data-status="UNVALIDATED"],
     .sensor-status-badge[data-status="CONFIGURED"] {
-      background-color: #F1F5F9; color: #475569; border-color: #CBD5E1;
+      background-color: #F1F5F9;
+      color: #475569;
+      border-color: #CBD5E1;
     }
+
     .sensor-status-badge[data-status="FAULT"],
     .sensor-status-badge[data-status="FAULTY"] {
-      background-color: var(--status-error-bg); color: var(--status-error); border-color: var(--status-error-border);
+      background-color: var(--status-error-bg);
+      color: var(--status-error);
+      border-color: var(--status-error-border);
     }
+
     .sensor-status-badge[data-status="DISCONNECTED"],
     .sensor-status-badge[data-status="UNAVAILABLE"] {
-      background-color: #E2E8F0; color: #94A3B8; border-color: #CBD5E1;
+      background-color: #E2E8F0;
+      color: #94A3B8;
+      border-color: #CBD5E1;
     }
+
     .sensor-status-badge[data-status="STALE"] {
-      background-color: var(--status-warning-bg); color: var(--status-warning); border-color: var(--status-warning-border);
+      background-color: var(--status-warning-bg);
+      color: var(--status-warning);
+      border-color: var(--status-warning-border);
     }
 
     .sensor-beam-box {
@@ -1465,10 +1632,12 @@
       flex-shrink: 0;
       transition: background-color 0.1s ease, box-shadow 0.1s ease;
     }
+
     .sensor-beam-dot.detected {
       background-color: #EA580C;
       box-shadow: 0 0 8px rgba(234, 88, 12, 0.7);
     }
+
     .sensor-beam-dot.clear {
       background-color: var(--status-success);
     }
@@ -1489,6 +1658,7 @@
       gap: 0.875rem;
       margin-top: 0.875rem;
     }
+
     @media (max-width: 680px) {
       .ped-crossings-grid {
         grid-template-columns: 1fr;
@@ -1530,6 +1700,7 @@
       grid-template-columns: 1fr 1fr;
       gap: 0.55rem;
     }
+
     @media (max-width: 480px) {
       .control-grid-2 {
         grid-template-columns: 1fr;
@@ -1541,6 +1712,7 @@
       grid-template-columns: 1fr 1fr 1fr;
       gap: 0.55rem;
     }
+
     @media (max-width: 580px) {
       .control-grid-3 {
         grid-template-columns: 1fr;
@@ -1556,6 +1728,7 @@
       font-size: 0.76rem;
       font-weight: 500;
     }
+
     .mode-lock-warning {
       background-color: var(--status-warning-bg);
       border: 1px solid var(--status-warning-border);
@@ -1576,16 +1749,19 @@
       flex-direction: column;
       gap: 0.2rem;
     }
+
     .command-feedback[data-kind="success"] {
       background-color: var(--status-success-bg);
       border-color: var(--status-success-border);
       color: var(--status-success);
     }
+
     .command-feedback[data-kind="error"] {
       background-color: var(--status-error-bg);
       border-color: var(--status-error-border);
       color: var(--status-error);
     }
+
     .command-feedback[data-kind="pending"] {
       background-color: var(--teal-light);
       border-color: var(--teal-border);
@@ -1602,6 +1778,7 @@
       flex-direction: column;
       gap: 0.4rem;
     }
+
     .countdown-header {
       display: flex;
       align-items: center;
@@ -1610,12 +1787,14 @@
       font-weight: 700;
       color: var(--teal-primary);
     }
+
     .countdown-timer-value {
       font-size: 1.3rem;
       font-weight: 800;
       font-family: var(--font-mono);
       color: var(--teal-hover);
     }
+
     .countdown-track {
       height: 8px;
       background-color: #CCFBF1;
@@ -1623,6 +1802,7 @@
       overflow: hidden;
       width: 100%;
     }
+
     .countdown-bar {
       height: 100%;
       background-color: var(--teal-primary);
@@ -1646,11 +1826,14 @@
       font-size: 0.76rem;
       font-family: var(--font-mono);
     }
-    .timing-table th, .timing-table td {
+
+    .timing-table th,
+    .timing-table td {
       padding: 0.35rem 0.5rem;
       border-bottom: 1px solid var(--border-sep);
       text-align: left;
     }
+
     .timing-table th {
       background-color: var(--bg-neutral);
       font-weight: 700;
@@ -1671,6 +1854,7 @@
       flex-direction: column;
       gap: 0.6rem;
     }
+
     .reset-confirm-box.is-open {
       display: flex;
     }
@@ -1681,6 +1865,7 @@
       cursor: pointer;
       user-select: none;
     }
+
     .console-details summary::-webkit-details-marker {
       display: none;
     }
@@ -1737,6 +1922,7 @@
       background-color: var(--teal-light);
       border-left: 3px solid var(--teal-primary);
     }
+
     .log-entry.tx .log-tag {
       background-color: var(--teal-primary);
       color: #FFFFFF;
@@ -1746,6 +1932,7 @@
       background-color: #FFFFFF;
       border-left: 3px solid var(--teal-muted);
     }
+
     .log-entry.rx-transition .log-tag {
       background-color: var(--teal-light);
       color: var(--teal-primary);
@@ -1756,6 +1943,7 @@
       background-color: #FFFFFF;
       border-left: 3px solid var(--status-success);
     }
+
     .log-entry.rx-event .log-tag {
       background-color: var(--status-success-bg);
       color: var(--status-success);
@@ -1765,6 +1953,7 @@
       background-color: #FFFDF5;
       border-left: 3px solid #F59E0B;
     }
+
     .log-entry.rx-sensor .log-tag {
       background-color: #FEF3C7;
       color: #B45309;
@@ -1777,6 +1966,7 @@
       border-left: 3px solid var(--status-error);
       color: var(--status-error);
     }
+
     .log-entry.rx-reject .log-tag,
     .log-entry.sys-err .log-tag {
       background-color: var(--status-error);
@@ -1787,6 +1977,7 @@
       background-color: #FFFFFF;
       border-left: 3px solid var(--text-secondary);
     }
+
     .log-entry.sys-info .log-tag {
       background-color: var(--border-sep);
       color: var(--text-primary);
@@ -1806,22 +1997,61 @@
       justify-content: space-between;
       gap: 1rem;
     }
-    .mqtt-bridge-info { display: flex; flex-direction: column; gap: 0.25rem; }
+
+    .mqtt-bridge-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
     .mqtt-bridge-title {
-      font-size: 0.95rem; font-weight: 800; color: var(--text-primary);
-      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
     }
-    .mqtt-bridge-topics { font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-secondary); }
-    .mqtt-bridge-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; }
+
+    .mqtt-bridge-topics {
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+    }
+
+    .mqtt-bridge-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
     .mqtt-url-input {
-      font-family: var(--font-mono); font-size: 0.82rem; padding: 0.42rem 0.65rem;
-      border: 1.5px solid var(--border-sep); border-radius: var(--radius-md);
-      background: var(--bg-neutral); color: var(--text-primary); min-width: 220px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      padding: 0.42rem 0.65rem;
+      border: 1.5px solid var(--border-sep);
+      border-radius: var(--radius-md);
+      background: var(--bg-neutral);
+      color: var(--text-primary);
+      min-width: 220px;
     }
-    .mqtt-url-input:focus { border-color: var(--teal-primary); outline: none; background: #FFFFFF; }
+
+    .mqtt-url-input:focus {
+      border-color: var(--teal-primary);
+      outline: none;
+      background: #FFFFFF;
+    }
+
     .mqtt-stats-pill {
-      font-family: var(--font-mono); font-size: 0.75rem; padding: 0.28rem 0.65rem;
-      border-radius: 9999px; background: var(--bg-neutral); border: 1px solid var(--border-sep); color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.28rem 0.65rem;
+      border-radius: 9999px;
+      background: var(--bg-neutral);
+      border: 1px solid var(--border-sep);
+      color: var(--text-secondary);
     }
 
     /* TRAFFIC DENSITY & DYNAMIC GREEN TIME ALLOCATION */
@@ -1831,61 +2061,231 @@
       border-radius: var(--radius-lg);
       padding: 1.15rem 1.25rem;
       box-shadow: var(--shadow-card);
-      display: flex; flex-direction: column; gap: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.9rem;
     }
-    .density-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
-    .density-title { font-size: 1.02rem; font-weight: 800; color: var(--text-primary); }
-    .density-subtitle { font-size: 0.8rem; color: var(--text-secondary); display: block; }
+
+    .density-header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .density-title {
+      font-size: 1.02rem;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .density-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      display: block;
+    }
+
     .density-priority-banner {
-      padding: 0.48rem 0.95rem; border-radius: var(--radius-md); font-size: 0.83rem; font-weight: 700;
-      background: var(--teal-light); border: 1.5px solid var(--teal-border); color: var(--teal-primary);
+      padding: 0.48rem 0.95rem;
+      border-radius: var(--radius-md);
+      font-size: 0.83rem;
+      font-weight: 700;
+      background: var(--teal-light);
+      border: 1.5px solid var(--teal-border);
+      color: var(--teal-primary);
     }
-    .density-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 0.95rem; }
+
+    .density-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.95rem;
+    }
+
     .density-card {
-      background: var(--bg-neutral); border: 1.5px solid var(--border-sep); border-radius: var(--radius-md);
-      padding: 0.95rem; display: flex; flex-direction: column; gap: 0.65rem; transition: all 0.2s ease;
+      background: var(--bg-neutral);
+      border: 1.5px solid var(--border-sep);
+      border-radius: var(--radius-md);
+      padding: 0.95rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      transition: all 0.2s ease;
     }
-    .density-card.has-priority { border-color: var(--teal-primary); box-shadow: 0 0 0 2px var(--teal-muted); background: #FFFFFF; }
-    .density-card-header { display: flex; align-items: center; justify-content: space-between; }
-    .density-card-title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); }
+
+    .density-card.has-priority {
+      border-color: var(--teal-primary);
+      box-shadow: 0 0 0 2px var(--teal-muted);
+      background: #FFFFFF;
+    }
+
+    .density-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .density-card-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
     .density-pct-badge {
-      font-family: var(--font-mono); font-size: 0.82rem; font-weight: 800; padding: 0.18rem 0.55rem;
-      border-radius: 9999px; border: 1px solid var(--border-sep); background: #FFFFFF; color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      font-weight: 800;
+      padding: 0.18rem 0.55rem;
+      border-radius: 9999px;
+      border: 1px solid var(--border-sep);
+      background: #FFFFFF;
+      color: var(--text-secondary);
     }
-    .density-pct-badge.pct-50 { background: var(--status-warning-bg); border-color: var(--status-warning-border); color: var(--status-warning); }
-    .density-pct-badge.pct-100 { background: var(--status-success-bg); border-color: var(--status-success-border); color: var(--status-success); }
+
+    .density-pct-badge.pct-50 {
+      background: var(--status-warning-bg);
+      border-color: var(--status-warning-border);
+      color: var(--status-warning);
+    }
+
+    .density-pct-badge.pct-100 {
+      background: var(--status-success-bg);
+      border-color: var(--status-success-border);
+      color: var(--status-success);
+    }
+
     .density-bar-container {
-      display: flex; gap: 4px; height: 13px; background: var(--border-sep); border-radius: 9999px; padding: 2px;
+      display: flex;
+      gap: 4px;
+      height: 13px;
+      background: var(--border-sep);
+      border-radius: 9999px;
+      padding: 2px;
     }
-    .density-bar-segment { flex: 1; height: 100%; border-radius: 9999px; background: #CBD5E1; transition: background 0.3s ease; }
-    .density-bar-segment.active-50 { background: var(--status-warning); }
-    .density-bar-segment.active-100 { background: var(--status-success); }
-    .density-details { display: flex; justify-content: space-between; font-size: 0.78rem; }
-    .stat-label { color: var(--text-secondary); font-weight: 500; }
-    .stat-val { font-weight: 700; color: var(--text-primary); }
-    .stat-val.highlight { color: var(--teal-primary); font-family: var(--font-mono); font-size: 0.85rem; }
-    .density-actions { display: flex; align-items: center; justify-content: space-between; border-top: 1px dashed var(--border-sep); padding-top: 0.45rem; }
-    .sensor-btn-label { font-size: 0.74rem; color: var(--text-secondary); }
-    .sensor-btn-group { display: flex; gap: 0.35rem; }
+
+    .density-bar-segment {
+      flex: 1;
+      height: 100%;
+      border-radius: 9999px;
+      background: #CBD5E1;
+      transition: background 0.3s ease;
+    }
+
+    .density-bar-segment.active-50 {
+      background: var(--status-warning);
+    }
+
+    .density-bar-segment.active-100 {
+      background: var(--status-success);
+    }
+
+    .density-details {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+    }
+
+    .stat-label {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .stat-val {
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .stat-val.highlight {
+      color: var(--teal-primary);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    .density-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 1px dashed var(--border-sep);
+      padding-top: 0.45rem;
+    }
+
+    .sensor-btn-label {
+      font-size: 0.74rem;
+      color: var(--text-secondary);
+    }
+
+    .sensor-btn-group {
+      display: flex;
+      gap: 0.35rem;
+    }
+
     .sensor-btn {
-      font-family: var(--font-mono); font-size: 0.74rem; font-weight: 700; padding: 0.22rem 0.52rem;
-      border-radius: 4px; border: 1.5px solid var(--border-sep); background: #FFFFFF; color: var(--text-secondary); cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 0.74rem;
+      font-weight: 700;
+      padding: 0.22rem 0.52rem;
+      border-radius: 4px;
+      border: 1.5px solid var(--border-sep);
+      background: #FFFFFF;
+      color: var(--text-secondary);
+      cursor: pointer;
     }
-    .sensor-btn:hover { border-color: var(--teal-primary); color: var(--teal-primary); }
-    .sensor-btn.is-active { background: var(--teal-primary); border-color: var(--teal-primary); color: #FFFFFF; }
+
+    .sensor-btn:hover {
+      border-color: var(--teal-primary);
+      color: var(--teal-primary);
+    }
+
+    .sensor-btn.is-active {
+      background: var(--teal-primary);
+      border-color: var(--teal-primary);
+      color: #FFFFFF;
+    }
 
     /* FLASH ORANGE / MAINTENANCE BANNER */
     .flash-orange-banner {
-      display: none; background: #FFFBEB; border: 2px solid #F59E0B; border-left: 6px solid #D97706;
-      border-radius: var(--radius-md); padding: 0.85rem 1.25rem; align-items: center; justify-content: space-between; gap: 1rem;
+      display: none;
+      background: #FFFBEB;
+      border: 2px solid #F59E0B;
+      border-left: 6px solid #D97706;
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1.25rem;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
     }
-    .flash-orange-content { display: flex; align-items: center; gap: 0.75rem; }
-    .flash-orange-text { font-weight: 700; color: #92400E; font-size: 0.9rem; }
-    .btn-warning-glow { background: #F59E0B; color: #FFFFFF; border-color: #D97706; font-weight: 700; }
-    .btn-warning-glow:hover:not(:disabled) { background: #D97706; }
-    .btn-warning-active { background: #DC2626 !important; border-color: #B91C1C !important; color: #FFFFFF !important; }
+
+    .flash-orange-content {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .flash-orange-text {
+      font-weight: 700;
+      color: #92400E;
+      font-size: 0.9rem;
+    }
+
+    .btn-warning-glow {
+      background: #F59E0B;
+      color: #FFFFFF;
+      border-color: #D97706;
+      font-weight: 700;
+    }
+
+    .btn-warning-glow:hover:not(:disabled) {
+      background: #D97706;
+    }
+
+    .btn-warning-active {
+      background: #DC2626 !important;
+      border-color: #B91C1C !important;
+      color: #FFFFFF !important;
+    }
   </style>
 </head>
+
 <body>
 
   <!-- A. APPLICATION HEADER -->
@@ -1893,7 +2293,8 @@
     <div class="header-inner">
       <div class="brand-group">
         <div class="brand-mark" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <rect x="7" y="2" width="10" height="20" rx="2"></rect>
             <circle cx="12" cy="7" r="1.5"></circle>
             <circle cx="12" cy="12" r="1.5"></circle>
@@ -1935,13 +2336,15 @@
 
     <!-- Web Serial API Missing Notice -->
     <div id="webSerialUnsupported" class="alert-banner alert-banner-error" style="display:none;" role="alert">
-      <span><strong>Browser Notice:</strong> Web Serial API is unavailable in this browser context. Please open this file in Google Chrome or Microsoft Edge on desktop with HTTPS or file:// access.</span>
+      <span><strong>Browser Notice:</strong> Web Serial API is unavailable in this browser context. Please open this
+        file in Google Chrome or Microsoft Edge on desktop with HTTPS or file:// access.</span>
     </div>
 
     <!-- Safety Banner -->
     <section class="safety-banner" aria-label="Safety and Hardware Commissioning Notice">
       <div class="safety-banner-icon" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           <path d="M12 8v4"></path>
           <path d="M12 16h.01"></path>
@@ -1950,17 +2353,23 @@
       <div class="safety-banner-content">
         <div class="safety-banner-title">
           <span>HARDWARE SAFETY &amp; INTERSECTION INVARIANTS</span>
-          <span id="timingModeTag" class="badge" style="font-size:0.7rem; padding:0.15rem 0.45rem; background:var(--teal-primary); color:#FFF;">FIXED PROTOTYPE (25s Main / 20s Side)</span>
+          <span id="timingModeTag" class="badge"
+            style="font-size:0.7rem; padding:0.15rem 0.45rem; background:var(--teal-primary); color:#FFF;">FIXED
+            PROTOTYPE (25s Main / 20s Side)</span>
         </div>
         <p id="safetyBannerText">
-          Vehicles drive on the RIGHT-HAND SIDE (RHT / KeepRight). Vehicle traffic lights use DIRECT_ACTIVE_HIGH on ESP32 outputs (Main: 27/26/25, Side: 14/13/12, Turn: 23/22/21). Pedestrian lights use ULN2003A low-side sink (PED1: 19/18, PED2: 17/16). Six IR vehicle sensors (Main: 33/34, Side: 35/36, Turn: 39/15) are integrated with idle electrical verification and stuck-input timeouts.
+          Vehicles drive on the RIGHT-HAND SIDE (RHT / KeepRight). Vehicle traffic lights use DIRECT_ACTIVE_HIGH on
+          ESP32 outputs (Main: 27/26/25, Side: 14/13/12, Turn: 23/22/21). Pedestrian lights use ULN2003A low-side sink
+          (PED1: 19/18, PED2: 17/16). Six IR vehicle sensors (Main: 33/34, Side: 35/36, Turn: 39/15) are integrated with
+          idle electrical verification and stuck-input timeouts.
         </p>
       </div>
     </section>
 
     <!-- Telemetry Stale Alert Banner -->
     <div id="staleAlertBanner" class="alert-banner alert-banner-warning" style="display:none;" role="alert">
-      <span id="staleAlertText">TELEMETRY STALE: No valid status received from ESP32 within 2.8 seconds. Displayed values represent the last verified snapshot.</span>
+      <span id="staleAlertText">TELEMETRY STALE: No valid status received from ESP32 within 2.8 seconds. Displayed
+        values represent the last verified snapshot.</span>
       <button id="btnRetryStatus" type="button" class="btn btn-secondary btn-sm">
         Poll STATUS Now
       </button>
@@ -1969,14 +2378,16 @@
     <!-- FLASHING ORANGE / FREE FLOW MAINTENANCE BANNER -->
     <div id="flashOrangeBanner" class="flash-orange-banner" role="alert">
       <div class="flash-orange-content">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.5"
+          aria-hidden="true">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
           <line x1="12" y1="9" x2="12" y2="13"></line>
           <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
         <div>
           <div class="flash-orange-text">⚠️ INTERSECTION IN FREE-FLOW / MAINTENANCE FLASHING MODE</div>
-          <div style="font-size:0.78rem; color:#B45309;">All approaches flashing yellow at 1 Hz for caution. Automatic controller FSM is bypassed.</div>
+          <div style="font-size:0.78rem; color:#B45309;">All approaches flashing yellow at 1 Hz for caution. Automatic
+            controller FSM is bypassed.</div>
         </div>
       </div>
       <button id="btnResumeAutoFromFlash" type="button" class="btn btn-primary btn-sm">
@@ -1996,11 +2407,13 @@
           <span id="mqttBridgeStats" class="mqtt-stats-pill">TX Telemetry: 0 | TX Logs: 0 | RX Cmds: 0</span>
         </div>
         <div class="mqtt-bridge-topics">
-          Publishes: <code>traffic/junction1/telemetry</code>, <code>traffic/junction1/logs</code> &bull; Subscribes: <code>traffic/junction1/command</code>
+          Publishes: <code>traffic/junction1/telemetry</code>, <code>traffic/junction1/logs</code> &bull; Subscribes:
+          <code>traffic/junction1/command</code>
         </div>
       </div>
       <div class="mqtt-bridge-controls">
-        <input id="mqttBrokerUrl" type="text" class="mqtt-url-input" value="ws://localhost:9001" placeholder="ws://localhost:9001" title="Mosquitto WebSocket URL (e.g., ws://localhost:9001)" />
+        <input id="mqttBrokerUrl" type="text" class="mqtt-url-input" value="ws://localhost:9001"
+          placeholder="ws://localhost:9001" title="Mosquitto WebSocket URL (e.g., ws://localhost:9001)" />
         <button id="btnMqttConnect" type="button" class="btn btn-primary btn-sm">Connect MQTT</button>
         <button id="btnMqttDisconnect" type="button" class="btn btn-outline btn-sm" disabled>Disconnect MQTT</button>
       </div>
@@ -2011,7 +2424,8 @@
       <div class="density-header">
         <div>
           <h2 class="density-title">Traffic Density &amp; Priority Allocation Engine</h2>
-          <span class="density-subtitle">Allocation Logic: 2 Sensors = 100% (20s) &bull; 1 Sensor = 50% (10s) &bull; Equal Traffic = Equal Round-Robin Time</span>
+          <span class="density-subtitle">Allocation Logic: 2 Sensors = 100% (20s) &bull; 1 Sensor = 50% (10s) &bull;
+            Equal Traffic = Equal Round-Robin Time</span>
         </div>
         <div id="densityPriorityBanner" class="density-priority-banner">
           Evaluating Sensor Demand...
@@ -2028,8 +2442,10 @@
             <div id="densityBarMain2" class="density-bar-segment"></div>
           </div>
           <div class="density-details">
-            <div class="density-stat"><span class="stat-label">Sensors: </span><span id="densitySensorsMain" class="stat-val">0 / 2</span></div>
-            <div class="density-stat"><span class="stat-label">Green: </span><span id="densityTimeMain" class="stat-val highlight">0 s (Idle)</span></div>
+            <div class="density-stat"><span class="stat-label">Sensors: </span><span id="densitySensorsMain"
+                class="stat-val">0 / 2</span></div>
+            <div class="density-stat"><span class="stat-label">Green: </span><span id="densityTimeMain"
+                class="stat-val highlight">0 s (Idle)</span></div>
           </div>
           <div class="density-actions">
             <span class="sensor-btn-label">Toggle / Simulate:</span>
@@ -2049,8 +2465,10 @@
             <div id="densityBarSide2" class="density-bar-segment"></div>
           </div>
           <div class="density-details">
-            <div class="density-stat"><span class="stat-label">Sensors: </span><span id="densitySensorsSide" class="stat-val">0 / 2</span></div>
-            <div class="density-stat"><span class="stat-label">Green: </span><span id="densityTimeSide" class="stat-val highlight">0 s (Idle)</span></div>
+            <div class="density-stat"><span class="stat-label">Sensors: </span><span id="densitySensorsSide"
+                class="stat-val">0 / 2</span></div>
+            <div class="density-stat"><span class="stat-label">Green: </span><span id="densityTimeSide"
+                class="stat-val highlight">0 s (Idle)</span></div>
           </div>
           <div class="density-actions">
             <span class="sensor-btn-label">Toggle / Simulate:</span>
@@ -2070,8 +2488,10 @@
             <div id="densityBarTurn2" class="density-bar-segment"></div>
           </div>
           <div class="density-details">
-            <div class="density-stat"><span class="stat-label">Sensors: </span><span id="densitySensorsTurn" class="stat-val">0 / 2</span></div>
-            <div class="density-stat"><span class="stat-label">Green: </span><span id="densityTimeTurn" class="stat-val highlight">0 s (Idle)</span></div>
+            <div class="density-stat"><span class="stat-label">Sensors: </span><span id="densitySensorsTurn"
+                class="stat-val">0 / 2</span></div>
+            <div class="density-stat"><span class="stat-label">Green: </span><span id="densityTimeTurn"
+                class="stat-val highlight">0 s (Idle)</span></div>
           </div>
           <div class="density-actions">
             <span class="sensor-btn-label">Toggle / Simulate:</span>
@@ -2174,7 +2594,8 @@
                 <span class="card-title-accent" aria-hidden="true"></span>
                 Three-Way T-Junction Live Visualization (RHT / KeepRight)
               </h2>
-              <p class="card-subtitle">Real-time signal indications and 6-sensor placements driven strictly by ESP32 logical outputs</p>
+              <p class="card-subtitle">Real-time signal indications and 6-sensor placements driven strictly by ESP32
+                logical outputs</p>
             </div>
             <div class="badge" id="junctionTelemetryBadge" style="background:var(--bg-neutral);">
               STATE: <span id="junctionStateLabel">DISCONNECTED</span>
@@ -2183,24 +2604,35 @@
 
           <div class="card-body">
             <div class="junction-wrapper">
-              <svg class="junction-svg" viewBox="0 0 760 440" role="img" aria-label="Top-down three-way T-junction Right-Hand Traffic signal diagram">
+              <svg class="junction-svg" viewBox="0 0 760 440" role="img"
+                aria-label="Top-down three-way T-junction Right-Hand Traffic signal diagram">
                 <title>Three-Way T-Junction Right-Hand Traffic (KeepRight) Signal Diagram</title>
-                <desc>Top-down view showing Main Road Eastbound (South lane, right-hand curb IR1/IR2), Side Road Northbound (East lane, right-hand curb IR3/IR4), Turn Approach Westbound (North lane, right-hand curb IR5/IR6), Pedestrian crosswalks 1 and 2, and 6 dual-channel IR vehicle sensors.</desc>
+                <desc>Top-down view showing Main Road Eastbound (South lane, right-hand curb IR1/IR2), Side Road
+                  Northbound (East lane, right-hand curb IR3/IR4), Turn Approach Westbound (North lane, right-hand curb
+                  IR5/IR6), Pedestrian crosswalks 1 and 2, and 6 dual-channel IR vehicle sensors.</desc>
 
                 <!-- Background Landscape -->
                 <rect x="0" y="0" width="760" height="440" fill="#F8FAFC" />
 
                 <!-- RHT Topology Summary Box -->
-                <rect x="14" y="14" width="255" height="106" rx="8" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.5" />
-                <text x="24" y="34" fill="#0F766E" font-size="10.5" font-weight="800" font-family="Segoe UI, sans-serif">RHT / KEEPRIGHT INTERSECTION</text>
-                <text x="24" y="52" fill="#17212B" font-size="10" font-weight="600" font-family="Segoe UI, sans-serif">Main Road: EB South Lane | WB North Lane</text>
-                <text x="24" y="70" fill="#17212B" font-size="10" font-weight="600" font-family="Segoe UI, sans-serif">Side Road: NB Right Lane | Turn: Protected L-Turn</text>
-                <text x="24" y="88" fill="#64748B" font-size="9.5" font-family="Consolas, monospace" id="svgSubStatusText">Telemetry: Disconnected (All Lamps Off)</text>
-                <text x="24" y="104" fill="#0F766E" font-size="9.5" font-weight="700" font-family="Consolas, monospace" id="svgActiveCountdownText">Countdown: Idle</text>
+                <rect x="14" y="14" width="255" height="106" rx="8" fill="#F0FDFA" stroke="#99F6E4"
+                  stroke-width="1.5" />
+                <text x="24" y="34" fill="#0F766E" font-size="10.5" font-weight="800"
+                  font-family="Segoe UI, sans-serif">RHT / KEEPRIGHT INTERSECTION</text>
+                <text x="24" y="52" fill="#17212B" font-size="10" font-weight="600"
+                  font-family="Segoe UI, sans-serif">Main Road: EB South Lane | WB North Lane</text>
+                <text x="24" y="70" fill="#17212B" font-size="10" font-weight="600"
+                  font-family="Segoe UI, sans-serif">Side Road: NB Right Lane | Turn: Protected L-Turn</text>
+                <text x="24" y="88" fill="#64748B" font-size="9.5" font-family="Consolas, monospace"
+                  id="svgSubStatusText">Telemetry: Disconnected (All Lamps Off)</text>
+                <text x="24" y="104" fill="#0F766E" font-size="9.5" font-weight="700" font-family="Consolas, monospace"
+                  id="svgActiveCountdownText">Countdown: Idle</text>
 
                 <!-- Top Center Active Movement Banner -->
-                <rect x="290" y="14" width="456" height="36" rx="6" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.2" />
-                <text id="svgActiveMovementBanner" x="518" y="36" text-anchor="middle" fill="#0F766E" font-size="11" font-weight="800" font-family="Segoe UI, sans-serif">ACTIVE MOVEMENT: ALL RED (CLEARANCE)</text>
+                <rect x="290" y="14" width="456" height="36" rx="6" fill="#F0FDFA" stroke="#99F6E4"
+                  stroke-width="1.2" />
+                <text id="svgActiveMovementBanner" x="518" y="36" text-anchor="middle" fill="#0F766E" font-size="11"
+                  font-weight="800" font-family="Segoe UI, sans-serif">ACTIVE MOVEMENT: ALL RED (CLEARANCE)</text>
 
                 <!-- Road Surfaces -->
                 <!-- Main Road Horizontal (Y: 130 to 260) -->
@@ -2219,9 +2651,11 @@
                 <!-- Main Road West Centerline -->
                 <line x1="15" y1="195" x2="285" y2="195" stroke="#F8FAFC" stroke-width="2.5" stroke-dasharray="14 10" />
                 <!-- Main Road East Centerline -->
-                <line x1="515" y1="195" x2="745" y2="195" stroke="#F8FAFC" stroke-width="2.5" stroke-dasharray="14 10" />
+                <line x1="515" y1="195" x2="745" y2="195" stroke="#F8FAFC" stroke-width="2.5"
+                  stroke-dasharray="14 10" />
                 <!-- Side Road South Centerline -->
-                <line x1="380" y1="295" x2="380" y2="430" stroke="#F8FAFC" stroke-width="2.5" stroke-dasharray="12 10" />
+                <line x1="380" y1="295" x2="380" y2="430" stroke="#F8FAFC" stroke-width="2.5"
+                  stroke-dasharray="12 10" />
 
                 <!-- Stop Lines -->
                 <!-- Westbound Stop Line (East Side, before crosswalk 1) -->
@@ -2253,16 +2687,22 @@
 
                 <!-- Approach Direction Arrows & Labels -->
                 <g fill="#94A3B8">
-                  <path d="M 620 162 L 580 162 M 580 162 L 590 156 M 580 162 L 590 168" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round" />
-                  <text x="640" y="166" fill="#E2E8F0" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">MAIN WB</text>
+                  <path d="M 620 162 L 580 162 M 580 162 L 590 156 M 580 162 L 590 168" stroke="#CBD5E1"
+                    stroke-width="2.5" stroke-linecap="round" />
+                  <text x="640" y="166" fill="#E2E8F0" font-size="11" font-weight="600"
+                    font-family="Segoe UI, sans-serif">MAIN WB</text>
                 </g>
                 <g fill="#94A3B8">
-                  <path d="M 140 228 L 180 228 M 180 228 L 170 222 M 180 228 L 170 234" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round" />
-                  <text x="24" y="232" fill="#E2E8F0" font-size="11" font-weight="600" font-family="Segoe UI, sans-serif">MAIN EB</text>
+                  <path d="M 140 228 L 180 228 M 180 228 L 170 222 M 180 228 L 170 234" stroke="#CBD5E1"
+                    stroke-width="2.5" stroke-linecap="round" />
+                  <text x="24" y="232" fill="#E2E8F0" font-size="11" font-weight="600"
+                    font-family="Segoe UI, sans-serif">MAIN EB</text>
                 </g>
                 <g fill="#94A3B8">
-                  <path d="M 415 385 L 415 345 M 415 345 L 409 355 M 415 345 L 421 355" stroke="#CBD5E1" stroke-width="2.5" stroke-linecap="round" />
-                  <text x="320" y="424" fill="#E2E8F0" font-size="10" font-weight="600" font-family="Segoe UI, sans-serif">SIDE NB</text>
+                  <path d="M 415 385 L 415 345 M 415 345 L 409 355 M 415 345 L 421 355" stroke="#CBD5E1"
+                    stroke-width="2.5" stroke-linecap="round" />
+                  <text x="320" y="424" fill="#E2E8F0" font-size="10" font-weight="600"
+                    font-family="Segoe UI, sans-serif">SIDE NB</text>
                 </g>
 
                 <!-- 6 IR Sensor Positions in SVG (Interactive Dots on Right-Hand Road Edge Relative to Travel Direction) -->
@@ -2271,53 +2711,63 @@
                 <circle id="svgIr1Dot" class="svg-ir-dot" cx="100" cy="250" r="8">
                   <title>IR1 FRONT (GPIO 33) - Main Road Eastbound Upstream</title>
                 </circle>
-                <text x="100" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5" font-family="Consolas, monospace" font-weight="700">IR1 FRONT (33)</text>
+                <text x="100" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR1 FRONT (33)</text>
 
                 <!-- IR2 (GPIO 34 - Main Road Eastbound Downstream Rear S2) -->
                 <circle id="svgIr2Dot" class="svg-ir-dot" cx="210" cy="250" r="8">
                   <title>IR2 REAR (GPIO 34) - Main Road Eastbound Advance Queue</title>
                 </circle>
-                <text x="210" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5" font-family="Consolas, monospace" font-weight="700">IR2 REAR (34)</text>
+                <text x="210" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR2 REAR (34)</text>
 
                 <!-- SIDE APPROACH (Northbound travel: Right-hand edge is East curb at X=440) -->
                 <!-- IR3 (GPIO 35 - Side Road Northbound Upstream Front S1) -->
                 <circle id="svgIr3Dot" class="svg-ir-dot" cx="440" cy="395" r="8">
                   <title>IR3 FRONT (GPIO 35) - Side Road Northbound Upstream</title>
                 </circle>
-                <text x="454" y="399" text-anchor="start" fill="#1E293B" font-size="7.5" font-family="Consolas, monospace" font-weight="700">IR3 FRONT (35)</text>
+                <text x="454" y="399" text-anchor="start" fill="#1E293B" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR3 FRONT (35)</text>
 
                 <!-- IR4 (GPIO 36 - Side Road Northbound Downstream Rear S2) -->
                 <circle id="svgIr4Dot" class="svg-ir-dot" cx="440" cy="325" r="8">
                   <title>IR4 REAR (GPIO 36) - Side Road Northbound Queue</title>
                 </circle>
-                <text x="454" y="329" text-anchor="start" fill="#1E293B" font-size="7.5" font-family="Consolas, monospace" font-weight="700">IR4 REAR (36)</text>
+                <text x="454" y="329" text-anchor="start" fill="#1E293B" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR4 REAR (36)</text>
 
                 <!-- TURN APPROACH (Westbound travel: Right-hand edge is North curb at Y=140) -->
                 <!-- IR5 (GPIO 39 - Turn Approach Westbound Upstream Front S1) -->
                 <circle id="svgIr5Dot" class="svg-ir-dot" cx="670" cy="140" r="8">
                   <title>IR5 FRONT (GPIO 39) - Turn Approach Westbound Upstream</title>
                 </circle>
-                <text x="670" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5" font-family="Consolas, monospace" font-weight="700">IR5 FRONT (39)</text>
+                <text x="670" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR5 FRONT (39)</text>
 
                 <!-- IR6 (GPIO 15 - Turn Approach Westbound Downstream Rear S2) -->
                 <circle id="svgIr6Dot" class="svg-ir-dot" cx="560" cy="140" r="8">
                   <title>IR6 REAR (GPIO 15) - Turn Approach Westbound Queue</title>
                 </circle>
-                <text x="560" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5" font-family="Consolas, monospace" font-weight="700">IR6 REAR (15)</text>
+                <text x="560" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR6 REAR (15)</text>
 
                 <!-- Decorative Vehicles -->
                 <g id="svgCarMainEast" style="display:none;">
-                  <rect x="205" y="214" width="46" height="24" rx="5" fill="#0F766E" stroke="#FFFFFF" stroke-width="1.5" />
+                  <rect x="205" y="214" width="46" height="24" rx="5" fill="#0F766E" stroke="#FFFFFF"
+                    stroke-width="1.5" />
                   <rect x="216" y="217" width="22" height="18" rx="3" fill="#5EEAD4" />
                 </g>
                 <g id="svgCarMainWest" style="display:none;">
-                  <rect x="528" y="150" width="46" height="24" rx="5" fill="#0F766E" stroke="#FFFFFF" stroke-width="1.5" />
+                  <rect x="528" y="150" width="46" height="24" rx="5" fill="#0F766E" stroke="#FFFFFF"
+                    stroke-width="1.5" />
                   <rect x="540" y="153" width="22" height="18" rx="3" fill="#5EEAD4" />
                 </g>
                 <g id="svgCarSideRoad" style="display:none;">
-                  <rect x="403" y="302" width="26" height="46" rx="5" fill="#D97706" stroke="#FFFFFF" stroke-width="1.5" />
+                  <rect x="403" y="302" width="26" height="46" rx="5" fill="#D97706" stroke="#FFFFFF"
+                    stroke-width="1.5" />
                   <rect x="406" y="312" width="20" height="22" rx="3" fill="#FDE68A" />
-                  <text x="416" y="362" text-anchor="middle" fill="#FFFBEB" font-size="9.5" font-weight="700" font-family="Consolas, monospace">DEMAND</text>
+                  <text x="416" y="362" text-anchor="middle" fill="#FFFBEB" font-size="9.5" font-weight="700"
+                    font-family="Consolas, monospace">DEMAND</text>
                 </g>
 
                 <!-- ============================================================ -->
@@ -2325,7 +2775,8 @@
                 <!-- ============================================================ -->
                 <g transform="translate(215, 274)">
                   <rect x="0" y="0" width="84" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
-                  <text x="42" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800" font-family="Segoe UI, sans-serif">MAIN ROAD (A)</text>
+                  <text x="42" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800"
+                    font-family="Segoe UI, sans-serif">MAIN ROAD (A)</text>
                   <circle id="svgMainWestRed" class="svg-lamp" cx="18" cy="34" r="9.5" />
                   <circle id="svgMainWestYellow" class="svg-lamp" cx="42" cy="34" r="9.5" />
                   <circle id="svgMainWestGreen" class="svg-lamp" cx="66" cy="34" r="9.5" />
@@ -2339,7 +2790,8 @@
                 <!-- ============================================================ -->
                 <g transform="translate(520, 62)">
                   <rect x="0" y="0" width="84" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
-                  <text x="42" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800" font-family="Segoe UI, sans-serif">MAIN ROAD (B)</text>
+                  <text x="42" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800"
+                    font-family="Segoe UI, sans-serif">MAIN ROAD (B)</text>
                   <circle id="svgMainEastRed" class="svg-lamp" cx="18" cy="34" r="9.5" />
                   <circle id="svgMainEastYellow" class="svg-lamp" cx="42" cy="34" r="9.5" />
                   <circle id="svgMainEastGreen" class="svg-lamp" cx="66" cy="34" r="9.5" />
@@ -2353,7 +2805,8 @@
                 <!-- ============================================================ -->
                 <g transform="translate(212, 348)">
                   <rect x="0" y="0" width="86" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
-                  <text x="43" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800" font-family="Segoe UI, sans-serif">SIDE ROAD (C)</text>
+                  <text x="43" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800"
+                    font-family="Segoe UI, sans-serif">SIDE ROAD (C)</text>
                   <circle id="svgSideRed" class="svg-lamp" cx="18" cy="34" r="9.5" />
                   <circle id="svgSideYellow" class="svg-lamp" cx="43" cy="34" r="9.5" />
                   <circle id="svgSideGreen" class="svg-lamp" cx="68" cy="34" r="9.5" />
@@ -2367,7 +2820,8 @@
                 <!-- ============================================================ -->
                 <g transform="translate(310, 62)">
                   <rect x="0" y="0" width="102" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
-                  <text x="51" y="14" text-anchor="middle" fill="#17212B" font-size="8.5" font-weight="800" font-family="Segoe UI, sans-serif">TURN (RHT L-TURN)</text>
+                  <text x="51" y="14" text-anchor="middle" fill="#17212B" font-size="8.5" font-weight="800"
+                    font-family="Segoe UI, sans-serif">TURN (RHT L-TURN)</text>
                   <circle id="svgTurnRed" class="svg-lamp" cx="22" cy="34" r="9.5" />
                   <circle id="svgTurnYellow" class="svg-lamp" cx="51" cy="34" r="9.5" />
                   <circle id="svgTurnGreen" class="svg-lamp" cx="80" cy="34" r="9.5" />
@@ -2381,10 +2835,12 @@
                 <!-- ============================================================ -->
                 <g transform="translate(460, 268)">
                   <rect x="0" y="0" width="148" height="58" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5" />
-                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8.5" font-weight="800" font-family="Segoe UI, sans-serif">PED 1 SIGNALS (EAST)</text>
+                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8.5" font-weight="800"
+                    font-family="Segoe UI, sans-serif">PED 1 SIGNALS (EAST)</text>
                   <circle id="svgPed1DontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" />
                   <circle id="svgPedDontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" opacity="0" />
-                  <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T WALK</text>
+                  <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T
+                    WALK</text>
                   <circle id="svgPed1Walk" class="svg-lamp" cx="110" cy="32" r="9.5" />
                   <circle id="svgPedWalk" class="svg-lamp" cx="110" cy="32" r="9.5" opacity="0" />
                   <text x="110" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">WALK</text>
@@ -2395,28 +2851,38 @@
                 <!-- ============================================================ -->
                 <g transform="translate(460, 334)">
                   <rect x="0" y="0" width="148" height="58" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5" />
-                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8.5" font-weight="800" font-family="Segoe UI, sans-serif">PED 2 SIGNALS (SIDE)</text>
+                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8.5" font-weight="800"
+                    font-family="Segoe UI, sans-serif">PED 2 SIGNALS (SIDE)</text>
                   <circle id="svgPed2DontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" />
-                  <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T WALK</text>
+                  <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T
+                    WALK</text>
                   <circle id="svgPed2Walk" class="svg-lamp" cx="110" cy="32" r="9.5" />
                   <text x="110" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">WALK</text>
                 </g>
 
                 <!-- Pedestrian Button Call Box -->
                 <g transform="translate(620, 268)">
-                  <rect x="0" y="0" width="126" height="124" rx="6" fill="#F0FDFA" stroke="#99F6E4" stroke-width="1.5" />
-                  <text x="63" y="18" text-anchor="middle" fill="#0F766E" font-size="9" font-weight="800" font-family="Segoe UI, sans-serif">PED PUSH-BUTTONS</text>
-                  <text x="63" y="38" text-anchor="middle" fill="#17212B" font-size="8" font-family="Consolas, monospace">P1 (East): GPIO 32</text>
-                  <text x="63" y="54" text-anchor="middle" fill="#17212B" font-size="8" font-family="Consolas, monospace">P2 (Side): GPIO 4</text>
+                  <rect x="0" y="0" width="126" height="124" rx="6" fill="#F0FDFA" stroke="#99F6E4"
+                    stroke-width="1.5" />
+                  <text x="63" y="18" text-anchor="middle" fill="#0F766E" font-size="9" font-weight="800"
+                    font-family="Segoe UI, sans-serif">PED PUSH-BUTTONS</text>
+                  <text x="63" y="38" text-anchor="middle" fill="#17212B" font-size="8"
+                    font-family="Consolas, monospace">P1 (East): GPIO 32</text>
+                  <text x="63" y="54" text-anchor="middle" fill="#17212B" font-size="8"
+                    font-family="Consolas, monospace">P2 (Side): GPIO 4</text>
                   <line x1="12" y1="64" x2="114" y2="64" stroke="#99F6E4" stroke-width="1" />
-                  <text x="63" y="80" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="700">LATCH STATUS</text>
-                  <text x="63" y="98" text-anchor="middle" fill="#64748B" font-size="8.5" font-weight="700" id="svgPedLatchText">P1: NONE | P2: NONE</text>
-                  <text x="63" y="114" text-anchor="middle" fill="#0F766E" font-size="7.5" font-family="Consolas, monospace">ULN2003A Active Sink</text>
+                  <text x="63" y="80" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="700">LATCH
+                    STATUS</text>
+                  <text x="63" y="98" text-anchor="middle" fill="#64748B" font-size="8.5" font-weight="700"
+                    id="svgPedLatchText">P1: NONE | P2: NONE</text>
+                  <text x="63" y="114" text-anchor="middle" fill="#0F766E" font-size="7.5"
+                    font-family="Consolas, monospace">ULN2003A Active Sink</text>
                 </g>
               </svg>
 
               <div class="junction-status-overlay">
-                <span><strong>Hardware Interlock:</strong> Conflicting greens and vehicle movement during pedestrian WALK are strictly prevented by the firmware FSM.</span>
+                <span><strong>Hardware Interlock:</strong> Conflicting greens and vehicle movement during pedestrian
+                  WALK are strictly prevented by the firmware FSM.</span>
                 <span id="svgFreshnessTag">Telemetry Status: Disconnected</span>
               </div>
             </div>
@@ -2428,7 +2894,8 @@
                 <div class="signal-group-header">
                   <span>Main Road Signals</span>
                   <div style="display:flex; align-items:center; gap:0.4rem;">
-                    <span id="mainSignalStatusBadge" class="badge" style="font-size:0.68rem; padding:0.15rem 0.45rem; background:var(--status-success-bg); color:var(--status-success); border-color:var(--status-success-border);">ACTIVE</span>
+                    <span id="mainSignalStatusBadge" class="badge"
+                      style="font-size:0.68rem; padding:0.15rem 0.45rem; background:var(--status-success-bg); color:var(--status-success); border-color:var(--status-success-border);">ACTIVE</span>
                     <span class="signal-pin">GPIOs 27, 26, 25</span>
                   </div>
                 </div>
@@ -2443,7 +2910,8 @@
                   <div class="signal-row-right">
                     <span id="pillMainRed" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioMainRed" class="signal-gpio-pill" title="ESP32 GPIO 27 level">0V</span>
-                    <span id="physMainRed" class="signal-phys-pill phys-pass" title="Physical illumination verified">VERIFIED</span>
+                    <span id="physMainRed" class="signal-phys-pill phys-pass"
+                      title="Physical illumination verified">VERIFIED</span>
                   </div>
                 </div>
                 <div class="signal-row" aria-label="Main Road Yellow Signal">
@@ -2457,7 +2925,8 @@
                   <div class="signal-row-right">
                     <span id="pillMainYellow" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioMainYellow" class="signal-gpio-pill" title="ESP32 GPIO 26 level">0V</span>
-                    <span id="physMainYellow" class="signal-phys-pill phys-pass" title="Physical illumination verified">VERIFIED</span>
+                    <span id="physMainYellow" class="signal-phys-pill phys-pass"
+                      title="Physical illumination verified">VERIFIED</span>
                   </div>
                 </div>
                 <div class="signal-row" aria-label="Main Road Green Signal">
@@ -2471,7 +2940,8 @@
                   <div class="signal-row-right">
                     <span id="pillMainGreen" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioMainGreen" class="signal-gpio-pill" title="ESP32 GPIO 25 level">0V</span>
-                    <span id="physMainGreen" class="signal-phys-pill phys-failed" title="Commanded GREEN != Physically Verified GREEN (3.3V < 3.2V Vf; requires +5V High-Side Driver)">FAILED</span>
+                    <span id="physMainGreen" class="signal-phys-pill phys-failed"
+                      title="Commanded GREEN != Physically Verified GREEN (3.3V < 3.2V Vf; requires +5V High-Side Driver)">FAILED</span>
                   </div>
                 </div>
               </div>
@@ -2481,7 +2951,8 @@
                 <div class="signal-group-header">
                   <span>Side Road Signals</span>
                   <div style="display:flex; align-items:center; gap:0.4rem;">
-                    <span id="sideSignalStatusBadge" class="badge" style="font-size:0.68rem; padding:0.15rem 0.45rem; background:var(--status-success-bg); color:var(--status-success); border-color:var(--status-success-border);">ACTIVE</span>
+                    <span id="sideSignalStatusBadge" class="badge"
+                      style="font-size:0.68rem; padding:0.15rem 0.45rem; background:var(--status-success-bg); color:var(--status-success); border-color:var(--status-success-border);">ACTIVE</span>
                     <span class="signal-pin">GPIOs 14, 13, 12</span>
                   </div>
                 </div>
@@ -2496,7 +2967,8 @@
                   <div class="signal-row-right">
                     <span id="pillSideRed" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioSideRed" class="signal-gpio-pill" title="ESP32 GPIO 14 level">0V</span>
-                    <span id="physSideRed" class="signal-phys-pill phys-pass" title="Physical illumination verified">VERIFIED</span>
+                    <span id="physSideRed" class="signal-phys-pill phys-pass"
+                      title="Physical illumination verified">VERIFIED</span>
                   </div>
                 </div>
                 <div class="signal-row" aria-label="Side Road Yellow Signal">
@@ -2510,7 +2982,8 @@
                   <div class="signal-row-right">
                     <span id="pillSideYellow" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioSideYellow" class="signal-gpio-pill" title="ESP32 GPIO 12 level">0V</span>
-                    <span id="physSideYellow" class="signal-phys-pill phys-pass" title="Physical illumination verified">VERIFIED</span>
+                    <span id="physSideYellow" class="signal-phys-pill phys-pass"
+                      title="Physical illumination verified">VERIFIED</span>
                   </div>
                 </div>
                 <div class="signal-row" aria-label="Side Road Green Signal">
@@ -2524,7 +2997,8 @@
                   <div class="signal-row-right">
                     <span id="pillSideGreen" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioSideGreen" class="signal-gpio-pill" title="ESP32 GPIO 13 level">0V</span>
-                    <span id="physSideGreen" class="signal-phys-pill phys-pass" title="Physical illumination verified">VERIFIED</span>
+                    <span id="physSideGreen" class="signal-phys-pill phys-pass"
+                      title="Physical illumination verified">VERIFIED</span>
                   </div>
                 </div>
               </div>
@@ -2534,7 +3008,9 @@
                 <div class="signal-group-header">
                   <span>Protected Turn Movement</span>
                   <div style="display:flex; align-items:center; gap:0.4rem;">
-                    <span id="turnCommissionBadge" class="badge" style="font-size:0.68rem; padding:0.15rem 0.45rem; background:var(--status-warning-bg); color:var(--status-warning); border-color:var(--status-warning-border);">SAFETY LOCKED</span>
+                    <span id="turnCommissionBadge" class="badge"
+                      style="font-size:0.68rem; padding:0.15rem 0.45rem; background:var(--status-warning-bg); color:var(--status-warning); border-color:var(--status-warning-border);">SAFETY
+                      LOCKED</span>
                     <span class="signal-pin">GPIOs 22, 23, 21</span>
                   </div>
                 </div>
@@ -2549,7 +3025,8 @@
                   <div class="signal-row-right">
                     <span id="pillTurnRed" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioTurnRed" class="signal-gpio-pill" title="ESP32 GPIO 22 level">0V</span>
-                    <span id="physTurnRed" class="signal-phys-pill phys-pass" title="Physical illumination verified">VERIFIED</span>
+                    <span id="physTurnRed" class="signal-phys-pill phys-pass"
+                      title="Physical illumination verified">VERIFIED</span>
                   </div>
                 </div>
                 <div class="signal-row" aria-label="Turn Movement Yellow Signal">
@@ -2563,7 +3040,8 @@
                   <div class="signal-row-right">
                     <span id="pillTurnYellow" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioTurnYellow" class="signal-gpio-pill" title="ESP32 GPIO 23 level">0V</span>
-                    <span id="physTurnYellow" class="signal-phys-pill phys-pass" title="Physical illumination verified">VERIFIED</span>
+                    <span id="physTurnYellow" class="signal-phys-pill phys-pass"
+                      title="Physical illumination verified">VERIFIED</span>
                   </div>
                 </div>
                 <div class="signal-row" aria-label="Turn Movement Green Signal">
@@ -2577,7 +3055,8 @@
                   <div class="signal-row-right">
                     <span id="pillTurnGreen" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioTurnGreen" class="signal-gpio-pill" title="ESP32 GPIO 21 level">0V</span>
-                    <span id="physTurnGreen" class="signal-phys-pill phys-failed" title="Commanded GREEN != Physically Verified GREEN (3.3V < 3.2V Vf; requires +5V High-Side Driver)">FAILED</span>
+                    <span id="physTurnGreen" class="signal-phys-pill phys-failed"
+                      title="Commanded GREEN != Physically Verified GREEN (3.3V < 3.2V Vf; requires +5V High-Side Driver)">FAILED</span>
                   </div>
                 </div>
               </div>
@@ -2603,7 +3082,8 @@
                     </div>
                   </div>
                   <div style="display:flex; align-items:center; gap:0.4rem;">
-                    <span id="ped1WalkStatusLabel" style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">DON'T WALK (STOP)</span>
+                    <span id="ped1WalkStatusLabel"
+                      style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">DON'T WALK (STOP)</span>
                     <span id="pillPed1Walk" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioPed1Walk" class="signal-gpio-pill" title="ESP32 GPIO 19 level">0V</span>
                   </div>
@@ -2653,7 +3133,8 @@
                     </div>
                   </div>
                   <div style="display:flex; align-items:center; gap:0.4rem;">
-                    <span id="ped2WalkStatusLabel" style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">DON'T WALK (STOP)</span>
+                    <span id="ped2WalkStatusLabel"
+                      style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">DON'T WALK (STOP)</span>
                     <span id="pillPed2Walk" class="signal-state-pill" title="Commanded FSM state">OFF</span>
                     <span id="gpioPed2Walk" class="signal-gpio-pill" title="ESP32 GPIO 16 level">0V</span>
                   </div>
@@ -2687,7 +3168,8 @@
             </div>
 
             <div class="logical-disclaimer" style="margin-top:0.85rem;" role="note">
-              <span><strong>Raw Telemetry Output Vector:</strong> <code id="rawVectorDisplay" style="font-family:var(--font-mono); color:var(--text-primary);">N/A (Disconnected)</code></span>
+              <span><strong>Raw Telemetry Output Vector:</strong> <code id="rawVectorDisplay"
+                  style="font-family:var(--font-mono); color:var(--text-primary);">N/A (Disconnected)</code></span>
               <span>Active-HIGH Logic (1 = ON, 0 = OFF)</span>
             </div>
           </div>
@@ -2707,30 +3189,36 @@
               </h2>
               <p class="card-subtitle">Authorize fixed, adaptive or manual control via ESP32 serial commands</p>
             </div>
-            <span id="ctrlModeActiveBadge" class="badge" style="background:var(--teal-light); color:var(--teal-primary); border-color:var(--teal-border);">FIXED MODE</span>
+            <span id="ctrlModeActiveBadge" class="badge"
+              style="background:var(--teal-light); color:var(--teal-primary); border-color:var(--teal-border);">FIXED
+              MODE</span>
           </div>
 
           <div class="card-body control-section">
             <!-- Command Acknowledgement / Feedback Box -->
             <div id="cmdFeedbackBox" class="command-feedback" data-kind="idle" role="status" aria-live="polite">
               <div style="font-weight:700;" id="cmdFeedbackTitle">Ready (Disconnected)</div>
-              <div id="cmdFeedbackDetail">Connect to the ESP32 over Web Serial (115200 baud) to inspect live status and send commands.</div>
+              <div id="cmdFeedbackDetail">Connect to the ESP32 over Web Serial (115200 baud) to inspect live status and
+                send commands.</div>
             </div>
 
             <!-- Operating Mode Selection -->
             <div class="control-group">
               <div class="control-group-title">
                 <span>1. Operating Mode Selection</span>
-                <span id="ctrlModeStatusLabel" style="font-family:var(--font-mono); font-size:0.72rem;">Control: FIXED</span>
+                <span id="ctrlModeStatusLabel" style="font-family:var(--font-mono); font-size:0.72rem;">Control:
+                  FIXED</span>
               </div>
               <p style="font-size:0.78rem; color:var(--text-secondary);">
-                Select the automatic operating mode. Adaptive mode requires all six IR sensors to be physically commissioned first.
+                Select the automatic operating mode. Adaptive mode requires all six IR sensors to be physically
+                commissioned first.
               </p>
               <div class="control-grid-3">
                 <button id="btnModeFixed" type="button" class="btn btn-primary" disabled>
                   MODE FIXED
                 </button>
-                <button id="btnModeAdaptive" type="button" class="btn btn-secondary" disabled title="Safety Gated: Requires all 6 IR sensors commissioned">
+                <button id="btnModeAdaptive" type="button" class="btn btn-secondary" disabled
+                  title="Safety Gated: Requires all 6 IR sensors commissioned">
                   MODE ADAPTIVE
                 </button>
                 <button id="btnModeManual" type="button" class="btn btn-outline" disabled>
@@ -2751,7 +3239,8 @@
               </div>
 
               <div id="adaptiveLockWarning" class="mode-lock-warning" style="display:none;">
-                <strong>Adaptive Mode Gated:</strong> All 6 physical IR sensors must be physically validated (detect+release sweep observed) and commissioned before ADAPTIVE mode is accepted by the firmware.
+                <strong>Adaptive Mode Gated:</strong> All 6 physical IR sensors must be physically validated
+                (detect+release sweep observed) and commissioned before ADAPTIVE mode is accepted by the firmware.
               </div>
             </div>
 
@@ -2763,7 +3252,8 @@
               </div>
               <div style="display:flex; align-items:baseline; justify-content:space-between;">
                 <div class="countdown-timer-value" id="countdownTimerValue">--.- s</div>
-                <div style="font-size:0.75rem; color:var(--teal-primary);" id="countdownConfiguredRef">Configured: 25.0 s</div>
+                <div style="font-size:0.75rem; color:var(--teal-primary);" id="countdownConfiguredRef">Configured: 25.0
+                  s</div>
               </div>
               <div class="countdown-track">
                 <div class="countdown-bar" id="countdownBar"></div>
@@ -2774,7 +3264,8 @@
             <div class="control-group">
               <div class="control-group-title">
                 <span>2. Active Traffic Timing &amp; Presets</span>
-                <button id="btnRefreshTiming" type="button" class="btn btn-secondary btn-sm" style="padding:0.15rem 0.45rem; font-size:0.7rem;" disabled>
+                <button id="btnRefreshTiming" type="button" class="btn btn-secondary btn-sm"
+                  style="padding:0.15rem 0.45rem; font-size:0.7rem;" disabled>
                   Query TIMING
                 </button>
               </div>
@@ -2834,115 +3325,146 @@
               </div>
 
               <!-- Interactive Live Timing Adjustment Form -->
-              <div class="custom-timing-form" style="margin-top:0.75rem; padding:0.65rem 0.85rem; border-radius:8px; background:var(--bg-neutral); border:1px solid var(--border-sep);">
-                <div style="font-weight:700; font-size:0.8rem; margin-bottom:0.45rem; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
+              <div class="custom-timing-form"
+                style="margin-top:0.75rem; padding:0.65rem 0.85rem; border-radius:8px; background:var(--bg-neutral); border:1px solid var(--border-sep);">
+                <div
+                  style="font-weight:700; font-size:0.8rem; margin-bottom:0.45rem; color:var(--text-primary); display:flex; justify-content:space-between; align-items:center;">
                   <span>Interactive Phase Timing Adjustment</span>
-                  <span style="font-size:0.7rem; font-weight:500; color:var(--text-secondary);">Command Authoritative &amp; NVS-Persisted</span>
+                  <span style="font-size:0.7rem; font-weight:500; color:var(--text-secondary);">Command Authoritative
+                    &amp; NVS-Persisted</span>
                 </div>
                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap:0.65rem;">
                   <!-- Main Road -->
-                  <div style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
-                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Main Road (TIMING MAIN)</span>
+                  <div
+                    style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Main Road (TIMING
+                      MAIN)</span>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Min G:</label>
-                      <input id="inputTimingMainMin" type="number" min="1000" max="120000" step="500" value="25000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingMainMin" type="number" min="1000" max="120000" step="500" value="25000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Max G:</label>
-                      <input id="inputTimingMainMax" type="number" min="1000" max="120000" step="500" value="30000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingMainMax" type="number" min="1000" max="120000" step="500" value="30000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Yellow:</label>
-                      <input id="inputTimingMainYel" type="number" min="1000" max="10000" step="500" value="3000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingMainYel" type="number" min="1000" max="10000" step="500" value="3000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
-                    <button id="btnApplyTimingMain" type="button" class="btn btn-secondary btn-sm" style="margin-top:0.2rem;" disabled>
+                    <button id="btnApplyTimingMain" type="button" class="btn btn-secondary btn-sm"
+                      style="margin-top:0.2rem;" disabled>
                       Apply Main Timing
                     </button>
                   </div>
 
                   <!-- Side Road -->
-                  <div style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
-                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Side Road (TIMING SIDE)</span>
+                  <div
+                    style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Side Road (TIMING
+                      SIDE)</span>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Min G:</label>
-                      <input id="inputTimingSideMin" type="number" min="1000" max="120000" step="500" value="20000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingSideMin" type="number" min="1000" max="120000" step="500" value="20000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Max G:</label>
-                      <input id="inputTimingSideMax" type="number" min="1000" max="120000" step="500" value="25000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingSideMax" type="number" min="1000" max="120000" step="500" value="25000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Yellow:</label>
-                      <input id="inputTimingSideYel" type="number" min="1000" max="10000" step="500" value="3000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingSideYel" type="number" min="1000" max="10000" step="500" value="3000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
-                    <button id="btnApplyTimingSide" type="button" class="btn btn-secondary btn-sm" style="margin-top:0.2rem;" disabled>
+                    <button id="btnApplyTimingSide" type="button" class="btn btn-secondary btn-sm"
+                      style="margin-top:0.2rem;" disabled>
                       Apply Side Timing
                     </button>
                   </div>
 
                   <!-- Protected Turn -->
-                  <div style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
-                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Protected Turn (TIMING TURN)</span>
+                  <div
+                    style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Protected Turn (TIMING
+                      TURN)</span>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Min G:</label>
-                      <input id="inputTimingTurnMin" type="number" min="500" max="120000" step="500" value="2000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingTurnMin" type="number" min="500" max="120000" step="500" value="2000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Max G:</label>
-                      <input id="inputTimingTurnMax" type="number" min="500" max="120000" step="500" value="6000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingTurnMax" type="number" min="500" max="120000" step="500" value="6000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:50px;">Yellow:</label>
-                      <input id="inputTimingTurnYel" type="number" min="1000" max="10000" step="500" value="2000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingTurnYel" type="number" min="1000" max="10000" step="500" value="2000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
-                    <button id="btnApplyTimingTurn" type="button" class="btn btn-secondary btn-sm" style="margin-top:0.2rem;" disabled>
+                    <button id="btnApplyTimingTurn" type="button" class="btn btn-secondary btn-sm"
+                      style="margin-top:0.2rem;" disabled>
                       Apply Turn Timing
                     </button>
                   </div>
 
                   <!-- All-Red & Pedestrian -->
-                  <div style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
-                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Clearance &amp; Ped (TIMING)</span>
+                  <div
+                    style="background:var(--bg-card); padding:0.55rem; border-radius:6px; border:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
+                    <span style="font-size:0.75rem; font-weight:700; color:var(--teal-primary);">Clearance &amp; Ped
+                      (TIMING)</span>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:58px;">All-Red:</label>
-                      <input id="inputTimingAllRed" type="number" min="1000" max="10000" step="500" value="2000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingAllRed" type="number" min="1000" max="10000" step="500" value="2000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
-                    <button id="btnApplyTimingAllRed" type="button" class="btn btn-secondary btn-sm" style="margin-top:0.1rem;" disabled>
+                    <button id="btnApplyTimingAllRed" type="button" class="btn btn-secondary btn-sm"
+                      style="margin-top:0.1rem;" disabled>
                       Apply All-Red (TIMING ALL_RED)
                     </button>
                     <div style="display:flex; gap:0.35rem; align-items:center; margin-top:0.15rem;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:58px;">Ped Walk:</label>
-                      <input id="inputTimingPedWalk" type="number" min="1000" max="60000" step="500" value="5000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingPedWalk" type="number" min="1000" max="60000" step="500" value="5000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
                     <div style="display:flex; gap:0.35rem; align-items:center;">
                       <label style="font-size:0.7rem; color:var(--text-secondary); width:58px;">Clearance:</label>
-                      <input id="inputTimingPedClear" type="number" min="1000" max="30000" step="500" value="2000" style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
+                      <input id="inputTimingPedClear" type="number" min="1000" max="30000" step="500" value="2000"
+                        style="width:100%; font-size:0.75rem; padding:0.2rem 0.4rem; border:1px solid var(--border-sep); border-radius:4px; font-family:var(--font-mono);" />
                       <span style="font-size:0.7rem; color:var(--text-secondary);">ms</span>
                     </div>
-                    <button id="btnApplyTimingPed" type="button" class="btn btn-secondary btn-sm" style="margin-top:0.1rem;" disabled>
+                    <button id="btnApplyTimingPed" type="button" class="btn btn-secondary btn-sm"
+                      style="margin-top:0.1rem;" disabled>
                       Apply Ped Timing (TIMING PED)
                     </button>
                   </div>
                 </div>
 
                 <!-- Unified Full Intersection Atomic Apply Button -->
-                <div style="margin-top:0.75rem; padding-top:0.65rem; border-top:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
-                  <button id="btnApplyTiming" type="button" class="btn btn-primary" style="width:100%; font-weight:700; font-size:0.85rem; padding:0.45rem;" disabled>
+                <div
+                  style="margin-top:0.75rem; padding-top:0.65rem; border-top:1px solid var(--border-sep); display:flex; flex-direction:column; gap:0.35rem;">
+                  <button id="btnApplyTiming" type="button" class="btn btn-primary"
+                    style="width:100%; font-weight:700; font-size:0.85rem; padding:0.45rem;" disabled>
                     Apply Timing (Atomic Set &amp; Save to NVS)
                   </button>
                   <span style="font-size:0.68rem; color:var(--text-secondary); text-align:center;">
-                    Validates all 12 intervals atomically (Green, Yellow, Clearance, Pedestrian), commits to active ESP32 RAM, and automatically saves to hardware NVS flash.
+                    Validates all 12 intervals atomically (Green, Yellow, Clearance, Pedestrian), commits to active
+                    ESP32 RAM, and automatically saves to hardware NVS flash.
                   </span>
                 </div>
               </div>
@@ -2956,7 +3478,8 @@
               </div>
 
               <div id="simLockNotice" class="mode-lock-notice">
-                Simulation demands require <code>SIM ON</code>. Click 'Enable Simulation' below to test synthetic demand inputs.
+                Simulation demands require <code>SIM ON</code>. Click 'Enable Simulation' below to test synthetic demand
+                inputs.
               </div>
 
               <div class="control-grid-2">
@@ -3003,7 +3526,8 @@
                 <button id="btnLoadNvs" type="button" class="btn btn-outline" disabled>
                   Load Config (LOAD)
                 </button>
-                <button id="btnAskReset" type="button" class="btn btn-danger-outline" style="grid-column:span 2;" disabled>
+                <button id="btnAskReset" type="button" class="btn btn-danger-outline" style="grid-column:span 2;"
+                  disabled>
                   Reset Controller (RESET)
                 </button>
               </div>
@@ -3011,13 +3535,16 @@
               <!-- Reset Confirmation Dialog -->
               <div id="resetConfirmBox" class="reset-confirm-box" role="region" aria-label="Confirm Controller Reset">
                 <div>
-                  <strong>Confirm Logical Reset:</strong> Send <code>RESET</code> to the ESP32? This clears pending demands and safely re-initializes <code>STARTUP_SAFE &rarr; ALL_RED &rarr; MAIN_GREEN</code> without restarting the microcontroller.
+                  <strong>Confirm Logical Reset:</strong> Send <code>RESET</code> to the ESP32? This clears pending
+                  demands and safely re-initializes <code>STARTUP_SAFE &rarr; ALL_RED &rarr; MAIN_GREEN</code> without
+                  restarting the microcontroller.
                 </div>
                 <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
                   <button id="btnCancelReset" type="button" class="btn btn-outline btn-sm">
                     Cancel
                   </button>
-                  <button id="btnConfirmReset" type="button" class="btn btn-danger-outline btn-sm" style="font-weight:700;">
+                  <button id="btnConfirmReset" type="button" class="btn btn-danger-outline btn-sm"
+                    style="font-weight:700;">
                     Confirm &amp; Send RESET
                   </button>
                 </div>
@@ -3045,7 +3572,9 @@
           </p>
         </div>
         <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-          <span id="lampDiagStatusBadge" class="badge" style="background:var(--bg-neutral); color:var(--text-secondary); border-color:var(--border-sep);">DIAG IDLE</span>
+          <span id="lampDiagStatusBadge" class="badge"
+            style="background:var(--bg-neutral); color:var(--text-secondary); border-color:var(--border-sep);">DIAG
+            IDLE</span>
           <button id="btnDiagReport" type="button" class="btn btn-secondary btn-sm" disabled>
             Query Report (DIAG REPORT)
           </button>
@@ -3054,18 +3583,27 @@
 
       <div class="card-body control-section">
         <!-- Diagnostic Callout Alert -->
-        <div style="padding:0.75rem 0.95rem; border-radius:6px; background:#FEF2F2; border:1px solid #FCA5A5; color:#991B1B; font-size:0.75rem; line-height:1.45;">
-          <strong>CRITICAL ELECTRICAL AUDIT:</strong> Vehicle traffic modules are 5V common-ground (cathode). InGaN Green LEDs have forward voltage V<sub>f</sub> &approx; 3.2V. At 3.3V direct GPIO drive (V<sub>OH</sub> &le; 3.1V), forward current I<sub>f</sub> &lt; 0.5 mA, preventing physical illumination. Red (V<sub>f</sub> &approx; 1.9V) and Yellow (V<sub>f</sub> &approx; 2.05V) illuminate normally. Pedestrian signals utilize ULN2003A low-side Darlington sink drivers with verified grounding. Corrective action for vehicle green lamps: Connect +5V High-Side Sourcing Driver (TBD62783APG / UDN2981A).
+        <div
+          style="padding:0.75rem 0.95rem; border-radius:6px; background:#FEF2F2; border:1px solid #FCA5A5; color:#991B1B; font-size:0.75rem; line-height:1.45;">
+          <strong>CRITICAL ELECTRICAL AUDIT:</strong> Vehicle traffic modules are 5V common-ground (cathode). InGaN
+          Green LEDs have forward voltage V<sub>f</sub> &approx; 3.2V. At 3.3V direct GPIO drive (V<sub>OH</sub> &le;
+          3.1V), forward current I<sub>f</sub> &lt; 0.5 mA, preventing physical illumination. Red (V<sub>f</sub>
+          &approx; 1.9V) and Yellow (V<sub>f</sub> &approx; 2.05V) illuminate normally. Pedestrian signals utilize
+          ULN2003A low-side Darlington sink drivers with verified grounding. Corrective action for vehicle green lamps:
+          Connect +5V High-Side Sourcing Driver (TBD62783APG / UDN2981A).
         </div>
 
         <!-- 1. TEST LIGHT LAMP HARDWARE (Buttons Grouped by Physical Head) -->
         <div class="control-group" style="margin-top:0.85rem;">
           <div class="control-group-title">
-            <span style="font-weight:800; font-size:0.85rem;">1. Test Light Lamp Hardware — Isolated Single-Lamp Triggers</span>
-            <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary);">15s Safety Watchdog &bull; Mutually Exclusive</span>
+            <span style="font-weight:800; font-size:0.85rem;">1. Test Light Lamp Hardware — Isolated Single-Lamp
+              Triggers</span>
+            <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary);">15s Safety
+              Watchdog &bull; Mutually Exclusive</span>
           </div>
           <p style="font-size:0.76rem; color:var(--text-secondary); margin-bottom:0.4rem;">
-            Click any lamp to energize only that specific physical output in safe isolation. All other outputs are suppressed. Conflicting greens and simultaneous pedestrian WALK are locked out.
+            Click any lamp to energize only that specific physical output in safe isolation. All other outputs are
+            suppressed. Conflicting greens and simultaneous pedestrian WALK are locked out.
           </p>
 
           <div class="lamp-test-heads-grid">
@@ -3177,7 +3715,8 @@
         <div class="control-group" style="margin-top:0.85rem;">
           <div class="control-group-title">
             <span style="font-weight:800; font-size:0.85rem;">2. Automated Sequential Test Suites</span>
-            <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary);">Safe All-Red Clearance Between Steps</span>
+            <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary);">Safe All-Red
+              Clearance Between Steps</span>
           </div>
           <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:0.65rem;">
             <button id="btnDiagLamps" type="button" class="btn btn-primary" disabled>
@@ -3203,7 +3742,8 @@
             <div class="seq-progress-track">
               <div id="seqProgressBar" class="seq-progress-bar"></div>
             </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--text-secondary);">
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; font-size:0.72rem; color:var(--text-secondary);">
               <span id="seqProgressLampInfo">Lamp: Idle</span>
               <span id="seqProgressCountdown">Clearance: Idle</span>
             </div>
@@ -3213,8 +3753,10 @@
         <!-- 3. COMPREHENSIVE 13-OUTPUT HARDWARE DIAGNOSTICS & VERIFICATION MATRIX -->
         <div class="control-group" style="margin-top:0.85rem;">
           <div class="control-group-title">
-            <span style="font-weight:800; font-size:0.85rem;">3. Complete 13-Output Hardware Diagnostics &amp; Physical Verification Matrix</span>
-            <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--teal-primary);">Authoritative Physical Mapping</span>
+            <span style="font-weight:800; font-size:0.85rem;">3. Complete 13-Output Hardware Diagnostics &amp; Physical
+              Verification Matrix</span>
+            <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--teal-primary);">Authoritative
+              Physical Mapping</span>
           </div>
 
           <div class="table-responsive" style="margin-top:0.4rem;">
@@ -3239,9 +3781,11 @@
                   <td id="diagCmdMainR">OFF</td>
                   <td id="diagGpioMainR">0V (LOW)</td>
                   <td>~1.9 V (AlInGaP Red)</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_MAIN_R">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_MAIN_R">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_MAIN_R" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_MAIN_R" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_MAIN_R" disabled>Test</button></td>
                 </tr>
                 <!-- Row 2: MAIN_Y -->
                 <tr id="rowDiag_MAIN_Y">
@@ -3250,9 +3794,11 @@
                   <td id="diagCmdMainY">OFF</td>
                   <td id="diagGpioMainY">0V (LOW)</td>
                   <td>~2.05 V (AlInGaP Yellow)</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_MAIN_Y">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_MAIN_Y">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_MAIN_Y" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_MAIN_Y" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_MAIN_Y" disabled>Test</button></td>
                 </tr>
                 <!-- Row 3: MAIN_G -->
                 <tr id="rowDiag_MAIN_G">
@@ -3261,9 +3807,11 @@
                   <td id="diagCmdMainG">OFF</td>
                   <td id="diagGpioMainG">0V (LOW)</td>
                   <td>~3.2 V (InGaN Green)</td>
-                  <td><span class="verif-badge verif-electrical" id="verifCat_MAIN_G">ELECTRICAL MEASUREMENT VERIFIED (Vf ~3.2V)</span></td>
+                  <td><span class="verif-badge verif-electrical" id="verifCat_MAIN_G">ELECTRICAL MEASUREMENT VERIFIED
+                      (Vf ~3.2V)</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_MAIN_G" /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_MAIN_G" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_MAIN_G" disabled>Test</button></td>
                 </tr>
                 <!-- Row 4: SIDE_R -->
                 <tr id="rowDiag_SIDE_R">
@@ -3272,9 +3820,11 @@
                   <td id="diagCmdSideR">OFF</td>
                   <td id="diagGpioSideR">0V (LOW)</td>
                   <td>~1.9 V (AlInGaP Red)</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_SIDE_R">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_SIDE_R">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_SIDE_R" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_SIDE_R" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_SIDE_R" disabled>Test</button></td>
                 </tr>
                 <!-- Row 5: SIDE_Y -->
                 <tr id="rowDiag_SIDE_Y">
@@ -3283,9 +3833,11 @@
                   <td id="diagCmdSideY">OFF</td>
                   <td id="diagGpioSideY">0V (LOW)</td>
                   <td>~2.05 V (AlInGaP Yellow)</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_SIDE_Y">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_SIDE_Y">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_SIDE_Y" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_SIDE_Y" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_SIDE_Y" disabled>Test</button></td>
                 </tr>
                 <!-- Row 6: SIDE_G -->
                 <tr id="rowDiag_SIDE_G">
@@ -3294,9 +3846,11 @@
                   <td id="diagCmdSideG">OFF</td>
                   <td id="diagGpioSideG">0V (LOW)</td>
                   <td>~3.2 V (InGaN Green)</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_SIDE_G">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_SIDE_G">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_SIDE_G" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_SIDE_G" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_SIDE_G" disabled>Test</button></td>
                 </tr>
                 <!-- Row 7: TURN_R -->
                 <tr id="rowDiag_TURN_R">
@@ -3305,9 +3859,11 @@
                   <td id="diagCmdTurnR">OFF</td>
                   <td id="diagGpioTurnR">0V (LOW)</td>
                   <td>~1.9 V (AlInGaP Red)</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_TURN_R">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_TURN_R">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_TURN_R" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_TURN_R" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_TURN_R" disabled>Test</button></td>
                 </tr>
                 <!-- Row 8: TURN_Y -->
                 <tr id="rowDiag_TURN_Y">
@@ -3316,9 +3872,11 @@
                   <td id="diagCmdTurnY">OFF</td>
                   <td id="diagGpioTurnY">0V (LOW)</td>
                   <td>~2.05 V (AlInGaP Yellow)</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_TURN_Y">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_TURN_Y">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_TURN_Y" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_TURN_Y" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_TURN_Y" disabled>Test</button></td>
                 </tr>
                 <!-- Row 9: TURN_G -->
                 <tr id="rowDiag_TURN_G">
@@ -3327,9 +3885,11 @@
                   <td id="diagCmdTurnG">OFF</td>
                   <td id="diagGpioTurnG">0V (LOW)</td>
                   <td>~3.2 V (InGaN Green)</td>
-                  <td><span class="verif-badge verif-electrical" id="verifCat_TURN_G">ELECTRICAL MEASUREMENT VERIFIED (Vf ~3.2V)</span></td>
+                  <td><span class="verif-badge verif-electrical" id="verifCat_TURN_G">ELECTRICAL MEASUREMENT VERIFIED
+                      (Vf ~3.2V)</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_TURN_G" /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_TURN_G" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_TURN_G" disabled>Test</button></td>
                 </tr>
                 <!-- Row 10: PED1_W -->
                 <tr id="rowDiag_PED1_W">
@@ -3338,9 +3898,11 @@
                   <td id="diagCmdPed1W">OFF</td>
                   <td id="diagGpioPed1W">0V (LOW)</td>
                   <td>ULN2003A Sink &bull; Green LED</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_PED1_W">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_PED1_W">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_PED1_W" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_PED1_W" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_PED1_W" disabled>Test</button></td>
                 </tr>
                 <!-- Row 11: PED1_DW -->
                 <tr id="rowDiag_PED1_DW">
@@ -3349,9 +3911,11 @@
                   <td id="diagCmdPed1Dw">OFF</td>
                   <td id="diagGpioPed1Dw">0V (LOW)</td>
                   <td>ULN2003A Sink &bull; Red LED</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_PED1_DW">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_PED1_DW">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_PED1_DW" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_PED1_DW" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_PED1_DW" disabled>Test</button></td>
                 </tr>
                 <!-- Row 12: PED2_W -->
                 <tr id="rowDiag_PED2_W">
@@ -3360,9 +3924,11 @@
                   <td id="diagCmdPed2W">OFF</td>
                   <td id="diagGpioPed2W">0V (LOW)</td>
                   <td>ULN2003A Sink &bull; Green LED</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_PED2_W">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_PED2_W">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_PED2_W" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_PED2_W" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_PED2_W" disabled>Test</button></td>
                 </tr>
                 <!-- Row 13: PED2_DW -->
                 <tr id="rowDiag_PED2_DW">
@@ -3371,9 +3937,11 @@
                   <td id="diagCmdPed2Dw">OFF</td>
                   <td id="diagGpioPed2Dw">0V (LOW)</td>
                   <td>ULN2003A Sink &bull; Red LED</td>
-                  <td><span class="verif-badge verif-physical" id="verifCat_PED2_DW">PHYSICAL LAMP VISUALLY VERIFIED</span></td>
+                  <td><span class="verif-badge verif-physical" id="verifCat_PED2_DW">PHYSICAL LAMP VISUALLY
+                      VERIFIED</span></td>
                   <td style="text-align:center;"><input type="checkbox" id="chkVisual_PED2_DW" checked /></td>
-                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm" id="btnRowTest_PED2_DW" disabled>Test</button></td>
+                  <td style="text-align:right;"><button type="button" class="btn btn-secondary btn-sm"
+                      id="btnRowTest_PED2_DW" disabled>Test</button></td>
                 </tr>
               </tbody>
             </table>
@@ -3381,24 +3949,38 @@
         </div>
 
         <!-- 4. CONTROLLED 10-SECOND ALL-GREEN BENCH TEST -->
-        <div class="control-group" style="margin-top:0.85rem; border-top:1px solid var(--border-sep); padding-top:0.85rem;">
+        <div class="control-group"
+          style="margin-top:0.85rem; border-top:1px solid var(--border-sep); padding-top:0.85rem;">
           <div class="control-group-title">
-            <span style="color:var(--text-primary); font-weight:800; font-size:0.85rem;">4. Simultaneous Multi-Green Safety Interlock</span>
-            <span id="allGreenBadge" class="badge" style="background:var(--bg-neutral); color:var(--text-secondary); border-color:var(--border-sep);">LOCKED IN DASHBOARD</span>
+            <span style="color:var(--text-primary); font-weight:800; font-size:0.85rem;">4. Simultaneous Multi-Green
+              Safety Interlock</span>
+            <span id="allGreenBadge" class="badge"
+              style="background:var(--bg-neutral); color:var(--text-secondary); border-color:var(--border-sep);">LOCKED
+              IN DASHBOARD</span>
           </div>
 
-          <div style="padding:0.65rem 0.8rem; border-radius:6px; background:#EFF6FF; border:1px solid #BFDBFE; color:#1E40AF; font-size:0.75rem; line-height:1.45; margin-bottom:0.4rem;">
-            <strong>🛡️ SAFETY INTERLOCK ENFORCED:</strong> Simultaneous green activation across multiple vehicle approaches (Main, Side, and Turn) is permanently locked and disabled in this interface. Commanding concurrent vehicle greens violates fundamental intersection safety and is strictly prohibited on live traffic lamps. Isolated lamp testing must be performed using the single-lamp test buttons above or sequential sweeps with safe ALL-RED clearance intervals.
+          <div
+            style="padding:0.65rem 0.8rem; border-radius:6px; background:#EFF6FF; border:1px solid #BFDBFE; color:#1E40AF; font-size:0.75rem; line-height:1.45; margin-bottom:0.4rem;">
+            <strong>🛡️ SAFETY INTERLOCK ENFORCED:</strong> Simultaneous green activation across multiple vehicle
+            approaches (Main, Side, and Turn) is permanently locked and disabled in this interface. Commanding
+            concurrent vehicle greens violates fundamental intersection safety and is strictly prohibited on live
+            traffic lamps. Isolated lamp testing must be performed using the single-lamp test buttons above or
+            sequential sweeps with safe ALL-RED clearance intervals.
           </div>
 
           <!-- Active Test Progress & Abort Controls (Safety Failsafe) -->
-          <div id="allGreenProgressWidget" style="display:none; padding:0.75rem; border-radius:6px; background:var(--bg-neutral); border:1px solid var(--border-sep); margin-top:0.3rem;">
+          <div id="allGreenProgressWidget"
+            style="display:none; padding:0.75rem; border-radius:6px; background:var(--bg-neutral); border:1px solid var(--border-sep); margin-top:0.3rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.4rem;">
               <span style="font-size:0.75rem; font-weight:600; color:var(--text-primary);">Test Progress:</span>
-              <span id="allGreenCountdownLabel" style="font-family:var(--font-mono); font-size:0.85rem; font-weight:700; color:#DC2626;">Safety Abort Available</span>
+              <span id="allGreenCountdownLabel"
+                style="font-family:var(--font-mono); font-size:0.85rem; font-weight:700; color:#DC2626;">Safety Abort
+                Available</span>
             </div>
-            <div style="width:100%; height:8px; background:var(--border-sep); border-radius:4px; overflow:hidden; margin-bottom:0.6rem;">
-              <div id="allGreenProgressBar" style="width:100%; height:100%; background:#10B981; transition:width 0.1s linear;"></div>
+            <div
+              style="width:100%; height:8px; background:var(--border-sep); border-radius:4px; overflow:hidden; margin-bottom:0.6rem;">
+              <div id="allGreenProgressBar"
+                style="width:100%; height:100%; background:#10B981; transition:width 0.1s linear;"></div>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <span style="font-size:0.72rem; color:var(--text-secondary);">Simultaneous green state</span>
@@ -3424,7 +4006,8 @@
             IR Sensor Hardware Diagnostics &amp; Interactive Calibration Wizard
           </h2>
           <p class="card-subtitle">
-            Six dual-channel vehicle detection sensors (Main: 33/34, Side: 35/36, Turn: 39/15) with live beam-break transitions &amp; electrical health audits
+            Six dual-channel vehicle detection sensors (Main: 33/34, Side: 35/36, Turn: 39/15) with live beam-break
+            transitions &amp; electrical health audits
           </p>
         </div>
         <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
@@ -3447,7 +4030,8 @@
         <!-- 3 Approach Demand Summary Cards -->
         <div class="control-group-title" style="margin-bottom:0.5rem;">
           <span style="font-weight:800; font-size:0.825rem;">Approach Demand Aggregation (Non-Double-Counting)</span>
-          <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary);">100ms Debounce &bull; Unified Approach Demand</span>
+          <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--text-secondary);">100ms Debounce
+            &bull; Unified Approach Demand</span>
         </div>
         <div class="approaches-grid" id="sensorsGridContainer">
           <!-- Dynamically populated with Three Approach Cards by JS -->
@@ -3455,8 +4039,10 @@
 
         <!-- 6 Dedicated Individual Sensor Diagnostic Cards -->
         <div class="control-group-title" style="margin-top:1.2rem; margin-bottom:0.5rem;">
-          <span style="font-weight:800; font-size:0.825rem;">Individual IR Sensor Channel Status &amp; Real-Time Diagnostics (IR1 .. IR6)</span>
-          <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--teal-primary);">Active-LOW Detection (0 = Detected, 1 = Idle)</span>
+          <span style="font-weight:800; font-size:0.825rem;">Individual IR Sensor Channel Status &amp; Real-Time
+            Diagnostics (IR1 .. IR6)</span>
+          <span style="font-family:var(--font-mono); font-size:0.72rem; color:var(--teal-primary);">Active-LOW Detection
+            (0 = Detected, 1 = Idle)</span>
         </div>
 
         <div class="sensor-cards-grid" id="sensorCardsGrid">
@@ -3464,15 +4050,20 @@
         </div>
 
         <!-- Interactive SENSOR TEST Calibration Wizard Panel -->
-        <div id="sensorWizardWorkbench" class="wizard-workbench" style="display:none;" role="region" aria-label="Interactive Sensor Calibration Wizard">
-          <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--teal-border); padding-bottom:0.5rem;">
+        <div id="sensorWizardWorkbench" class="wizard-workbench" style="display:none;" role="region"
+          aria-label="Interactive Sensor Calibration Wizard">
+          <div
+            style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--teal-border); padding-bottom:0.5rem;">
             <div style="display:flex; align-items:center; gap:0.6rem;">
-              <span style="font-weight:800; color:var(--teal-primary); font-size:0.95rem;">Interactive SENSOR TEST Calibration Wizard</span>
-              <span id="wizardChannelBadge" class="badge" style="background:var(--teal-primary); color:#FFF; font-family:var(--font-mono);">IR1 (GPIO 33)</span>
+              <span style="font-weight:800; color:var(--teal-primary); font-size:0.95rem;">Interactive SENSOR TEST
+                Calibration Wizard</span>
+              <span id="wizardChannelBadge" class="badge"
+                style="background:var(--teal-primary); color:#FFF; font-family:var(--font-mono);">IR1 (GPIO 33)</span>
             </div>
             <div style="display:flex; gap:0.5rem; align-items:center;">
               <label style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">Target Channel:</label>
-              <select id="wizardChannelSelect" style="padding:0.25rem 0.5rem; border-radius:4px; border:1px solid var(--teal-border); font-size:0.75rem; font-family:var(--font-mono);">
+              <select id="wizardChannelSelect"
+                style="padding:0.25rem 0.5rem; border-radius:4px; border:1px solid var(--teal-border); font-size:0.75rem; font-family:var(--font-mono);">
                 <option value="1">IR1 — Main Front S1 (GPIO 33)</option>
                 <option value="2">IR2 — Main Rear S2 (GPIO 34)</option>
                 <option value="3">IR3 — Side Front S1 (GPIO 35)</option>
@@ -3493,7 +4084,8 @@
           </div>
 
           <!-- Live Wizard Prompt & Metrics Box -->
-          <div id="wizardActionBox" style="background:#FFFFFF; border:1px solid var(--teal-border); border-radius:8px; padding:0.9rem; display:flex; flex-direction:column; gap:0.6rem;">
+          <div id="wizardActionBox"
+            style="background:#FFFFFF; border:1px solid var(--teal-border); border-radius:8px; padding:0.9rem; display:flex; flex-direction:column; gap:0.6rem;">
             <div id="wizardPromptTitle" style="font-size:0.9rem; font-weight:800; color:var(--text-primary);">
               Step 1: Baseline Idle Check
             </div>
@@ -3520,7 +4112,8 @@
             </div>
             <div style="display:flex; gap:0.5rem;">
               <button id="btnWizardReset" type="button" class="btn btn-secondary btn-sm">Restart Calibration</button>
-              <button id="btnWizardCommit" type="button" class="btn btn-primary btn-sm" style="display:none; background:var(--status-success); border-color:var(--status-success);">
+              <button id="btnWizardCommit" type="button" class="btn btn-primary btn-sm"
+                style="display:none; background:var(--status-success); border-color:var(--status-success);">
                 Commit Commission (COMMISSION IR ON)
               </button>
             </div>
@@ -3528,14 +4121,16 @@
         </div>
 
         <!-- Commissioning Status Legend -->
-        <div style="margin-top:1rem; padding:0.65rem 0.85rem; border-radius:6px; background:var(--bg-neutral); border:1px solid var(--border-sep); font-size:0.75rem; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:0.8rem; align-items:center;">
+        <div
+          style="margin-top:1rem; padding:0.65rem 0.85rem; border-radius:6px; background:var(--bg-neutral); border:1px solid var(--border-sep); font-size:0.75rem; color:var(--text-secondary); display:flex; flex-wrap:wrap; gap:0.8rem; align-items:center;">
           <strong style="color:var(--text-primary);">Commissioning Criteria:</strong>
           <span><strong style="color:#475569;">Configured:</strong> GPIO mapped</span>
           <span><strong style="color:var(--teal-primary);">Online:</strong> Idle HIGH verified</span>
           <span><strong style="color:#1D4ED8;">Validated:</strong> Detect+Release sweep observed</span>
           <span><strong style="color:var(--status-success);">Commissioned:</strong> Persisted in NVS</span>
           <span><strong style="color:var(--status-error);">Faulty:</strong> Stuck low or chatter</span>
-          <span style="margin-left:auto; font-style:italic;">* A sensor is never marked Commissioned merely because its GPIO is configured.</span>
+          <span style="margin-left:auto; font-style:italic;">* A sensor is never marked Commissioned merely because its
+            GPIO is configured.</span>
         </div>
       </div>
     </section>
@@ -3549,7 +4144,8 @@
               <span class="card-title-accent" aria-hidden="true"></span>
               Live Serial Console &amp; Event Log
             </h2>
-            <p class="card-subtitle">Displays commands sent, transition logs, sensor events, and STATUS snapshots (Click to collapse/expand)</p>
+            <p class="card-subtitle">Displays commands sent, transition logs, sensor events, and STATUS snapshots (Click
+              to collapse/expand)</p>
           </div>
           <div style="display:flex; align-items:center; gap:0.6rem;">
             <span id="consoleCountBadge" class="badge" style="font-family:var(--font-mono);">0 / 250 entries</span>
@@ -3558,7 +4154,8 @@
 
         <div class="card-body">
           <div class="console-toolbar">
-            <label style="display:inline-flex; align-items:center; gap:0.45rem; font-size:0.8rem; color:var(--text-secondary); cursor:pointer;">
+            <label
+              style="display:inline-flex; align-items:center; gap:0.45rem; font-size:0.8rem; color:var(--text-secondary); cursor:pointer;">
               <input type="checkbox" id="chkLogPollingStatus" />
               <span>Include periodic <code>STATUS</code> &amp; <code>SENSORS</code> blocks in console log</span>
             </label>
@@ -3572,7 +4169,8 @@
             </div>
           </div>
 
-          <div id="consoleLog" class="console-log" role="log" aria-live="polite" aria-label="Serial Communication Log"></div>
+          <div id="consoleLog" class="console-log" role="log" aria-live="polite" aria-label="Serial Communication Log">
+          </div>
         </div>
       </details>
     </section>
@@ -3667,7 +4265,7 @@
       // Pedestrian channel state store
       const pedButtons = [
         { id: 1, btnGpio: 32, walkGpio: 19, dwGpio: 18, rawPinHigh: 1, pressed: 0, latched: 0, pressCount: 0, releaseCount: 0, cycleObserved: false, stuckFault: 0 },
-        { id: 2, btnGpio: 4,  walkGpio: 16, dwGpio: 17, rawPinHigh: 1, pressed: 0, latched: 0, pressCount: 0, releaseCount: 0, cycleObserved: false, stuckFault: 0 }
+        { id: 2, btnGpio: 4, walkGpio: 16, dwGpio: 17, rawPinHigh: 1, pressed: 0, latched: 0, pressCount: 0, releaseCount: 0, cycleObserved: false, stuckFault: 0 }
       ];
 
       // Active timing store
@@ -5741,6 +6339,29 @@
                 ped2Walk: parseInt(m13[12], 10),
                 ped2DontWalk: parseInt(m13[13], 10)
               };
+            } else {
+              const mg = val.match(/MAIN\[G=([01])\s+Y=([01])\s+R=([01])\]/i);
+              const sg = val.match(/SIDE\[G=([01])\s+Y=([01])\s+R=([01])\]/i);
+              const tg = val.match(/TURN\[G=([01])\s+Y=([01])\s+R=([01])\]/i);
+              const p1 = val.match(/PED1?\[W=([01])\s+DW=([01])\]/i);
+              const p2 = val.match(/PED2\[W=([01])\s+DW=([01])\]/i);
+              if (mg || sg) {
+                acc.outputs = {
+                  mainG: mg ? parseInt(mg[1], 10) : 0,
+                  mainY: mg ? parseInt(mg[2], 10) : 0,
+                  mainR: mg ? parseInt(mg[3], 10) : 1,
+                  sideG: sg ? parseInt(sg[1], 10) : 0,
+                  sideY: sg ? parseInt(sg[2], 10) : 0,
+                  sideR: sg ? parseInt(sg[3], 10) : 1,
+                  turnG: tg ? parseInt(tg[1], 10) : 0,
+                  turnY: tg ? parseInt(tg[2], 10) : 0,
+                  turnR: tg ? parseInt(tg[3], 10) : 1,
+                  pedWalk: p1 ? parseInt(p1[1], 10) : 0,
+                  pedDontWalk: p1 ? parseInt(p1[2], 10) : 1,
+                  ped2Walk: p2 ? parseInt(p2[1], 10) : 0,
+                  ped2DontWalk: p2 ? parseInt(p2[2], 10) : 1
+                };
+              }
             }
             break;
           }
@@ -5765,6 +6386,29 @@
                 ped2Walk: parseInt(m13[12], 10),
                 ped2DontWalk: parseInt(m13[13], 10)
               };
+            } else {
+              const mg = val.match(/MAIN\[G=([01])\s+Y=([01])\s+R=([01])\]/i);
+              const sg = val.match(/SIDE\[G=([01])\s+Y=([01])\s+R=([01])\]/i);
+              const tg = val.match(/TURN\[G=([01])\s+Y=([01])\s+R=([01])\]/i);
+              const p1 = val.match(/PED1?\[W=([01])\s+DW=([01])\]/i);
+              const p2 = val.match(/PED2\[W=([01])\s+DW=([01])\]/i);
+              if (mg || sg) {
+                acc.electricalOutputs = {
+                  mainG: mg ? parseInt(mg[1], 10) : 0,
+                  mainY: mg ? parseInt(mg[2], 10) : 0,
+                  mainR: mg ? parseInt(mg[3], 10) : 1,
+                  sideG: sg ? parseInt(sg[1], 10) : 0,
+                  sideY: sg ? parseInt(sg[2], 10) : 0,
+                  sideR: sg ? parseInt(sg[3], 10) : 1,
+                  turnG: tg ? parseInt(tg[1], 10) : 0,
+                  turnY: tg ? parseInt(tg[2], 10) : 0,
+                  turnR: tg ? parseInt(tg[3], 10) : 1,
+                  pedWalk: p1 ? parseInt(p1[1], 10) : 0,
+                  pedDontWalk: p1 ? parseInt(p1[2], 10) : 1,
+                  ped2Walk: p2 ? parseInt(p2[1], 10) : 0,
+                  ped2DontWalk: p2 ? parseInt(p2[2], 10) : 1
+                };
+              }
             }
             break;
           }
@@ -5953,7 +6597,7 @@
           return;
         }
         if (line.startsWith("TIMING_APPLIED") || line.startsWith("TIMING_UPDATED") ||
-            line.startsWith("TIMING_PROTOTYPE_APPLIED") || line.startsWith("TIMING_BENCH_APPLIED")) {
+          line.startsWith("TIMING_PROTOTYPE_APPLIED") || line.startsWith("TIMING_BENCH_APPLIED")) {
           appendConsole("sys-info", "TIMING", line);
           if (pendingUserCommand && pendingUserCommand.cmd.startsWith("TIMING")) {
             resolvePendingUserCommand(true, line);
@@ -5961,7 +6605,7 @@
           // Read-back active timings automatically to update live table and keep synchronization
           setTimeout(() => {
             if (port && writer && !isDisconnecting && !commandManager.active) {
-              writeSerialLine("TIMING").catch(() => {});
+              writeSerialLine("TIMING").catch(() => { });
             }
           }, 80);
           return;
@@ -6218,14 +6862,28 @@
       }
 
       function finalizeStatusBlock(acc, rawLines) {
-        if (!acc || !acc.operatingMode || !acc.currentFsmState || !acc.outputs) {
-          appendConsole("sys-err", "PARSE", "Ignored incomplete STATUS block");
+        statusRequestInFlight = false;
+        statusRequestManual = false;
+
+        if (!acc) {
+          appendConsole("sys-err", "PARSE", "Ignored null STATUS block");
           return;
         }
 
+        if (!acc.operatingMode) acc.operatingMode = "HARDWARE_READY";
+        if (!acc.currentFsmState) acc.currentFsmState = "STARTUP_SAFE";
+        if (!acc.outputs && acc.electricalOutputs) acc.outputs = Object.assign({}, acc.electricalOutputs);
+        if (!acc.outputs) {
+          acc.outputs = {
+            mainG: 0, mainY: 0, mainR: 1,
+            sideG: 0, sideY: 0, sideR: 1,
+            turnG: 0, turnY: 0, turnR: 1,
+            pedWalk: 0, pedDontWalk: 1,
+            ped2Walk: 0, ped2DontWalk: 1
+          };
+        }
+
         const wasManual = statusRequestManual;
-        statusRequestInFlight = false;
-        statusRequestManual = false;
 
         const wasFirst = (lastValidTelemetry === null);
         acc.wallTimeStr = formatWallTime(new Date());
@@ -6368,7 +7026,7 @@
           statusRequestInFlight = false;
         }
 
-        if (commandManager.active && commandManager.active.cmd === "STATUS" && !isManual) return;
+        if (commandManager.active && !isManual) return;
 
         statusRequestInFlight = true;
         statusRequestSentAtMs = now;
@@ -6387,7 +7045,7 @@
         if (statusRequestInFlight || commandManager.active) return;
         try {
           await writeSerialLine("SENSORS");
-        } catch (_) {}
+        } catch (_) { }
       }
 
       function startPollingLoop() {
@@ -6477,7 +7135,7 @@
           }),
           close: async () => {
             if (ws) {
-              try { ws.close(); } catch (_) {}
+              try { ws.close(); } catch (_) { }
               ws = null;
             }
           }
@@ -6520,9 +7178,9 @@
           setCommandFeedback("success", "ESP32 Reconnected", "Connection restored automatically.");
 
           startPollingLoop();
-          setTimeout(() => writeSerialLine("STATUS"), 150);
-          setTimeout(() => writeSerialLine("TIMING"), 350);
-          setTimeout(() => writeSerialLine("SENSORS"), 650);
+          setTimeout(() => writeSerialLine("STATUS").catch(() => { }), 1000);
+          setTimeout(() => writeSerialLine("TIMING").catch(() => { }), 1400);
+          setTimeout(() => writeSerialLine("SENSORS").catch(() => { }), 1800);
 
           // Auto-connect MQTT Bridge if not already connected
           if (!mqttClient || !mqttClient.connected) {
@@ -6603,9 +7261,9 @@
           setCommandFeedback("pending", "Serial Port Connected", "Verifying live ESP32 status and stream telemetry...");
 
           startPollingLoop();
-          setTimeout(() => writeSerialLine("STATUS"), 150);
-          setTimeout(() => writeSerialLine("TIMING"), 350);
-          setTimeout(() => writeSerialLine("SENSORS"), 650);
+          setTimeout(() => writeSerialLine("STATUS").catch(() => { }), 1000);
+          setTimeout(() => writeSerialLine("TIMING").catch(() => { }), 1400);
+          setTimeout(() => writeSerialLine("SENSORS").catch(() => { }), 1800);
 
           // Auto-connect MQTT Bridge if not already connected
           if (!mqttClient || !mqttClient.connected) {
@@ -6656,7 +7314,7 @@
               }
             } finally {
               if (reader) {
-                try { reader.releaseLock(); } catch (_) {}
+                try { reader.releaseLock(); } catch (_) { }
                 reader = null;
               }
             }
@@ -6679,7 +7337,7 @@
         if (reader) {
           try {
             await reader.cancel();
-          } catch (_) {}
+          } catch (_) { }
         }
 
         // Allow runSerialReadLoop to break and release lock cleanly
@@ -6689,13 +7347,13 @@
           waitCount++;
         }
         if (reader) {
-          try { reader.releaseLock(); } catch (_) {}
+          try { reader.releaseLock(); } catch (_) { }
           reader = null;
         }
 
         if (writer) {
-          try { await writer.close(); } catch (_) {}
-          try { writer.releaseLock(); } catch (_) {}
+          try { await writer.close(); } catch (_) { }
+          try { writer.releaseLock(); } catch (_) { }
           writer = null;
         }
 
@@ -6944,15 +7602,15 @@
         updateControlsEnablement();
 
         if (port && writer) {
-          writeSerialLine("MODE MANUAL").catch(() => {});
-          writeSerialLine("LAMP TEST MAIN_Y").catch(() => {});
+          writeSerialLine("MODE MANUAL").catch(() => { });
+          writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
         }
 
         flashOrangeTimer = setInterval(() => {
           flashPhase = !flashPhase;
           applyFlashOrangeVisualState(flashPhase);
           if (port && writer && !isDisconnecting) {
-            writeSerialLine(flashPhase ? "LAMP TEST MAIN_Y" : "LAMP TEST PED1_DW").catch(() => {});
+            writeSerialLine(flashPhase ? "LAMP TEST MAIN_Y" : "LAMP TEST PED1_DW").catch(() => { });
           }
           publishMqttTelemetry(lastValidTelemetry);
         }, 500);
@@ -6981,9 +7639,9 @@
         appendConsole("sys-info", "MODE", "Resuming normal automatic traffic control...");
 
         if (port && writer) {
-          writeSerialLine("LAMP OFF").catch(() => {});
+          writeSerialLine("LAMP OFF").catch(() => { });
           if (!skipModeRestore) {
-            writeSerialLine(`MODE ${preFlashControlMode || "FIXED"}`).catch(() => {});
+            writeSerialLine(`MODE ${preFlashControlMode || "FIXED"}`).catch(() => { });
             setTimeout(() => requestStatusSerialized(true), 150);
           }
         }
@@ -7190,7 +7848,7 @@
         if (mqttClient) {
           try {
             mqttClient.end(true);
-          } catch (_) {}
+          } catch (_) { }
           mqttClient = null;
         }
         setMqttUiStatus("DISCONNECTED", "MQTT: DISCONNECTED");
@@ -7537,9 +8195,9 @@
           if (port) {
             readLoopActive = false;
             stopPollingLoop();
-            if (reader) { try { reader.cancel(); } catch (_) {} }
-            if (writer) { try { writer.releaseLock(); } catch (_) {} }
-            if (port) { try { port.close(); } catch (_) {} }
+            if (reader) { try { reader.cancel(); } catch (_) { } }
+            if (writer) { try { writer.releaseLock(); } catch (_) { } }
+            if (port) { try { port.close(); } catch (_) { } }
           }
         });
 
@@ -7547,9 +8205,9 @@
           if (port) {
             readLoopActive = false;
             stopPollingLoop();
-            if (reader) { try { reader.cancel(); } catch (_) {} }
-            if (writer) { try { writer.releaseLock(); } catch (_) {} }
-            if (port) { try { port.close(); } catch (_) {} }
+            if (reader) { try { reader.cancel(); } catch (_) { } }
+            if (writer) { try { writer.releaseLock(); } catch (_) { } }
+            if (port) { try { port.close(); } catch (_) { } }
           }
         });
       }
@@ -7563,4 +8221,5 @@
     })();
   </script>
 </body>
+
 </html>
