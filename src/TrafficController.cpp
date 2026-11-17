@@ -373,18 +373,18 @@ bool TrafficController::startLampTest(uint32_t nowMs, int8_t channelIdx, const c
         logEvent(nowMs, "COMMAND_REJECTED", "LAMP TEST requires MODE MANUAL");
         return false;
     }
-    if (channelIdx >= static_cast<int8_t>(TrafficConfig::TOTAL_SIGNAL_OUTPUTS)) {
+    if (channelIdx > 13) {
         if (rejectReason) *rejectReason = "Invalid signal channel index";
         return false;
     }
     if (!outputDriver_.setLampTestChannel(channelIdx)) {
         if (rejectReason) {
-            *rejectReason = (channelIdx < 9)
+            *rejectReason = (channelIdx < 9 || channelIdx == 13)
                                 ? "Vehicle output driver is not commissioned/verified"
                                 : "Pedestrian output driver is not commissioned/verified";
         }
         logEvent(nowMs, "COMMAND_REJECTED",
-                 (channelIdx < 9)
+                 (channelIdx < 9 || channelIdx == 13)
                      ? "LAMP TEST rejected: vehicle driver unverified (cannot energize unverified circuit)"
                      : "LAMP TEST rejected: pedestrian driver unverified (cannot energize unverified circuit)");
         return false;

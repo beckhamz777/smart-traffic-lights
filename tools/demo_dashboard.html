@@ -5016,6 +5016,16 @@
       }
 
       function updateCountdownTick() {
+        if (isFlashOrangeActive) {
+          el.countdownPhaseLabel.textContent = "FLASH_ORANGE";
+          el.countdownActiveRoad.textContent = "ALL APPROACHES (1 Hz CAUTION)";
+          el.countdownTimerValue.textContent = flashPhase ? "ON" : "OFF";
+          el.countdownConfiguredRef.textContent = "1.0 Hz (500ms / 500ms)";
+          el.countdownBar.style.width = flashPhase ? "100%" : "0%";
+          el.metricRemainingGreenSub.textContent = "Flash Orange Active";
+          el.svgActiveCountdownText.textContent = `FLASH ORANGE: ${flashPhase ? "AMBER ON" : "AMBER OFF"} (1 Hz)`;
+          return;
+        }
         if (!lastValidTelemetry || (connectionStatus !== "CONNECTED" && connectionStatus !== "RECEIVING_DATA")) {
           el.countdownTimerValue.textContent = "--.- s";
           el.countdownBar.style.width = "0%";
@@ -5292,8 +5302,8 @@
 
         // Control Mode Tag
         const ctrlModeStr = t.controlMode || "FIXED";
-        el.ctrlModeActiveBadge.textContent = `${ctrlModeStr} MODE`;
-        el.ctrlModeStatusLabel.textContent = `Control: ${ctrlModeStr}`;
+        el.ctrlModeActiveBadge.textContent = isFlashOrangeActive ? "FLASH ORANGE (1 Hz)" : `${ctrlModeStr} MODE`;
+        el.ctrlModeStatusLabel.textContent = isFlashOrangeActive ? "Control: FLASH ORANGE" : `Control: ${ctrlModeStr}`;
 
         // Vehicle Signal Group Status Badges
         const inFaultState = (t.currentFsmState === "FAULT_SAFE" || (t.activeFaultMask && t.activeFaultMask > 0));
@@ -5333,7 +5343,10 @@
         // Active Movement Description
         let activeMovementText = "ALL RED (CLEARANCE)";
         let activeRoadDesc = "All-Red Clearance";
-        if (t.currentFsmState === "MAIN_GREEN") {
+        if (isFlashOrangeActive) {
+          activeMovementText = "⚠️ FLASHING ORANGE — FREE FLOW CAUTION";
+          activeRoadDesc = "All Approaches Flashing Yellow (1 Hz)";
+        } else if (t.currentFsmState === "MAIN_GREEN") {
           activeMovementText = "MAIN ROAD GREEN (PRIORITY GO)";
           activeRoadDesc = "Main Road (Arterial)";
         } else if (t.currentFsmState === "MAIN_YELLOW") {
@@ -5357,12 +5370,14 @@
         }
 
         if (el.svgActiveMovementBanner) {
-          el.svgActiveMovementBanner.textContent = `ACTIVE MOVEMENT: ${activeMovementText}${staleSuffix}`;
+          el.svgActiveMovementBanner.textContent = isFlashOrangeActive
+            ? activeMovementText
+            : `ACTIVE MOVEMENT: ${activeMovementText}${staleSuffix}`;
         }
         el.metricActiveRoadSub.textContent = `Active: ${activeRoadDesc}`;
 
         // Metrics
-        el.metricFsmState.textContent = (t.currentFsmState || "N/A") + staleSuffix;
+        el.metricFsmState.textContent = isFlashOrangeActive ? "FLASH_ORANGE" : (t.currentFsmState || "N/A") + staleSuffix;
         el.metricNextTarget.textContent = `Next: ${t.nextTargetPhase || "N/A"}`;
 
         // Operating Mode & Fallback State Calculation
@@ -5476,8 +5491,10 @@
           }
         }
 
-        el.junctionStateLabel.textContent = (t.currentFsmState || "UNKNOWN") + staleSuffix;
-        el.svgSubStatusText.textContent = `State: ${t.currentFsmState || "N/A"} | Elapsed: ${t.stateElapsedMs !== null ? t.stateElapsedMs + " ms" : "N/A"}${staleSuffix}`;
+        el.junctionStateLabel.textContent = isFlashOrangeActive ? "FLASH_ORANGE (1 Hz)" : (t.currentFsmState || "UNKNOWN") + staleSuffix;
+        el.svgSubStatusText.textContent = isFlashOrangeActive
+          ? `State: FLASH_ORANGE (1 Hz Caution) | Phase: ${flashPhase ? "AMBER ON" : "AMBER OFF"}`
+          : `State: ${t.currentFsmState || "N/A"} | Elapsed: ${t.stateElapsedMs !== null ? t.stateElapsedMs + " ms" : "N/A"}${staleSuffix}`;
         el.svgFreshnessTag.textContent = isStale
           ? `WARNING: Telemetry Stale (Last: ${t.wallTimeStr})`
           : `Live Telemetry Synchronized (${t.wallTimeStr})`;
@@ -5492,7 +5509,7 @@
       // CONTROLS & COMMANDS ENABLEMENT
       // ======================================================================
       function updateControlsEnablement() {
-        const isConnected = (connectionStatus === "CONNECTED" || connectionStatus === "RECEIVING_DATA" || connectionStatus === "TELEMETRY STALE" || connectionStatus === "CONTROLLER FAULT");
+        const isConnected = (connectionStatus === "CONNECTED" || connectionStatus === "RECEIVING_DATA" || connectionStatus === "STALE" || connectionStatus === "TELEMETRY STALE" || connectionStatus === "STALE TELEMETRY" || connectionStatus === "CONTROLLER FAULT");
         const hasCmdPending = Boolean(pendingUserCommand);
         const hasTelemetry = Boolean(lastValidTelemetry);
         const mode = hasTelemetry ? lastValidTelemetry.operatingMode : null;
@@ -5502,9 +5519,9 @@
         const isSimMode = (mode === "SERIAL_SIMULATION");
 
         // Mode Switching
-        el.btnModeFixed.disabled = !isConnected || hasCmdPending || inFault || (ctrlMode === "FIXED");
-        el.btnModeAdaptive.disabled = !isConnected || hasCmdPending || inFault || (ctrlMode === "ADAPTIVE");
-        el.btnModeManual.disabled = !isConnected || hasCmdPending || inFault || (ctrlMode === "MANUAL");
+        el.btnModeFixed.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "FIXED");
+        el.btnModeAdaptive.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "ADAPTIVE");
+        el.btnModeManual.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "MANUAL");
 
         el.manualStepBox.style.display = (ctrlMode === "MANUAL") ? "block" : "none";
         el.btnManualNext.disabled = !isConnected || hasCmdPending || inFault || (ctrlMode !== "MANUAL");
@@ -6039,6 +6056,13 @@
           const eventType = eventMatch[2];
           const detail = eventMatch[3];
 
+          if (isFlashOrangeActive && (eventType === "LAMP_TEST_ACTIVE" || eventType === "LAMP_TEST_STOPPED" || eventType === "CONTROL_MODE_CHANGE")) {
+            if (pendingUserCommand) {
+              resolvePendingUserCommand(true, `${eventType}: ${detail}`);
+            }
+            return;
+          }
+
           if (eventType === "SENSOR_DETECTED" || eventType === "SENSOR_RELEASED") {
             const chM = detail.match(/Channel:\s*(\d+)/i);
             if (chM) {
@@ -6344,7 +6368,7 @@
           statusRequestInFlight = false;
         }
 
-        if (commandManager.active && !isManual) return;
+        if (commandManager.active && commandManager.active.cmd === "STATUS" && !isManual) return;
 
         statusRequestInFlight = true;
         statusRequestSentAtMs = now;
@@ -6745,6 +6769,7 @@
       let isFlashOrangeActive = false;
       let flashOrangeTimer = null;
       let flashPhase = false;
+      let preFlashControlMode = "FIXED";
 
       const MQTT_TOPICS = {
         telemetry: "traffic/junction1/telemetry",
@@ -6849,9 +6874,65 @@
         publishMqttTelemetry(lastValidTelemetry);
       }
 
+      function applyFlashOrangeVisualState(isAmberOn) {
+        // Turn all Red & Green vehicle lamps OFF
+        updateSingleLamp([el.svgMainWestRed, el.svgMainEastRed], el.dotMainRed, el.pillMainRed, false, "active-red", "OFF", el.gpioMainRed, false);
+        updateSingleLamp([el.svgMainWestGreen, el.svgMainEastGreen], el.dotMainGreen, el.pillMainGreen, false, "active-green", "OFF", el.gpioMainGreen, false);
+        updateSingleLamp([el.svgSideRed], el.dotSideRed, el.pillSideRed, false, "active-red", "OFF", el.gpioSideRed, false);
+        updateSingleLamp([el.svgSideGreen], el.dotSideGreen, el.pillSideGreen, false, "active-green", "OFF", el.gpioSideGreen, false);
+        updateSingleLamp([el.svgTurnRed], el.dotTurnRed, el.pillTurnRed, false, "active-red", "OFF", el.gpioTurnRed, false);
+        updateSingleLamp([el.svgTurnGreen], el.dotTurnGreen, el.pillTurnGreen, false, "active-green", "OFF", el.gpioTurnGreen, false);
+
+        // Flash all 3 vehicle Yellow groups in sync
+        const yellowLabel = isAmberOn ? "FLASH: ON" : "FLASH: OFF";
+        updateSingleLamp([el.svgMainWestYellow, el.svgMainEastYellow], el.dotMainYellow, el.pillMainYellow, isAmberOn, "active-yellow", yellowLabel, el.gpioMainYellow, isAmberOn);
+        updateSingleLamp([el.svgSideYellow], el.dotSideYellow, el.pillSideYellow, isAmberOn, "active-yellow", yellowLabel, el.gpioSideYellow, isAmberOn);
+        updateSingleLamp([el.svgTurnYellow], el.dotTurnYellow, el.pillTurnYellow, isAmberOn, "active-yellow", yellowLabel, el.gpioTurnYellow, isAmberOn);
+
+        // Keep Pedestrian 1 & 2 safely locked on DON'T WALK
+        updateSingleLamp([el.svgPed1Walk, el.svgPedWalk], el.dotPed1Walk, el.pillPed1Walk, false, "active-green", "OFF", el.gpioPed1Walk, false);
+        updateSingleLamp([el.svgPed1DontWalk, el.svgPedDontWalk], el.dotPed1DontWalk, el.pillPed1DontWalk, true, "active-red", "CMD: ON", el.gpioPed1DontWalk, true);
+        updateSingleLamp([el.svgPed2Walk], el.dotPed2Walk, el.pillPed2Walk, false, "active-green", "OFF", el.gpioPed2Walk, false);
+        updateSingleLamp([el.svgPed2DontWalk], el.dotPed2DontWalk, el.pillPed2DontWalk, true, "active-red", "CMD: ON", el.gpioPed2DontWalk, true);
+
+        if (el.btnTestMainYellow) el.btnTestMainYellow.classList.toggle("active-test", isAmberOn);
+        if (el.btnTestSideYellow) el.btnTestSideYellow.classList.toggle("active-test", isAmberOn);
+        if (el.btnTestTurnYellow) el.btnTestTurnYellow.classList.toggle("active-test", isAmberOn);
+
+        // Hide decorative vehicles while flashing caution
+        if (el.svgCarMainEast) el.svgCarMainEast.style.display = "none";
+        if (el.svgCarMainWest) el.svgCarMainWest.style.display = "none";
+        if (el.svgCarSideRoad) el.svgCarSideRoad.style.display = "none";
+
+        const flashBit = isAmberOn ? 1 : 0;
+        const flashObj = {
+          mainR: 0, mainY: flashBit, mainG: 0,
+          sideR: 0, sideY: flashBit, sideG: 0,
+          turnR: 0, turnY: flashBit, turnG: 0,
+          pedWalk: 0, pedDontWalk: 1,
+          ped2Walk: 0, ped2DontWalk: 1
+        };
+        update13OutputTable(flashObj, flashObj);
+
+        if (el.junctionStateLabel) el.junctionStateLabel.textContent = "FLASH_ORANGE (1 Hz)";
+        if (el.svgActiveMovementBanner) el.svgActiveMovementBanner.textContent = "⚠️ FLASHING ORANGE — FREE FLOW CAUTION";
+        if (el.svgSubStatusText) el.svgSubStatusText.textContent = `State: FLASH_ORANGE (1 Hz Caution) | Phase: ${isAmberOn ? "AMBER ON" : "AMBER OFF"}`;
+        if (el.metricFsmState) el.metricFsmState.textContent = "FLASH_ORANGE";
+        if (el.ctrlModeActiveBadge) el.ctrlModeActiveBadge.textContent = "FLASH ORANGE (1 Hz)";
+        if (el.ctrlModeStatusLabel) el.ctrlModeStatusLabel.textContent = "Control: FLASH ORANGE";
+        updateCountdownTick();
+      }
+
       function startFlashOrangeMode() {
         if (isFlashOrangeActive) return;
+        preFlashControlMode = (lastValidTelemetry && lastValidTelemetry.controlMode && lastValidTelemetry.controlMode !== "MANUAL")
+          ? lastValidTelemetry.controlMode
+          : "FIXED";
+        if (commandManager.active) {
+          commandManager.resolve(true, "Superseded by Flash Orange mode");
+        }
         isFlashOrangeActive = true;
+        flashPhase = true;
         if (el.flashOrangeBanner) el.flashOrangeBanner.style.display = "flex";
         if (el.btnModeFlashOrange) {
           el.btnModeFlashOrange.classList.add("active");
@@ -6859,45 +6940,57 @@
         }
         appendConsole("sys-warn", "MODE", ">>> FLASH ORANGE / FREE FLOW MAINTENANCE MODE ACTIVATED <<<");
 
+        applyFlashOrangeVisualState(true);
+        updateControlsEnablement();
+
         if (port && writer) {
-          sendUserCommand("MODE MANUAL");
+          writeSerialLine("MODE MANUAL").catch(() => {});
+          writeSerialLine("LAMP TEST MAIN_Y").catch(() => {});
         }
 
-        clearLiveSignalDisplay("Flash Orange Mode");
-
-        flashPhase = true;
         flashOrangeTimer = setInterval(() => {
           flashPhase = !flashPhase;
-          const isAmberOn = flashPhase;
-          updateSingleLamp([el.svgMainWestYellow, el.svgMainEastYellow], el.dotMainYellow, el.pillMainYellow, isAmberOn, "active-yellow", isAmberOn ? "FLASH" : "OFF", el.gpioMainYellow, isAmberOn);
-          updateSingleLamp([el.svgSideYellow], el.dotSideYellow, el.pillSideYellow, isAmberOn, "active-yellow", isAmberOn ? "FLASH" : "OFF", el.gpioSideYellow, isAmberOn);
-          updateSingleLamp([el.svgTurnYellow], el.dotTurnYellow, el.pillTurnYellow, isAmberOn, "active-yellow", isAmberOn ? "FLASH" : "OFF", el.gpioTurnYellow, isAmberOn);
+          applyFlashOrangeVisualState(flashPhase);
+          if (port && writer && !isDisconnecting) {
+            writeSerialLine(flashPhase ? "LAMP TEST MAIN_Y" : "LAMP TEST PED1_DW").catch(() => {});
+          }
           publishMqttTelemetry(lastValidTelemetry);
         }, 500);
 
         publishMqttTelemetry(lastValidTelemetry);
       }
 
-      function stopFlashOrangeMode() {
+      function stopFlashOrangeMode(skipModeRestore) {
         if (!isFlashOrangeActive) return;
         isFlashOrangeActive = false;
         if (flashOrangeTimer) {
           clearInterval(flashOrangeTimer);
           flashOrangeTimer = null;
         }
+        if (el.btnTestMainYellow) el.btnTestMainYellow.classList.remove("active-test");
+        if (el.btnTestSideYellow) el.btnTestSideYellow.classList.remove("active-test");
+        if (el.btnTestTurnYellow) el.btnTestTurnYellow.classList.remove("active-test");
         if (el.flashOrangeBanner) el.flashOrangeBanner.style.display = "none";
         if (el.btnModeFlashOrange) {
           el.btnModeFlashOrange.classList.remove("active");
-          el.btnModeFlashOrange.textContent = "Flash Orange (Free/Maintain)";
+          el.btnModeFlashOrange.textContent = "⚠️ FREE / MAINTAIN (Flash Orange)";
+        }
+        if (commandManager.active) {
+          commandManager.resolve(true, "Exited Flash Orange mode");
         }
         appendConsole("sys-info", "MODE", "Resuming normal automatic traffic control...");
 
         if (port && writer) {
-          sendUserCommand("MODE AUTO");
-          setTimeout(() => sendUserCommand("STATUS"), 250);
-        } else if (lastValidTelemetry) {
+          writeSerialLine("LAMP OFF").catch(() => {});
+          if (!skipModeRestore) {
+            writeSerialLine(`MODE ${preFlashControlMode || "FIXED"}`).catch(() => {});
+            setTimeout(() => requestStatusSerialized(true), 150);
+          }
+        }
+        if (lastValidTelemetry) {
           renderTelemetry(lastValidTelemetry);
         }
+        updateControlsEnablement();
         publishMqttTelemetry(lastValidTelemetry);
       }
 
@@ -6941,20 +7034,28 @@
 
       function publishMqttTelemetry(acc) {
         if (!mqttClient || !mqttClient.connected) return;
+        const flashBit = flashPhase ? 1 : 0;
         const payload = {
           timestamp: new Date().toISOString(),
           currentFsmState: isFlashOrangeActive ? "FLASH_ORANGE" : (acc ? acc.currentFsmState : "UNKNOWN"),
           operatingMode: acc ? acc.operatingMode : "UNKNOWN",
-          controlMode: acc ? acc.controlMode : "UNKNOWN",
+          controlMode: isFlashOrangeActive ? "FLASH_ORANGE" : (acc ? acc.controlMode : "UNKNOWN"),
           stateElapsedMs: acc ? acc.stateElapsedMs : 0,
-          nextTargetPhase: acc ? acc.nextTargetPhase : "UNKNOWN",
+          nextTargetPhase: isFlashOrangeActive ? "NONE (CAUTION)" : (acc ? acc.nextTargetPhase : "UNKNOWN"),
           flashOrangeActive: isFlashOrangeActive,
-          outputs: acc && acc.outputs ? acc.outputs : {
-            mainR: 0, mainY: isFlashOrangeActive ? (flashPhase ? 1 : 0) : 0, mainG: 0,
-            sideR: 0, sideY: isFlashOrangeActive ? (flashPhase ? 1 : 0) : 0, sideG: 0,
-            turnR: 0, turnY: isFlashOrangeActive ? (flashPhase ? 1 : 0) : 0, turnG: 0,
-            pedWalk: 0, pedDontWalk: 1
-          },
+          outputs: isFlashOrangeActive ? {
+            mainR: 0, mainY: flashBit, mainG: 0,
+            sideR: 0, sideY: flashBit, sideG: 0,
+            turnR: 0, turnY: flashBit, turnG: 0,
+            pedWalk: 0, pedDontWalk: 1,
+            ped2Walk: 0, ped2DontWalk: 1
+          } : (acc && acc.outputs ? acc.outputs : {
+            mainR: 0, mainY: 0, mainG: 0,
+            sideR: 0, sideY: 0, sideG: 0,
+            turnR: 0, turnY: 0, turnG: 0,
+            pedWalk: 0, pedDontWalk: 1,
+            ped2Walk: 0, ped2DontWalk: 1
+          }),
           density: getCurrentDensitySnapshot()
         };
         try {
@@ -7122,9 +7223,18 @@
         el.btnRetryStatus.addEventListener("click", () => sendUserCommand("STATUS"));
 
         // Mode Commands
-        el.btnModeFixed.addEventListener("click", () => sendUserCommand("MODE FIXED"));
-        el.btnModeAdaptive.addEventListener("click", () => sendUserCommand("MODE ADAPTIVE"));
-        el.btnModeManual.addEventListener("click", () => sendUserCommand("MODE MANUAL"));
+        el.btnModeFixed.addEventListener("click", () => {
+          if (isFlashOrangeActive) stopFlashOrangeMode(true);
+          sendUserCommand("MODE FIXED");
+        });
+        el.btnModeAdaptive.addEventListener("click", () => {
+          if (isFlashOrangeActive) stopFlashOrangeMode(true);
+          sendUserCommand("MODE ADAPTIVE");
+        });
+        el.btnModeManual.addEventListener("click", () => {
+          if (isFlashOrangeActive) stopFlashOrangeMode(true);
+          sendUserCommand("MODE MANUAL");
+        });
         el.btnManualNext.addEventListener("click", () => sendUserCommand("NEXT"));
 
         // Flash Orange Mode Button
