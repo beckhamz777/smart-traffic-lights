@@ -5996,6 +5996,34 @@
             if (cellGpio) cellGpio.textContent = pinStr;
           }
         }
+        if (line.startsWith("MODE_OK")) {
+          appendConsole("sys-info", "MODE", line);
+          if (pendingUserCommand && pendingUserCommand.cmd.startsWith("MODE")) {
+            resolvePendingUserCommand(true, line);
+          }
+          return;
+        }
+        if (line.startsWith("MODE_REJECTED")) {
+          appendConsole("sys-err", "MODE", line);
+          if (pendingUserCommand && pendingUserCommand.cmd.startsWith("MODE")) {
+            resolvePendingUserCommand(false, line);
+          }
+          return;
+        }
+        if (line === "NEXT_OK") {
+          appendConsole("sys-info", "NEXT", "Advanced to next phase step.");
+          if (pendingUserCommand && pendingUserCommand.cmd === "NEXT") {
+            resolvePendingUserCommand(true, "Phase advanced");
+          }
+          return;
+        }
+        if (line === "NEXT_REJECTED") {
+          appendConsole("sys-err", "NEXT", "NEXT rejected: Requires MODE MANUAL.");
+          if (pendingUserCommand && pendingUserCommand.cmd === "NEXT") {
+            resolvePendingUserCommand(false, "Requires MODE MANUAL");
+          }
+          return;
+        }
         if (line === "COMMAND_REJECTED_UNKNOWN") {
           appendConsole("rx-reject", "REJECTED", "Command rejected: Unknown or invalid syntax.");
           if (pendingUserCommand) {
@@ -6198,8 +6226,20 @@
           appendConsole("sys-info", "STATUS", `[${acc.timestampMs} ms] ${acc.currentFsmState} | Control=${acc.controlMode} | Outputs=${acc.rawOutputsLine}`);
         }
 
-        if (pendingUserCommand && pendingUserCommand.cmd === "STATUS") {
-          resolvePendingUserCommand(true, `STATUS verified (${acc.currentFsmState}, Control: ${acc.controlMode})`);
+        if (pendingUserCommand) {
+          if (pendingUserCommand.cmd === "STATUS") {
+            resolvePendingUserCommand(true, `STATUS verified (${acc.currentFsmState}, Control: ${acc.controlMode})`);
+          } else if (pendingUserCommand.cmd === "MODE MANUAL" && (acc.controlMode === "MANUAL" || acc.operatingMode === "MANUAL")) {
+            resolvePendingUserCommand(true, "MODE MANUAL confirmed via controller status");
+          } else if (pendingUserCommand.cmd === "MODE FIXED" && acc.controlMode === "FIXED") {
+            resolvePendingUserCommand(true, "MODE FIXED confirmed via controller status");
+          } else if (pendingUserCommand.cmd === "MODE AUTO" && (acc.controlMode === "AUTO" || acc.controlMode === "ACTUATED" || acc.controlMode === "ADAPTIVE")) {
+            resolvePendingUserCommand(true, `MODE AUTO confirmed (${acc.controlMode})`);
+          } else if (pendingUserCommand.cmd === "MODE ADAPTIVE" && acc.controlMode === "ADAPTIVE") {
+            resolvePendingUserCommand(true, "MODE ADAPTIVE confirmed via controller status");
+          } else if (pendingUserCommand.cmd === "MODE ACTUATED" && acc.controlMode === "ACTUATED") {
+            resolvePendingUserCommand(true, "MODE ACTUATED confirmed via controller status");
+          }
         }
 
         renderTelemetry(lastValidTelemetry);
@@ -6236,7 +6276,7 @@
             if (this.active && this.active.id === cmdId) {
               this.resolve(false, "Timeout waiting for firmware acknowledgement over Serial.");
             }
-          }, 2400);
+          }, 4000);
 
           this.active = cmdRecord;
           pendingUserCommand = cmdRecord;

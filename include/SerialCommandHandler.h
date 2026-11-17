@@ -603,29 +603,29 @@ public:
 
         // Mode commands
         if (strcmp(normalized, "MODE AUTO") == 0) {
-            return ctrl.setControlMode(nowMs, ControlMode::AUTO)
-                       ? SerialCommandResult::OK_EXECUTED
-                       : SerialCommandResult::REJECTED_BY_STATE;
+            const bool ok = ctrl.setControlMode(nowMs, ControlMode::AUTO);
+            emitLine(ok ? "MODE_OK: AUTO" : "MODE_REJECTED: AUTO");
+            return ok ? SerialCommandResult::OK_EXECUTED : SerialCommandResult::REJECTED_BY_STATE;
         }
         if (strcmp(normalized, "MODE FIXED") == 0) {
-            return ctrl.setControlMode(nowMs, ControlMode::FIXED)
-                       ? SerialCommandResult::OK_EXECUTED
-                       : SerialCommandResult::REJECTED_BY_STATE;
+            const bool ok = ctrl.setControlMode(nowMs, ControlMode::FIXED);
+            emitLine(ok ? "MODE_OK: FIXED" : "MODE_REJECTED: FIXED");
+            return ok ? SerialCommandResult::OK_EXECUTED : SerialCommandResult::REJECTED_BY_STATE;
         }
         if (strcmp(normalized, "MODE ACTUATED") == 0) {
-            return ctrl.setControlMode(nowMs, ControlMode::ACTUATED)
-                       ? SerialCommandResult::OK_EXECUTED
-                       : SerialCommandResult::REJECTED_BY_STATE;
+            const bool ok = ctrl.setControlMode(nowMs, ControlMode::ACTUATED);
+            emitLine(ok ? "MODE_OK: ACTUATED" : "MODE_REJECTED: ACTUATED");
+            return ok ? SerialCommandResult::OK_EXECUTED : SerialCommandResult::REJECTED_BY_STATE;
         }
         if (strcmp(normalized, "MODE ADAPTIVE") == 0) {
-            return ctrl.setControlMode(nowMs, ControlMode::ADAPTIVE)
-                       ? SerialCommandResult::OK_EXECUTED
-                       : SerialCommandResult::REJECTED_BY_STATE;
+            const bool ok = ctrl.setControlMode(nowMs, ControlMode::ADAPTIVE);
+            emitLine(ok ? "MODE_OK: ADAPTIVE" : "MODE_REJECTED: ADAPTIVE");
+            return ok ? SerialCommandResult::OK_EXECUTED : SerialCommandResult::REJECTED_BY_STATE;
         }
         if (strcmp(normalized, "MODE MANUAL") == 0) {
-            return ctrl.setControlMode(nowMs, ControlMode::MANUAL)
-                       ? SerialCommandResult::OK_EXECUTED
-                       : SerialCommandResult::REJECTED_BY_STATE;
+            const bool ok = ctrl.setControlMode(nowMs, ControlMode::MANUAL);
+            emitLine(ok ? "MODE_OK: MANUAL" : "MODE_REJECTED: MANUAL");
+            return ok ? SerialCommandResult::OK_EXECUTED : SerialCommandResult::REJECTED_BY_STATE;
         }
 
         // Simulation mode commands
@@ -702,9 +702,9 @@ public:
 
         // Manual step command
         if (strcmp(normalized, "NEXT") == 0) {
-            return ctrl.advanceManualStep(nowMs)
-                       ? SerialCommandResult::OK_EXECUTED
-                       : SerialCommandResult::REJECTED_BY_STATE;
+            const bool ok = ctrl.advanceManualStep(nowMs);
+            emitLine(ok ? "NEXT_OK" : "NEXT_REJECTED");
+            return ok ? SerialCommandResult::OK_EXECUTED : SerialCommandResult::REJECTED_BY_STATE;
         }
 
         // Fault injection & recovery commands
