@@ -6116,9 +6116,16 @@
         const inFault = (fsmState === "FAULT_SAFE");
         const isSimMode = (mode === "SERIAL_SIMULATION");
 
+        const allIrCommissioned = hasTelemetry && Boolean(lastValidTelemetry.allPhysicalIrValidated || lastValidTelemetry.physicalIrValid === "YES" || lastValidTelemetry.validatedIrMask === 0x3F);
+
         // Mode Switching
         el.btnModeFixed.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "FIXED");
-        el.btnModeAdaptive.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "ADAPTIVE");
+        el.btnModeAdaptive.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "ADAPTIVE") || !allIrCommissioned;
+        if (!allIrCommissioned) {
+          el.btnModeAdaptive.title = "Safety Locked: Requires all 6 IR sensors commissioned first (detect + release sweep)";
+        } else {
+          el.btnModeAdaptive.title = "Switch to Adaptive Control Mode";
+        }
         el.btnModeManual.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "MANUAL");
 
         el.manualStepBox.style.display = (ctrlMode === "MANUAL") ? "block" : "none";
@@ -7886,6 +7893,10 @@
           sendUserCommand("MODE FIXED");
         });
         el.btnModeAdaptive.addEventListener("click", () => {
+          if (lastValidTelemetry && !(lastValidTelemetry.allPhysicalIrValidated || lastValidTelemetry.physicalIrValid === "YES" || lastValidTelemetry.validatedIrMask === 0x3F)) {
+            setCommandFeedback("warning", "MODE ADAPTIVE Locked", "All 6 physical IR sensors must be commissioned first (detect + release sweep observed).");
+            return;
+          }
           if (isFlashOrangeActive) stopFlashOrangeMode(true);
           sendUserCommand("MODE ADAPTIVE");
         });
