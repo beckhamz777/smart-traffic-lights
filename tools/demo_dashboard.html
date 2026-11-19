@@ -7621,6 +7621,7 @@
           setTimeout(() => {
             if (isFlashOrangeActive && port && writer) {
               writeSerialLine("LAMP TEST FLASH_ORANGE").catch(() => { });
+              writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
             }
           }, 80);
         }
@@ -7629,7 +7630,12 @@
           flashPhase = !flashPhase;
           applyFlashOrangeVisualState(flashPhase);
           if (port && writer && !isDisconnecting && isFlashOrangeActive) {
-            writeSerialLine(flashPhase ? "LAMP TEST FLASH_ORANGE" : "LAMP OFF").catch(() => { });
+            if (flashPhase) {
+              writeSerialLine("LAMP TEST FLASH_ORANGE").catch(() => { });
+              writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
+            } else {
+              writeSerialLine("LAMP OFF").catch(() => { });
+            }
           }
           publishMqttTelemetry(lastValidTelemetry);
         }, 500);
