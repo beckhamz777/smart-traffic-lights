@@ -6982,6 +6982,13 @@
 
           try {
             await writeSerialLine(normalized);
+            if (normalized.startsWith("MODE ") || normalized === "NEXT" || normalized.startsWith("SIM ") || normalized.startsWith("COMMISSION ")) {
+              setTimeout(() => {
+                if (port && writer && !isDisconnecting && commandManager.active) {
+                  writeSerialLine("STATUS").catch(() => { });
+                }
+              }, 120);
+            }
             return true;
           } catch (err) {
             this.resolve(false, `Serial write error: ${err.message || err}`);
@@ -7610,14 +7617,19 @@
 
         if (port && writer) {
           writeSerialLine("MODE MANUAL").catch(() => { });
-          writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
+          writeSerialLine("COMMISSION VEH ON").catch(() => { });
+          setTimeout(() => {
+            if (isFlashOrangeActive && port && writer) {
+              writeSerialLine("LAMP TEST FLASH_ORANGE").catch(() => { });
+            }
+          }, 80);
         }
 
         flashOrangeTimer = setInterval(() => {
           flashPhase = !flashPhase;
           applyFlashOrangeVisualState(flashPhase);
-          if (port && writer && !isDisconnecting) {
-            writeSerialLine(flashPhase ? "LAMP TEST MAIN_Y" : "LAMP TEST PED1_DW").catch(() => { });
+          if (port && writer && !isDisconnecting && isFlashOrangeActive) {
+            writeSerialLine(flashPhase ? "LAMP TEST FLASH_ORANGE" : "LAMP OFF").catch(() => { });
           }
           publishMqttTelemetry(lastValidTelemetry);
         }, 500);
@@ -7648,8 +7660,11 @@
         if (port && writer) {
           writeSerialLine("LAMP OFF").catch(() => { });
           if (!skipModeRestore) {
-            writeSerialLine(`MODE ${preFlashControlMode || "FIXED"}`).catch(() => { });
-            setTimeout(() => requestStatusSerialized(true), 150);
+            setTimeout(() => {
+              if (port && writer && !isDisconnecting) {
+                sendUserCommand(`MODE ${preFlashControlMode || "FIXED"}`);
+              }
+            }, 100);
           }
         }
         if (lastValidTelemetry) {
