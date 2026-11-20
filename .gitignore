@@ -19,10 +19,6 @@ compile_commands.json
 .vscode/ipch
 .idea/
 
-# Desktop Control Center App
-control-center-app/node_modules/
-control-center-app/dist/
-
 # Temporary Files & Local Snapshots
 scratch/
 *.tmp
@@ -37,6 +33,11 @@ backups/
 Thumbs.db
 Desktop.ini
 
+# Node & Electron
+node_modules/
+**/node_modules/
+electron-operator-app/captures/
+
 # Credentials, API Keys & Private Configuration
 .env
 .env.*
@@ -50,3 +51,6 @@ Desktop.ini
 *apikey*
 private_config.h
 secrets.h
+
+__pycache__/
+*.pyc

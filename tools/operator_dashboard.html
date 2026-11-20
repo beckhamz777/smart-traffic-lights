@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Traffic Control Center | Operator Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              900: '#134e4a',
+            },
+            signal: {
+              red: '#ef4444',
+              orange: '#f59e0b',
+              green: '#10b981',
+              off: '#1e293b'
+            }
+          },
+          animation: {
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'radar': 'radar 3s linear infinite',
+          },
+          keyframes: {
+            radar: {
+              '0%': { transform: 'rotate(0deg)' },
+              '100%': { transform: 'rotate(360deg)' }
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- MQTT.js -->
+  <script src="https://unpkg.com/mqtt@5.3.5/dist/mqtt.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    /* Traffic Signal Glows */
+    .glow-red {
+      box-shadow: 0 0 25px 6px rgba(239, 68, 68, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    .glow-orange {
+      box-shadow: 0 0 25px 6px rgba(245, 158, 11, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+    .glow-green {
+      box-shadow: 0 0 25px 6px rgba(16, 185, 129, 0.7), inset 0 0 10px rgba(255, 255, 255, 0.6);
+    }
+
+    /* CRT Scanline effect for Camera */
+    .scanlines {
+      background: linear-gradient(
+        rgba(18, 16, 16, 0) 50%, 
+        rgba(0, 0, 0, 0.25) 50%
+      ), linear-gradient(
+        90deg,
+        rgba(255, 0, 0, 0.04),
+        rgba(0, 255, 0, 0.02),
+        rgba(0, 0, 255, 0.04)
+      );
+      background-size: 100% 4px, 6px 100%;
+      pointer-events: none;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- TOP NAVIGATION / OPERATOR BAR                                            -->
+  <!-- ========================================================================= -->
+  <header class="bg-slate-900/90 border-b border-slate-800 backdrop-blur sticky top-0 z-50 px-4 py-2.5">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-brand-700 to-emerald-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-bold text-white tracking-wide">TRAFFIC-OPS <span class="text-brand-500">PRO</span></h1>
+            <span class="px-2 py-0.5 text-xs font-semibold rounded bg-slate-800 text-slate-300 border border-slate-700">INT-01 (4-WAY)</span>
+          </div>
+          <p class="text-xs text-slate-400">Intersection Management &amp; Violation Surveillance System</p>
+        </div>
+      </div>
+
+      <!-- Quick Metrics & Status -->
+      <div class="flex flex-wrap items-center gap-3">
+        
+        <!-- Operating Mode Badge -->
+        <div class="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+          <span class="text-xs text-slate-400 font-medium">CONTROL MODE:</span>
+          <span id="headerModeBadge" class="px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+            ADAPTIVE
+          </span>
+        </div>
+
+        <!-- Priority Lane Pill -->
+        <div class="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+          <span class="text-xs text-slate-400 font-medium">HIGH DENSITY:</span>
+          <span id="headerPriorityBadge" class="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">
+            <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+            EAST (100%)
+          </span>
+        </div>
+
+        <!-- MQTT Connection Status -->
+        <div class="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+          <span class="text-xs text-slate-400 font-medium">MQTT:</span>
+          <span id="mqttStatusBadge" class="flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span id="mqttStatusText">SIMULATED</span>
+          </span>
+        </div>
+
+        <!-- Mode Source Switcher (Mock vs Real Broker) -->
+        <div class="flex items-center bg-slate-800 p-0.5 rounded-lg border border-slate-700 text-xs font-medium">
+          <button id="btnSourceMock" class="px-2.5 py-1 rounded bg-brand-600 text-white font-semibold transition" onclick="setMqttSource('mock')">
+            Mock Engine
+          </button>
+          <button id="btnSourceLive" class="px-2.5 py-1 rounded text-slate-400 hover:text-white transition" onclick="setMqttSource('live')">
+            Live Broker (9001)
+          </button>
+        </div>
+
+        <!-- Audio Alert Mute Toggle -->
+        <button id="btnMuteToggle" onclick="toggleAudioAlerts()" class="p-1.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition" title="Toggle Alarm Audio">
+          <svg id="iconUnmuted" class="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          </svg>
+          <svg id="iconMuted" class="w-5 h-5 text-slate-500 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+          </svg>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN DASHBOARD CONTENT                                                   -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 space-y-4">
+
+    <!-- Top Alert Banner for Critical Hardware Faults (Hidden by default) -->
+    <div id="hardwareFaultBanner" class="hidden bg-rose-950/80 border-l-4 border-rose-500 p-3 rounded-r-lg flex items-center justify-between text-rose-200">
+      <div class="flex items-center space-x-3">
+        <svg class="w-6 h-6 text-rose-400 shrink-0 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <div>
+          <span class="font-bold text-white uppercase tracking-wider text-xs">CRITICAL HARDWARE FAULT:</span>
+          <span id="hardwareFaultText" class="text-sm ml-2">West Lane Sensor 1 Disconnected &bull; East Orange Lamp Burnt-out</span>
+        </div>
+      </div>
+      <button onclick="dismissFaultBanner()" class="text-xs bg-rose-900/50 hover:bg-rose-900 px-3 py-1 rounded text-rose-300 transition">Acknowledge</button>
+    </div>
+
+    <!-- 3-COLUMN MASTER GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      
+      <!-- ===================================================================== -->
+      <!-- LEFT COLUMN: INTERSECTION 2D VISUAL MAP & SENSOR CONTROLS (5 cols)     -->
+      <!-- ===================================================================== -->
+      <section class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col shadow-xl">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+            <h2 class="font-bold text-sm text-white uppercase tracking-wider">Live Intersection Visualizer</h2>
+          </div>
+          <span class="text-xs font-mono text-slate-400">RHT 4-WAY TOPOLOGY</span>
+        </div>
+
+        <!-- 2D SVG INTERSECTION MAP -->
+        <div class="relative w-full aspect-square max-w-[480px] mx-auto bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center p-2 shadow-inner">
+          <svg viewBox="0 0 500 500" class="w-full h-full select-none">
+            <defs>
+              <pattern id="roadStripes" width="10" height="24" patternUnits="userSpaceOnUse">
+                <line x1="5" y1="0" x2="5" y2="14" stroke="#e2e8f0" stroke-width="2" stroke-dasharray="8,6" opacity="0.6"/>
+              </pattern>
+              <linearGradient id="grassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#064e3b" stop-opacity="0.25"/>
+                <stop offset="100%" stop-color="#022c22" stop-opacity="0.1"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Corner Grass / Curbs -->
+            <rect x="0" y="0" width="180" height="180" fill="url(#grassGrad)"/>
+            <rect x="320" y="0" width="180" height="180" fill="url(#grassGrad)"/>
+            <rect x="0" y="320" width="180" height="180" fill="url(#grassGrad)"/>
+            <rect x="320" y="320" width="180" height="180" fill="url(#grassGrad)"/>
+
+            <!-- Curbs Outline -->
+            <path d="M 0,180 L 180,180 L 180,0" fill="none" stroke="#334155" stroke-width="4"/>
+            <path d="M 320,0 L 320,180 L 500,180" fill="none" stroke="#334155" stroke-width="4"/>
+            <path d="M 0,320 L 180,320 L 180,500" fill="none" stroke="#334155" stroke-width="4"/>
+            <path d="M 320,500 L 320,320 L 500,320" fill="none" stroke="#334155" stroke-width="4"/>
+
+            <!-- Asphalt Road Surface -->
+            <rect x="180" y="0" width="140" height="500" fill="#0f172a"/>
+            <rect x="0" y="180" width="500" height="140" fill="#0f172a"/>
+
+            <!-- Center Intersection Junction Box -->
+            <rect x="180" y="180" width="140" height="140" fill="#1e293b" opacity="0.4"/>
+            <!-- Yellow Box Junction Hatching -->
+            <line x1="185" y1="185" x2="315" y2="315" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+            <line x1="315" y1="185" x2="185" y2="315" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.4"/>
+
+            <!-- Center Division Lines -->
+            <line x1="250" y1="0" x2="250" y2="170" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="8,6"/>
+            <line x1="250" y1="330" x2="250" y2="500" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="8,6"/>
+            <line x1="0" y1="250" x2="170" y2="250" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="8,6"/>
+            <line x1="330" y1="250" x2="500" y2="250" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="8,6"/>
+
+            <!-- Pedestrian Crosswalks (White Zebras) -->
+            <!-- North Crosswalk -->
+            <g stroke="#ffffff" stroke-width="3" opacity="0.75">
+              <line x1="185" y1="172" x2="315" y2="172"/>
+              <line x1="185" y1="160" x2="315" y2="160" stroke-dasharray="8,8"/>
+            </g>
+            <!-- South Crosswalk -->
+            <g stroke="#ffffff" stroke-width="3" opacity="0.75">
+              <line x1="185" y1="328" x2="315" y2="328"/>
+              <line x1="185" y1="340" x2="315" y2="340" stroke-dasharray="8,8"/>
+            </g>
+            <!-- West Crosswalk -->
+            <g stroke="#ffffff" stroke-width="3" opacity="0.75">
+              <line x1="172" y1="185" x2="172" y2="315"/>
+              <line x1="160" y1="185" x2="160" y2="315" stroke-dasharray="8,8"/>
+            </g>
+            <!-- East Crosswalk -->
+            <g stroke="#ffffff" stroke-width="3" opacity="0.75">
+              <line x1="328" y1="185" x2="328" y2="315"/>
+              <line x1="340" y1="185" x2="340" y2="315" stroke-dasharray="8,8"/>
+            </g>
+
+            <!-- ------------------------------------------------------------- -->
+            <!-- ROAD SENSORS (Inductive Loop visual pads in lanes)            -->
+            <!-- ------------------------------------------------------------- -->
+            <!-- North Lane Sensors (Approaching Southbound: x=200..235) -->
+            <g class="cursor-pointer" onclick="toggleSensor('north', 1)">
+              <rect id="svgSensorN1" x="200" y="125" width="35" height="18" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="217" y="138" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S1</text>
+            </g>
+            <g class="cursor-pointer" onclick="toggleSensor('north', 2)">
+              <rect id="svgSensorN2" x="200" y="80" width="35" height="18" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="217" y="93" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S2</text>
+            </g>
+
+            <!-- South Lane Sensors (Approaching Northbound: x=265..300) -->
+            <g class="cursor-pointer" onclick="toggleSensor('south', 1)">
+              <rect id="svgSensorS1" x="265" y="355" width="35" height="18" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="282" y="368" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S1</text>
+            </g>
+            <g class="cursor-pointer" onclick="toggleSensor('south', 2)">
+              <rect id="svgSensorS2" x="265" y="400" width="35" height="18" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="282" y="413" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S2</text>
+            </g>
+
+            <!-- West Lane Sensors (Approaching Eastbound: y=265..300) -->
+            <g class="cursor-pointer" onclick="toggleSensor('west', 1)">
+              <rect id="svgSensorW1" x="125" y="265" width="18" height="35" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="134" y="286" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S1</text>
+            </g>
+            <g class="cursor-pointer" onclick="toggleSensor('west', 2)">
+              <rect id="svgSensorW2" x="80" y="265" width="18" height="35" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="89" y="286" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S2</text>
+            </g>
+
+            <!-- East Lane Sensors (Approaching Westbound: y=200..235) -->
+            <g class="cursor-pointer" onclick="toggleSensor('east', 1)">
+              <rect id="svgSensorE1" x="355" y="200" width="18" height="35" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="364" y="221" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S1</text>
+            </g>
+            <g class="cursor-pointer" onclick="toggleSensor('east', 2)">
+              <rect id="svgSensorE2" x="400" y="200" width="18" height="35" rx="3" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-colors"/>
+              <text x="409" y="221" fill="#94a3b8" font-size="8" font-family="monospace" text-anchor="middle">S2</text>
+            </g>
+
+            <!-- ------------------------------------------------------------- -->
+            <!-- DYNAMIC MOVING VEHICLES ANIMATIONS                            -->
+            <!-- ------------------------------------------------------------- -->
+            <!-- North Car -->
+            <g id="carNorth" class="transition-all duration-700" transform="translate(210, 60)">
+              <rect width="16" height="26" rx="3" fill="#38bdf8" stroke="#0284c7" stroke-width="1.5"/>
+              <rect x="2" y="6" width="12" height="6" rx="1" fill="#0f172a"/>
+            </g>
+            <!-- South Car -->
+            <g id="carSouth" class="transition-all duration-700" transform="translate(274, 410)">
+              <rect width="16" height="26" rx="3" fill="#a855f7" stroke="#7e22ce" stroke-width="1.5"/>
+              <rect x="2" y="14" width="12" height="6" rx="1" fill="#0f172a"/>
+            </g>
+            <!-- West Car -->
+            <g id="carWest" class="transition-all duration-700" transform="translate(60, 274)">
+              <rect width="26" height="16" rx="3" fill="#f43f5e" stroke="#be123c" stroke-width="1.5"/>
+              <rect x="14" y="2" width="6" height="12" rx="1" fill="#0f172a"/>
+            </g>
+            <!-- East Car -->
+            <g id="carEast" class="transition-all duration-700" transform="translate(410, 210)">
+              <rect width="26" height="16" rx="3" fill="#f59e0b" stroke="#d97706" stroke-width="1.5"/>
+              <rect x="6" y="2" width="6" height="12" rx="1" fill="#0f172a"/>
+            </g>
+
+            <!-- ------------------------------------------------------------- -->
+            <!-- TRAFFIC LIGHT HEADS OVERLAY (NORTH, SOUTH, EAST, WEST)        -->
+            <!-- ------------------------------------------------------------- -->
+            <!-- North Traffic Light Head (Governs SB Traffic: at top right curb) -->
+            <g transform="translate(135, 120)">
+              <rect x="0" y="0" width="36" height="52" rx="6" fill="#020617" stroke="#334155" stroke-width="2"/>
+              <circle id="svgLightN_R" cx="18" cy="11" r="5.5" fill="#ef4444" class="glow-red"/>
+              <circle id="svgLightN_O" cx="18" cy="26" r="5.5" fill="#334155"/>
+              <circle id="svgLightN_G" cx="18" cy="41" r="5.5" fill="#334155"/>
+            </g>
+            <!-- South Traffic Light Head (Governs NB Traffic: at bottom left curb) -->
+            <g transform="translate(328, 330)">
+              <rect x="0" y="0" width="36" height="52" rx="6" fill="#020617" stroke="#334155" stroke-width="2"/>
+              <circle id="svgLightS_R" cx="18" cy="11" r="5.5" fill="#ef4444" class="glow-red"/>
+              <circle id="svgLightS_O" cx="18" cy="26" r="5.5" fill="#334155"/>
+              <circle id="svgLightS_G" cx="18" cy="41" r="5.5" fill="#334155"/>
+            </g>
+            <!-- West Traffic Light Head (Governs EB Traffic: at bottom curb) -->
+            <g transform="translate(120, 328)">
+              <rect x="0" y="0" width="52" height="36" rx="6" fill="#020617" stroke="#334155" stroke-width="2"/>
+              <circle id="svgLightW_R" cx="11" cy="18" r="5.5" fill="#ef4444" class="glow-red"/>
+              <circle id="svgLightW_O" cx="26" cy="18" r="5.5" fill="#334155"/>
+              <circle id="svgLightW_G" cx="41" cy="18" r="5.5" fill="#334155"/>
+            </g>
+            <!-- East Traffic Light Head (Governs WB Traffic: at top curb) -->
+            <g transform="translate(330, 135)">
+              <rect x="0" y="0" width="52" height="36" rx="6" fill="#020617" stroke="#334155" stroke-width="2"/>
+              <circle id="svgLightE_R" cx="11" cy="18" r="5.5" fill="#ef4444" class="glow-red"/>
+              <circle id="svgLightE_O" cx="26" cy="18" r="5.5" fill="#334155"/>
+              <circle id="svgLightE_G" cx="41" cy="18" r="5.5" fill="#334155"/>
+            </g>
+
+            <!-- Lane High-Priority Glow Indicators -->
+            <circle id="prioIndicatorN" cx="217" cy="25" r="8" fill="#f43f5e" class="hidden animate-ping"/>
+            <circle id="prioIndicatorS" cx="282" cy="475" r="8" fill="#f43f5e" class="hidden animate-ping"/>
+            <circle id="prioIndicatorW" cx="25" cy="282" r="8" fill="#f43f5e" class="hidden animate-ping"/>
+            <circle id="prioIndicatorE" cx="475" cy="217" r="8" fill="#f43f5e" class="hidden animate-ping"/>
+
+            <!-- Cardinal Compass Rose -->
+            <g transform="translate(450, 450)" opacity="0.6">
+              <circle cx="0" cy="0" r="18" fill="#0f172a" stroke="#334155"/>
+              <text x="0" y="-8" fill="#38bdf8" font-size="9" font-weight="bold" text-anchor="middle">N</text>
+              <text x="0" y="14" fill="#64748b" font-size="8" text-anchor="middle">S</text>
+              <text x="11" y="3" fill="#64748b" font-size="8" text-anchor="middle">E</text>
+              <text x="-11" y="3" fill="#64748b" font-size="8" text-anchor="middle">W</text>
+            </g>
+          </svg>
+
+          <!-- Interactive Sensor Help Tooltip inside Map -->
+          <div class="absolute bottom-2 left-2 bg-slate-900/90 border border-slate-700/80 px-2 py-1 rounded text-[11px] text-slate-300">
+            <span class="text-brand-400 font-semibold">Tip:</span> Click any lane sensor pad (S1, S2) to toggle car presence.
+          </div>
+        </div>
+
+        <!-- SENSOR STATUS & CONGESTION GRID -->
+        <div class="mt-3 pt-3 border-t border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">Lane Congestion &amp; Sensor Telemetry</span>
+            <span class="text-[11px] text-slate-400">0=Base | 1=10s | 2=20s</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <!-- North Lane Card -->
+            <div id="laneCardNorth" class="bg-slate-950/80 border border-slate-800 rounded-lg p-2 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-200">NORTH (SB)</span>
+                <span id="badgeCongestionN" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400">0%</span>
+              </div>
+              <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+                <span>Sensors: <b id="valSensorsN" class="text-slate-200">0/2</b></span>
+                <span>Calc Green: <b id="valCalcGreenN" class="text-brand-400">6s</b></span>
+              </div>
+              <div class="flex gap-1 mt-1.5">
+                <button onclick="toggleSensor('north', 1)" id="btnSensorN1" class="flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono border border-slate-700">S1: OFF</button>
+                <button onclick="toggleSensor('north', 2)" id="btnSensorN2" class="flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono border border-slate-700">S2: OFF</button>
+              </div>
+            </div>
+
+            <!-- South Lane Card -->
+            <div id="laneCardSouth" class="bg-slate-950/80 border border-slate-800 rounded-lg p-2 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-200">SOUTH (NB)</span>
+                <span id="badgeCongestionS" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400">0%</span>
+              </div>
+              <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+                <span>Sensors: <b id="valSensorsS" class="text-slate-200">0/2</b></span>
+                <span>Calc Green: <b id="valCalcGreenS" class="text-brand-400">6s</b></span>
+              </div>
+              <div class="flex gap-1 mt-1.5">
+                <button onclick="toggleSensor('south', 1)" id="btnSensorS1" class="flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono border border-slate-700">S1: OFF</button>
+                <button onclick="toggleSensor('south', 2)" id="btnSensorS2" class="flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono border border-slate-700">S2: OFF</button>
+              </div>
+            </div>
+
+            <!-- East Lane Card -->
+            <div id="laneCardEast" class="bg-slate-950/80 border border-slate-800 rounded-lg p-2 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-200">EAST (WB)</span>
+                <span id="badgeCongestionE" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">100%</span>
+              </div>
+              <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+                <span>Sensors: <b id="valSensorsE" class="text-rose-300">2/2</b></span>
+                <span>Calc Green: <b id="valCalcGreenE" class="text-brand-400">20s</b></span>
+              </div>
+              <div class="flex gap-1 mt-1.5">
+                <button onclick="toggleSensor('east', 1)" id="btnSensorE1" class="flex-1 py-1 rounded bg-emerald-600 text-white text-[10px] font-mono border border-emerald-500 font-bold">S1: ON</button>
+                <button onclick="toggleSensor('east', 2)" id="btnSensorE2" class="flex-1 py-1 rounded bg-emerald-600 text-white text-[10px] font-mono border border-emerald-500 font-bold">S2: ON</button>
+              </div>
+            </div>
+
+            <!-- West Lane Card -->
+            <div id="laneCardWest" class="bg-slate-950/80 border border-slate-800 rounded-lg p-2 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-slate-200">WEST (EB)</span>
+                <span id="badgeCongestionW" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">50%</span>
+              </div>
+              <div class="flex items-center justify-between mt-1 text-[11px] text-slate-400">
+                <span>Sensors: <b id="valSensorsW" class="text-amber-300">1/2</b></span>
+                <span>Calc Green: <b id="valCalcGreenW" class="text-brand-400">10s</b></span>
+              </div>
+              <div class="flex gap-1 mt-1.5">
+                <button onclick="toggleSensor('west', 1)" id="btnSensorW1" class="flex-1 py-1 rounded bg-emerald-600 text-white text-[10px] font-mono border border-emerald-500 font-bold">S1: ON</button>
+                <button onclick="toggleSensor('west', 2)" id="btnSensorW2" class="flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono border border-slate-700">S2: OFF</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- CENTER COLUMN: LIVE 4-SIGNAL STATUS & OPERATOR CONTROLS (4 cols)      -->
+      <!-- ===================================================================== -->
+      <section class="lg:col-span-4 space-y-4">
+        
+        <!-- 4-WAY SIGNAL CARDS & COUNTDOWN TIMERS -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
+            <h2 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Signal Status &amp; Countdowns
+            </h2>
+            <span id="phaseBadge" class="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">
+              PHASE: NS_GREEN
+            </span>
+          </div>
+
+          <!-- 4 Traffic Light Blocks -->
+          <div class="grid grid-cols-2 gap-3">
+            
+            <!-- North Signal Card -->
+            <div id="cardLightNorth" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center relative overflow-hidden transition-all">
+              <div class="w-full flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-300">NORTH (SB)</span>
+                <span id="badgeColorN" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">GREEN</span>
+              </div>
+              <!-- Vertical Signal Housing -->
+              <div class="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center gap-1.5 shadow-inner">
+                <div id="lampN_R" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+                <div id="lampN_O" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+                <div id="lampN_G" class="w-7 h-7 rounded-full bg-emerald-500 glow-green border border-emerald-300 transition-all"></div>
+              </div>
+              <!-- Countdown Display -->
+              <div class="mt-2 text-center">
+                <span id="cntN" class="text-2xl font-mono font-extrabold text-emerald-400">14</span>
+                <span class="text-[10px] text-slate-400 block -mt-1">seconds left</span>
+              </div>
+            </div>
+
+            <!-- South Signal Card -->
+            <div id="cardLightSouth" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center relative overflow-hidden transition-all">
+              <div class="w-full flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-300">SOUTH (NB)</span>
+                <span id="badgeColorS" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400">GREEN</span>
+              </div>
+              <div class="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center gap-1.5 shadow-inner">
+                <div id="lampS_R" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+                <div id="lampS_O" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+                <div id="lampS_G" class="w-7 h-7 rounded-full bg-emerald-500 glow-green border border-emerald-300 transition-all"></div>
+              </div>
+              <div class="mt-2 text-center">
+                <span id="cntS" class="text-2xl font-mono font-extrabold text-emerald-400">14</span>
+                <span class="text-[10px] text-slate-400 block -mt-1">seconds left</span>
+              </div>
+            </div>
+
+            <!-- East Signal Card -->
+            <div id="cardLightEast" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center relative overflow-hidden transition-all">
+              <div class="w-full flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-300">EAST (WB)</span>
+                <span id="badgeColorE" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400">RED</span>
+              </div>
+              <div class="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center gap-1.5 shadow-inner">
+                <div id="lampE_R" class="w-7 h-7 rounded-full bg-rose-500 glow-red border border-rose-300 transition-all"></div>
+                <div id="lampE_O" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+                <div id="lampE_G" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+              </div>
+              <div class="mt-2 text-center">
+                <span id="cntE" class="text-2xl font-mono font-extrabold text-rose-400">18</span>
+                <span class="text-[10px] text-slate-400 block -mt-1">seconds left</span>
+              </div>
+            </div>
+
+            <!-- West Signal Card -->
+            <div id="cardLightWest" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center relative overflow-hidden transition-all">
+              <div class="w-full flex items-center justify-between mb-2">
+                <span class="text-xs font-bold text-slate-300">WEST (EB)</span>
+                <span id="badgeColorW" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-400">RED</span>
+              </div>
+              <div class="w-12 bg-slate-900 border border-slate-700 rounded-lg p-1.5 flex flex-col items-center gap-1.5 shadow-inner">
+                <div id="lampW_R" class="w-7 h-7 rounded-full bg-rose-500 glow-red border border-rose-300 transition-all"></div>
+                <div id="lampW_O" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+                <div id="lampW_G" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+              </div>
+              <div class="mt-2 text-center">
+                <span id="cntW" class="text-2xl font-mono font-extrabold text-rose-400">18</span>
+                <span class="text-[10px] text-slate-400 block -mt-1">seconds left</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- OPERATOR CONTROL PANEL: MODE & TIMING CONFIGURATION -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+            <h2 class="font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+              <svg class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              Operator Control Center
+            </h2>
+            <span class="text-[10px] text-slate-400 font-mono">MQTT RPC</span>
+          </div>
+
+          <!-- Mode Toggle Switch -->
+          <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-slate-200 block">Adaptive Sensor Mode</span>
+              <span class="text-[11px] text-slate-400">Dynamically adjust green times per active sensors</span>
+            </div>
+            
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="toggleAdaptiveMode" class="sr-only peer" checked onchange="handleModeToggle(this.checked)">
+              <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+            </label>
+          </div>
+
+          <!-- Manual Timing Configuration Form (Enabled in Manual Mode) -->
+          <div id="manualTimingPanel" class="bg-slate-950/70 p-3 rounded-lg border border-slate-800/80 space-y-2.5 transition-all opacity-60">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-slate-300">Manual Phase Durations:</span>
+              <span id="manualLockNotice" class="text-[10px] text-amber-400 font-mono bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">LOCKED (IN ADAPTIVE)</span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">GREEN (Sec)</label>
+                <input type="number" id="inputGreenSec" min="5" max="90" value="15" disabled class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:border-brand-500 focus:outline-none disabled:opacity-50">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">ORANGE (Sec)</label>
+                <input type="number" id="inputOrangeSec" min="2" max="10" value="3" disabled class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:border-brand-500 focus:outline-none disabled:opacity-50">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-400 mb-1">RED (Sec)</label>
+                <input type="number" id="inputRedSec" min="1" max="15" value="2" disabled class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-white font-mono focus:border-brand-500 focus:outline-none disabled:opacity-50">
+              </div>
+            </div>
+
+            <button id="btnPublishTiming" onclick="publishManualTimings()" disabled class="w-full py-1.5 bg-brand-600 hover:bg-brand-500 disabled:bg-slate-800 text-white font-semibold text-xs rounded transition flex items-center justify-center gap-1.5 shadow">
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              Publish Custom Timings via MQTT
+            </button>
+          </div>
+
+          <!-- Quick Action Commands -->
+          <div class="flex gap-2 pt-1">
+            <button onclick="sendEmergencyAllRed()" class="flex-1 py-1.5 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded text-xs font-semibold transition flex items-center justify-center gap-1">
+              <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+              Emergency ALL-RED
+            </button>
+            <button onclick="stepNextPhaseManual()" id="btnStepNext" disabled class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 border border-slate-700 rounded text-xs font-semibold transition">
+              Step Phase (NEXT)
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ===================================================================== -->
+      <!-- RIGHT COLUMN: LAW BREAKERS & SYSTEM HEALTH (3 cols)                   -->
+      <!-- ===================================================================== -->
+      <section class="lg:col-span-3 space-y-4">
+        
+        <!-- LAW BREAKERS CAMERA FEED & VIOLATION LOG -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl flex flex-col">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping"></span>
+              <h2 class="font-bold text-sm text-white uppercase tracking-wider">Law Breakers Feed</h2>
+            </div>
+            <span class="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">CCTV LIVE</span>
+          </div>
+
+          <!-- Live CCTV Viewport Simulator -->
+          <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden border border-slate-800 group">
+            <!-- Simulated CCTV canvas -->
+            <canvas id="cctvCanvas" class="w-full h-full object-cover"></canvas>
+            
+            <!-- Scanline CRT layer -->
+            <div class="absolute inset-0 scanlines"></div>
+
+            <!-- Camera Metadata Overlay -->
+            <div class="absolute top-2 left-2 text-[10px] font-mono text-emerald-400 bg-black/60 px-1.5 py-0.5 rounded flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+              <span id="cctvCamLabel">CAM-04 [WEST]</span>
+              <span>REC</span>
+            </div>
+
+            <div class="absolute top-2 right-2 text-[10px] font-mono text-slate-300 bg-black/60 px-1.5 py-0.5 rounded">
+              <span id="cctvTimestamp">2026-11-20 01:10:04</span>
+            </div>
+
+            <div class="absolute bottom-2 left-2 text-[10px] font-mono text-amber-300 bg-black/60 px-1.5 py-0.5 rounded">
+              RED LIGHT SURVEILLANCE &bull; SPEED RADAR
+            </div>
+
+            <!-- Cam Switcher Buttons -->
+            <div class="absolute bottom-2 right-2 flex gap-1 opacity-80 group-hover:opacity-100 transition">
+              <button onclick="switchCctv('north')" class="px-1.5 py-0.5 rounded bg-slate-900/80 hover:bg-slate-800 text-[9px] font-mono text-slate-300">N</button>
+              <button onclick="switchCctv('south')" class="px-1.5 py-0.5 rounded bg-slate-900/80 hover:bg-slate-800 text-[9px] font-mono text-slate-300">S</button>
+              <button onclick="switchCctv('east')" class="px-1.5 py-0.5 rounded bg-slate-900/80 hover:bg-slate-800 text-[9px] font-mono text-slate-300">E</button>
+              <button onclick="switchCctv('west')" class="px-1.5 py-0.5 rounded bg-brand-600 text-[9px] font-mono text-white font-bold">W</button>
+            </div>
+          </div>
+
+          <!-- Trigger Violation Test Button -->
+          <div class="flex justify-between items-center my-2">
+            <span class="text-xs text-slate-400 font-medium">Recent Violations Log:</span>
+            <button onclick="triggerSimulatedViolation()" class="text-[10px] px-2 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded font-bold transition flex items-center gap-1 shadow">
+              <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Simulate Violation
+            </button>
+          </div>
+
+          <!-- Violation Snapshot Alert Stream -->
+          <div id="violationList" class="flex-1 max-h-[220px] overflow-y-auto space-y-2 pr-1">
+            <!-- Dynamic alerts inserted here via MQTT -->
+          </div>
+        </div>
+
+        <!-- SYSTEM HEALTH & FAULT DIAGNOSTICS -->
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-xl">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-800">
+            <div class="flex items-center space-x-2">
+              <span id="healthDot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              <h2 class="font-bold text-sm text-white uppercase tracking-wider">System Health &amp; Faults</h2>
+            </div>
+            <span id="healthOverallBadge" class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              WARNING (2)
+            </span>
+          </div>
+
+          <!-- Ping / Heartbeat Tracker -->
+          <div class="flex items-center justify-between text-xs bg-slate-950 p-2 rounded-lg border border-slate-800 mb-2.5">
+            <span class="text-slate-400">ESP32 Heartbeat:</span>
+            <div class="flex items-center gap-2">
+              <span id="heartbeatMs" class="font-mono text-brand-400 font-bold">42 ms</span>
+              <span class="text-slate-500">&bull;</span>
+              <span id="heartbeatUptime" class="font-mono text-slate-300">99.8% Uptime</span>
+            </div>
+          </div>
+
+          <!-- Hardware Device Status Matrix -->
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-950/60 border border-slate-800/60">
+              <span class="text-slate-300 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                ESP32 Master Controller
+              </span>
+              <span class="font-mono text-[10px] text-emerald-400 font-bold">ONLINE (41°C)</span>
+            </div>
+
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-950/60 border border-slate-800/60">
+              <span class="text-slate-300 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                HD Violation Cameras (4)
+              </span>
+              <span id="camHealthStatus" class="font-mono text-[10px] text-amber-400 font-bold">3/4 OK (West Offline)</span>
+            </div>
+
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-950/60 border border-slate-800/60">
+              <span class="text-slate-300 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                Road Inductive Sensors (8)
+              </span>
+              <span id="sensorHealthStatus" class="font-mono text-[10px] text-amber-400 font-bold">7/8 OK (W-S1 Fault)</span>
+            </div>
+
+            <div class="flex items-center justify-between p-1.5 rounded bg-slate-950/60 border border-slate-800/60">
+              <span class="text-slate-300 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                Signal Lamp Modules (12)
+              </span>
+              <span id="lampHealthStatus" class="font-mono text-[10px] text-amber-400 font-bold">11/12 OK (East-Y Alert)</span>
+            </div>
+          </div>
+
+          <!-- Diagnostics Test Buttons -->
+          <div class="mt-3 pt-2 border-t border-slate-800/80 flex gap-2">
+            <button onclick="injectMockFault()" class="flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-semibold border border-slate-700 transition">
+              Inject Fault
+            </button>
+            <button onclick="clearAllFaults()" class="flex-1 py-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-300 text-[10px] font-semibold border border-emerald-800 transition">
+              Reset / Clear Faults
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- BOTTOM: LIVE MQTT RAW MESSAGE TERMINAL (EXPANDABLE)                   -->
+    <!-- ===================================================================== -->
+    <section class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden shadow-xl">
+      <div class="px-4 py-2.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <svg class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <h2 class="font-bold text-xs text-white uppercase tracking-wider">Live MQTT Telemetry &amp; JSON Payload Inspector</h2>
+        </div>
+        
+        <div class="flex items-center space-x-2 text-xs">
+          <button onclick="clearMqttLog()" class="text-slate-400 hover:text-white px-2 py-0.5 rounded bg-slate-800 text-[11px] transition">Clear Log</button>
+          <span id="mqttMsgCounter" class="text-slate-400 font-mono text-[11px]">Messages: 0</span>
+        </div>
+      </div>
+
+      <div id="mqttConsole" class="h-32 bg-slate-950 p-3 font-mono text-[11px] overflow-y-auto space-y-1 text-slate-300 select-text">
+        <div class="text-slate-500">// MQTT Telemetry Logger initialized. Ready for incoming topics...</div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- VIOLATION DETAIL MODAL                                                   -->
+  <!-- ========================================================================= -->
+  <div id="violationModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-xl max-w-lg w-full overflow-hidden shadow-2xl">
+      <div class="bg-rose-950/80 px-4 py-3 border-b border-rose-800 flex items-center justify-between">
+        <div class="flex items-center space-x-2 text-rose-300">
+          <svg class="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <h3 class="font-bold text-sm tracking-wide">RED LIGHT VIOLATION RECORD</h3>
+        </div>
+        <button onclick="closeViolationModal()" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+
+      <div class="p-4 space-y-3">
+        <!-- Snapshot Image View -->
+        <div class="w-full aspect-video bg-black rounded border border-slate-800 overflow-hidden relative flex items-center justify-center">
+          <canvas id="modalSnapshotCanvas" class="w-full h-full object-cover"></canvas>
+          <div class="absolute bottom-2 left-2 bg-black/70 px-2 py-0.5 rounded font-mono text-[11px] text-rose-400 font-bold">
+            SPEED: <span id="modalSpeed">68.4 km/h</span> (LIMIT: 50 km/h)
+          </div>
+        </div>
+
+        <!-- Evidence Metadata Grid -->
+        <div class="grid grid-cols-2 gap-2 text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 font-mono">
+          <div><span class="text-slate-400">Violation ID:</span> <span id="modalVioId" class="text-white font-bold">VIO-20261120-0042</span></div>
+          <div><span class="text-slate-400">Timestamp:</span> <span id="modalTimestamp" class="text-white font-bold">01:10:04</span></div>
+          <div><span class="text-slate-400">Lane:</span> <span id="modalLane" class="text-rose-400 font-bold uppercase">WEST (EB)</span></div>
+          <div><span class="text-slate-400">License Plate:</span> <span id="modalPlate" class="text-amber-400 font-bold">ABC-8924</span></div>
+          <div><span class="text-slate-400">Vehicle:</span> <span id="modalVehicle" class="text-white">Silver Sedan</span></div>
+          <div><span class="text-slate-400">Fine Status:</span> <span id="modalStatus" class="text-rose-400 font-bold">FLAGGED</span></div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button onclick="closeViolationModal()" class="px-3 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold">Dismiss</button>
+          <button onclick="confirmFineIssued()" class="px-3 py-1.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow">Issue Formal Citation</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT: FULL APPLICATION CONTROLLER & MQTT ENGINE                     -->
+  <!-- ========================================================================= -->
+  <script>
+    // =========================================================================
+    // MQTT CONFIGURATION & TOPIC CONSTANTS
+    // =========================================================================
+    const MQTT_CONFIG = {
+      defaultBrokerUrl: "ws://localhost:9001",
+      clientId: "traffic_operator_ui_" + Math.random().toString(16).substring(2, 10),
+      topics: {
+        lightsStatus: "traffic/intersection1/lights/status",
+        sensors: "traffic/intersection1/sensors",
+        alertsViolations: "traffic/intersection1/alerts/violations",
+        health: "traffic/intersection1/health",
+        controlMode: "traffic/intersection1/control/mode",
+        controlTiming: "traffic/intersection1/control/timing",
+        controlCommand: "traffic/intersection1/control/command"
+      }
+    };
+
+    // =========================================================================
+    // GLOBAL STATE MODEL
+    // =========================================================================
+    const state = {
+      source: "mock", // 'mock' or 'live'
+      mqttClient: null,
+      audioEnabled: true,
+      audioCtx: null,
+
+      // Core Traffic State
+      mode: "ADAPTIVE", // 'ADAPTIVE' or 'MANUAL'
+      currentPhase: "NS_GREEN", // 'NS_GREEN', 'NS_YELLOW', 'ALL_RED_1', 'EW_GREEN', 'EW_YELLOW', 'ALL_RED_2'
+      countdownSec: 14,
+      prioritizedLane: "east",
+
+      // Signal Light Colors & Timers (North, South, East, West)
+      lights: {
+        north: { color: "GREEN", countdown: 14 },
+        south: { color: "GREEN", countdown: 14 },
+        east:  { color: "RED",   countdown: 18 },
+        west:  { color: "RED",   countdown: 18 }
+      },
+
+      // Sensor presence per lane (true/false)
+      sensors: {
+        north: { s1: false, s2: false },
+        south: { s1: false, s2: false },
+        east:  { s1: true,  s2: true  },
+        west:  { s1: true,  s2: false }
+      },
+
+      // Configured Manual Timings
+      timings: {
+        greenSec: 15,
+        orangeSec: 3,
+        redSec: 2,
+        baseAdaptiveSec: 6
+      },
+
+      // CCTV Camera View
+      activeCam: "west",
+
+      // Violations History
+      violations: [],
+
+      // Hardware Diagnostic Flags
+      health: {
+        status: "WARNING",
+        heartbeatMs: 42,
+        uptime: "99.8%",
+        faults: [
+          "West Lane Sensor 1 Disconnected",
+          "East Orange Lamp Burnt-out Warning"
+        ]
+      },
+
+      // MQTT Logging
+      msgCount: 0
+    };
+
+    // =========================================================================
+    // DOM CACHED ELEMENTS
+    // =========================================================================
+    const el = {
+      headerModeBadge: document.getElementById("headerModeBadge"),
+      headerPriorityBadge: document.getElementById("headerPriorityBadge"),
+      mqttStatusBadge: document.getElementById("mqttStatusBadge"),
+      mqttStatusText: document.getElementById("mqttStatusText"),
+      btnSourceMock: document.getElementById("btnSourceMock"),
+      btnSourceLive: document.getElementById("btnSourceLive"),
+      toggleAdaptiveMode: document.getElementById("toggleAdaptiveMode"),
+      phaseBadge: document.getElementById("phaseBadge"),
+      manualTimingPanel: document.getElementById("manualTimingPanel"),
+      manualLockNotice: document.getElementById("manualLockNotice"),
+      inputGreenSec: document.getElementById("inputGreenSec"),
+      inputOrangeSec: document.getElementById("inputOrangeSec"),
+      inputRedSec: document.getElementById("inputRedSec"),
+      btnPublishTiming: document.getElementById("btnPublishTiming"),
+      btnStepNext: document.getElementById("btnStepNext"),
+      hardwareFaultBanner: document.getElementById("hardwareFaultBanner"),
+      hardwareFaultText: document.getElementById("hardwareFaultText"),
+      mqttConsole: document.getElementById("mqttConsole"),
+      mqttMsgCounter: document.getElementById("mqttMsgCounter"),
+      violationList: document.getElementById("violationList"),
+      cctvCanvas: document.getElementById("cctvCanvas"),
+      cctvCamLabel: document.getElementById("cctvCamLabel"),
+      cctvTimestamp: document.getElementById("cctvTimestamp")
+    };
+
+    // =========================================================================
+    // INITIALIZATION & ENTRY POINT
+    // =========================================================================
+    window.addEventListener("DOMContentLoaded", () => {
+      initCctvRenderer();
+      renderInitialSensorsUI();
+      renderLightsUI();
+      renderHealthUI();
+      startCctvRenderLoop();
+
+      // Start in Mock Engine mode by default so dashboard is interactive immediately
+      setMqttSource("mock");
+
+      // Seed initial sample violation
+      pushViolationRecord({
+        violation_id: "VIO-20261120-0042",
+        timestamp: new Date().toLocaleTimeString(),
+        type: "RED_LIGHT_RUNNER",
+        lane: "west",
+        speed_kmh: 68.4,
+        plate_number: "ABC-8924",
+        vehicle_color: "Silver",
+        vehicle_type: "Sedan"
+      }, false);
+    });
+
+    // =========================================================================
+    // MQTT ENGINE: LIVE WEBSOCKETS OR BUILT-IN MOCK ENGINE
+    // =========================================================================
+    let mockIntervalId = null;
+
+    function setMqttSource(mode) {
+      state.source = mode;
+
+      if (mode === "mock") {
+        el.btnSourceMock.className = "px-2.5 py-1 rounded bg-brand-600 text-white font-semibold transition";
+        el.btnSourceLive.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition";
+
+        if (state.mqttClient) {
+          try { state.mqttClient.end(true); } catch (_) {}
+          state.mqttClient = null;
+        }
+
+        setMqttBadge("SIMULATED", "emerald");
+        logMqttMessage("SYSTEM", "Switched to Built-in Mock Simulator engine.");
+        startMockSimulator();
+      } else {
+        el.btnSourceLive.className = "px-2.5 py-1 rounded bg-brand-600 text-white font-semibold transition";
+        el.btnSourceMock.className = "px-2.5 py-1 rounded text-slate-400 hover:text-white transition";
+
+        stopMockSimulator();
+        connectLiveMqttBroker();
+      }
+    }
+
+    function setMqttBadge(text, color) {
+      el.mqttStatusText.textContent = text;
+      el.mqttStatusBadge.className = `flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold bg-${color}-500/20 text-${color}-400 border border-${color}-500/30`;
+    }
+
+    function connectLiveMqttBroker() {
+      const brokerUrl = MQTT_CONFIG.defaultBrokerUrl;
+      setMqttBadge("CONNECTING...", "amber");
+      logMqttMessage("MQTT", `Connecting to broker at ${brokerUrl}...`);
+
+      try {
+        state.mqttClient = mqtt.connect(brokerUrl, {
+          clientId: MQTT_CONFIG.clientId,
+          clean: true,
+          connectTimeout: 4000,
+          reconnectPeriod: 5000
+        });
+
+        state.mqttClient.on("connect", () => {
+          setMqttBadge("CONNECTED (9001)", "emerald");
+          logMqttMessage("MQTT", `Connected successfully to ${brokerUrl}`);
+
+          // Subscribe to all intersection topics
+          const subTopics = [
+            MQTT_CONFIG.topics.lightsStatus,
+            MQTT_CONFIG.topics.sensors,
+            MQTT_CONFIG.topics.alertsViolations,
+            MQTT_CONFIG.topics.health
+          ];
+          state.mqttClient.subscribe(subTopics, (err) => {
+            if (!err) {
+              logMqttMessage("MQTT", `Subscribed to: ${subTopics.join(", ")}`);
+            } else {
+              logMqttMessage("MQTT ERROR", `Subscribe failed: ${err.message}`);
+            }
+          });
+        });
+
+        state.mqttClient.on("message", (topic, message) => {
+          try {
+            const payload = JSON.parse(message.toString());
+            handleIncomingMqttMessage(topic, payload);
+          } catch (e) {
+            logMqttMessage("PARSE ERROR", `Invalid JSON on ${topic}: ${message.toString()}`);
+          }
+        });
+
+        state.mqttClient.on("error", (err) => {
+          setMqttBadge("BROKER OFFLINE", "rose");
+          logMqttMessage("MQTT ERROR", `Broker connection error: ${err.message}`);
+        });
+
+        state.mqttClient.on("close", () => {
+          if (state.source === "live") {
+            setMqttBadge("DISCONNECTED", "rose");
+          }
+        });
+
+      } catch (err) {
+        setMqttBadge("FAIL", "rose");
+        logMqttMessage("MQTT ERROR", `Failed to initiate MQTT client: ${err.message}`);
+      }
+    }
+
+    function publishMqtt(topic, payloadObj) {
+      const payloadStr = JSON.stringify(payloadObj);
+      logMqttMessage("TX: " + topic, payloadStr);
+
+      if (state.source === "live" && state.mqttClient && state.mqttClient.connected) {
+        state.mqttClient.publish(topic, payloadStr);
+      } else {
+        // In mock mode, feed back immediately to internal handler
+        setTimeout(() => handleIncomingMqttMessage(topic, payloadObj), 50);
+      }
+    }
+
+    function handleIncomingMqttMessage(topic, payload) {
+      logMqttMessage("RX: " + topic, JSON.stringify(payload));
+
+      if (topic === MQTT_CONFIG.topics.lightsStatus) {
+        updateLightsFromPayload(payload);
+      } else if (topic === MQTT_CONFIG.topics.sensors) {
+        updateSensorsFromPayload(payload);
+      } else if (topic === MQTT_CONFIG.topics.alertsViolations) {
+        pushViolationRecord(payload, true);
+      } else if (topic === MQTT_CONFIG.topics.health) {
+        updateHealthFromPayload(payload);
+      } else if (topic === MQTT_CONFIG.topics.controlMode) {
+        if (payload.mode) setControlMode(payload.mode);
+      } else if (topic === MQTT_CONFIG.topics.controlTiming) {
+        if (payload.green_sec) state.timings.greenSec = payload.green_sec;
+        if (payload.orange_sec) state.timings.orangeSec = payload.orange_sec;
+        if (payload.red_sec) state.timings.redSec = payload.red_sec;
+      }
+    }
+
+    // =========================================================================
+    // BUILT-IN MOCK SIMULATION ENGINE (FAITHFUL FSM & ADAPTIVE SENSOR LOGIC)
+    // =========================================================================
+    function startMockSimulator() {
+      if (mockIntervalId) clearInterval(mockIntervalId);
+
+      mockIntervalId = setInterval(() => {
+        runMockTick();
+      }, 1000);
+    }
+
+    function stopMockSimulator() {
+      if (mockIntervalId) {
+        clearInterval(mockIntervalId);
+        mockIntervalId = null;
+      }
+    }
+
+    function runMockTick() {
+      // 1. Decrement countdown
+      state.countdownSec--;
+
+      // 2. Compute adaptive green time per sensor requirements:
+      //    0 sensors -> default base time (6s)
+      //    1 sensor  -> 10 seconds
+      //    2 sensors -> 20 seconds
+      const calcLaneGreen = (laneKey) => {
+        const activeCount = (state.sensors[laneKey].s1 ? 1 : 0) + (state.sensors[laneKey].s2 ? 1 : 0);
+        if (activeCount === 2) return 20;
+        if (activeCount === 1) return 10;
+        return state.timings.baseAdaptiveSec;
+      };
+
+      // 3. Phase Transition State Machine
+      if (state.countdownSec <= 0) {
+        switch (state.currentPhase) {
+          case "NS_GREEN":
+            state.currentPhase = "NS_YELLOW";
+            state.countdownSec = state.timings.orangeSec;
+            break;
+          case "NS_YELLOW":
+            state.currentPhase = "ALL_RED_1";
+            state.countdownSec = state.timings.redSec;
+            break;
+          case "ALL_RED_1":
+            state.currentPhase = "EW_GREEN";
+            // Set green duration based on Mode:
+            if (state.mode === "ADAPTIVE") {
+              const ewTime = Math.max(calcLaneGreen("east"), calcLaneGreen("west"));
+              state.countdownSec = ewTime;
+            } else {
+              state.countdownSec = state.timings.greenSec;
+            }
+            break;
+          case "EW_GREEN":
+            state.currentPhase = "EW_YELLOW";
+            state.countdownSec = state.timings.orangeSec;
+            break;
+          case "EW_YELLOW":
+            state.currentPhase = "ALL_RED_2";
+            state.countdownSec = state.timings.redSec;
+            break;
+          case "ALL_RED_2":
+          default:
+            state.currentPhase = "NS_GREEN";
+            if (state.mode === "ADAPTIVE") {
+              const nsTime = Math.max(calcLaneGreen("north"), calcLaneGreen("south"));
+              state.countdownSec = nsTime;
+            } else {
+              state.countdownSec = state.timings.greenSec;
+            }
+            break;
+        }
+
+        // Evaluate High-Traffic Prioritized Lane
+        evaluateLanePriorities();
+      }
+
+      // 4. Synthesize current signal states & countdowns
+      const isNsGreen = (state.currentPhase === "NS_GREEN");
+      const isNsYellow = (state.currentPhase === "NS_YELLOW");
+      const isEwGreen = (state.currentPhase === "EW_GREEN");
+      const isEwYellow = (state.currentPhase === "EW_YELLOW");
+
+      state.lights.north.color = isNsGreen ? "GREEN" : (isNsYellow ? "ORANGE" : "RED");
+      state.lights.south.color = isNsGreen ? "GREEN" : (isNsYellow ? "ORANGE" : "RED");
+      state.lights.east.color  = isEwGreen ? "GREEN" : (isEwYellow ? "ORANGE" : "RED");
+      state.lights.west.color  = isEwGreen ? "GREEN" : (isEwYellow ? "ORANGE" : "RED");
+
+      state.lights.north.countdown = state.countdownSec;
+      state.lights.south.countdown = state.countdownSec;
+      state.lights.east.countdown  = state.countdownSec;
+      state.lights.west.countdown  = state.countdownSec;
+
+      // 5. Publish simulated MQTT Status payload
+      const statusPayload = {
+        intersection_id: "INT-01",
+        timestamp: new Date().toISOString(),
+        current_phase: state.currentPhase,
+        mode: state.mode,
+        countdown_sec: state.countdownSec,
+        lights: state.lights
+      };
+      handleIncomingMqttMessage(MQTT_CONFIG.topics.lightsStatus, statusPayload);
+
+      // Periodically publish sensor telemetry (every 2s)
+      if (state.countdownSec % 2 === 0) {
+        publishSensorsTelemetry();
+      }
+    }
+
+    function evaluateLanePriorities() {
+      // Count active sensors per lane
+      const scores = {
+        north: (state.sensors.north.s1 ? 1 : 0) + (state.sensors.north.s2 ? 1 : 0),
+        south: (state.sensors.south.s1 ? 1 : 0) + (state.sensors.south.s2 ? 1 : 0),
+        east:  (state.sensors.east.s1 ? 1 : 0)  + (state.sensors.east.s2 ? 1 : 0),
+        west:  (state.sensors.west.s1 ? 1 : 0)  + (state.sensors.west.s2 ? 1 : 0)
+      };
+
+      let highestLane = "east";
+      let highestScore = -1;
+      for (const [lane, score] of Object.entries(scores)) {
+        if (score > highestScore) {
+          highestScore = score;
+          highestLane = lane;
+        }
+      }
+
+      state.prioritizedLane = highestLane;
+      updatePriorityIndicatorUI();
+    }
+
+    function publishSensorsTelemetry() {
+      const getCongestion = (lane) => {
+        const count = (state.sensors[lane].s1 ? 1 : 0) + (state.sensors[lane].s2 ? 1 : 0);
+        return count === 2 ? 100 : (count === 1 ? 50 : 0);
+      };
+
+      const sensorPayload = {
+        intersection_id: "INT-01",
+        timestamp: new Date().toISOString(),
+        lanes: {
+          north: { sensors_active: (state.sensors.north.s1 ? 1:0) + (state.sensors.north.s2 ? 1:0), congestion_pct: getCongestion('north'), sensor_1: state.sensors.north.s1, sensor_2: state.sensors.north.s2 },
+          south: { sensors_active: (state.sensors.south.s1 ? 1:0) + (state.sensors.south.s2 ? 1:0), congestion_pct: getCongestion('south'), sensor_1: state.sensors.south.s1, sensor_2: state.sensors.south.s2 },
+          east:  { sensors_active: (state.sensors.east.s1 ? 1:0)  + (state.sensors.east.s2 ? 1:0),  congestion_pct: getCongestion('east'),  sensor_1: state.sensors.east.s1,  sensor_2: state.sensors.east.s2 },
+          west:  { sensors_active: (state.sensors.west.s1 ? 1:0)  + (state.sensors.west.s2 ? 1:0),  congestion_pct: getCongestion('west'),  sensor_1: state.sensors.west.s1,  sensor_2: state.sensors.west.s2 }
+        },
+        prioritized_lane: state.prioritizedLane,
+        priority_reason: `Highest congestion (${getCongestion(state.prioritizedLane)}%)`
+      };
+
+      handleIncomingMqttMessage(MQTT_CONFIG.topics.sensors, sensorPayload);
+    }
+
+    // =========================================================================
+    // SENSOR TOGGLES & INTERACTION
+    // =========================================================================
+    function toggleSensor(lane, sensorNum) {
+      const sKey = `s${sensorNum}`;
+      state.sensors[lane][sKey] = !state.sensors[lane][sKey];
+
+      // Re-evaluate priorities immediately
+      evaluateLanePriorities();
+      publishSensorsTelemetry();
+      renderSensorsUI();
+
+      // Animate moving cars on map based on presence
+      updateCarPositions();
+    }
+
+    function renderInitialSensorsUI() {
+      renderSensorsUI();
+    }
+
+    function renderSensorsUI() {
+      ["north", "south", "east", "west"].forEach(lane => {
+        const s1 = state.sensors[lane].s1;
+        const s2 = state.sensors[lane].s2;
+        const count = (s1 ? 1 : 0) + (s2 ? 1 : 0);
+        const congestion = (count === 2) ? 100 : ((count === 1) ? 50 : 0);
+        const calcSec = (count === 2) ? 20 : ((count === 1) ? 10 : state.timings.baseAdaptiveSec);
+
+        // Update SVG Pads
+        const svg1 = document.getElementById(`svgSensor${lane.charAt(0).toUpperCase()}1`);
+        const svg2 = document.getElementById(`svgSensor${lane.charAt(0).toUpperCase()}2`);
+        if (svg1) {
+          svg1.setAttribute("fill", s1 ? "#059669" : "#1e293b");
+          svg1.setAttribute("stroke", s1 ? "#10b981" : "#475569");
+        }
+        if (svg2) {
+          svg2.setAttribute("fill", s2 ? "#059669" : "#1e293b");
+          svg2.setAttribute("stroke", s2 ? "#10b981" : "#475569");
+        }
+
+        // Update Card Badges
+        const u = lane.charAt(0).toUpperCase();
+        const badge = document.getElementById(`badgeCongestion${u}`);
+        const valS = document.getElementById(`valSensors${u}`);
+        const valG = document.getElementById(`valCalcGreen${u}`);
+        const b1 = document.getElementById(`btnSensor${u}1`);
+        const b2 = document.getElementById(`btnSensor${u}2`);
+
+        if (badge) {
+          badge.textContent = `${congestion}%`;
+          badge.className = `px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+            congestion === 100 ? "bg-rose-500/20 text-rose-400 border border-rose-500/30" :
+            congestion === 50  ? "bg-amber-500/20 text-amber-400 border border-amber-500/30" :
+                                 "bg-slate-800 text-slate-400"
+          }`;
+        }
+        if (valS) valS.textContent = `${count}/2`;
+        if (valG) valG.textContent = `${calcSec}s`;
+
+        if (b1) {
+          b1.textContent = `S1: ${s1 ? 'ON' : 'OFF'}`;
+          b1.className = s1
+            ? "flex-1 py-1 rounded bg-emerald-600 text-white text-[10px] font-mono border border-emerald-500 font-bold"
+            : "flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono border border-slate-700";
+        }
+        if (b2) {
+          b2.textContent = `S2: ${s2 ? 'ON' : 'OFF'}`;
+          b2.className = s2
+            ? "flex-1 py-1 rounded bg-emerald-600 text-white text-[10px] font-mono border border-emerald-500 font-bold"
+            : "flex-1 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono border border-slate-700";
+        }
+      });
+
+      updatePriorityIndicatorUI();
+    }
+
+    function updatePriorityIndicatorUI() {
+      const prio = state.prioritizedLane.toUpperCase();
+      const count = (state.sensors[state.prioritizedLane].s1 ? 1 : 0) + (state.sensors[state.prioritizedLane].s2 ? 1 : 0);
+      const pct = (count === 2) ? 100 : (count === 1 ? 50 : 0);
+
+      el.headerPriorityBadge.innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+        ${prio} (${pct}%)
+      `;
+
+      // Highlight SVG compass dots
+      ["N", "S", "E", "W"].forEach(dir => {
+        const pDot = document.getElementById(`prioIndicator${dir}`);
+        if (pDot) {
+          const isMatch = (dir === prio.charAt(0));
+          pDot.classList.toggle("hidden", !isMatch);
+        }
+      });
+
+      // Highlight Lane Cards
+      ["north", "south", "east", "west"].forEach(lane => {
+        const card = document.getElementById(`laneCard${lane.charAt(0).toUpperCase() + lane.slice(1)}`);
+        if (card) {
+          if (lane === state.prioritizedLane) {
+            card.classList.add("border-rose-500/60", "bg-rose-950/20");
+            card.classList.remove("border-slate-800");
+          } else {
+            card.classList.remove("border-rose-500/60", "bg-rose-950/20");
+            card.classList.add("border-slate-800");
+          }
+        }
+      });
+    }
+
+    function updateCarPositions() {
+      // Moves car onto intersection line if green, or stops at sensor if red
+      const cN = document.getElementById("carNorth");
+      const cS = document.getElementById("carSouth");
+      const cE = document.getElementById("carEast");
+      const cW = document.getElementById("carWest");
+
+      const isGreen = (dir) => state.lights[dir].color === "GREEN";
+
+      if (cN) cN.setAttribute("transform", isGreen("north") ? "translate(210, 195)" : (state.sensors.north.s1 ? "translate(210, 120)" : "translate(210, 60)"));
+      if (cS) cS.setAttribute("transform", isGreen("south") ? "translate(274, 275)" : (state.sensors.south.s1 ? "translate(274, 350)" : "translate(274, 410)"));
+      if (cW) cW.setAttribute("transform", isGreen("west") ? "translate(195, 274)" : (state.sensors.west.s1 ? "translate(120, 274)" : "translate(60, 274)"));
+      if (cE) cE.setAttribute("transform", isGreen("east") ? "translate(275, 210)" : (state.sensors.east.s1 ? "translate(350, 210)" : "translate(410, 210)"));
+    }
+
+    // =========================================================================
+    // SIGNAL RENDERING (RED, ORANGE, GREEN) & COUNTDOWNS
+    // =========================================================================
+    function updateLightsFromPayload(payload) {
+      if (payload.lights) state.lights = payload.lights;
+      if (payload.countdown_sec !== undefined) state.countdownSec = payload.countdown_sec;
+      if (payload.current_phase) state.currentPhase = payload.current_phase;
+      if (payload.mode) setControlMode(payload.mode);
+
+      renderLightsUI();
+      updateCarPositions();
+    }
+
+    function renderLightsUI() {
+      el.phaseBadge.textContent = `PHASE: ${state.currentPhase}`;
+
+      ["north", "south", "east", "west"].forEach(lane => {
+        const u = lane.charAt(0).toUpperCase();
+        const light = state.lights[lane];
+        const color = light.color;
+        const countdown = light.countdown;
+
+        // Card countdown & color badge
+        const badge = document.getElementById(`badgeColor${u}`);
+        const cnt = document.getElementById(`cnt${u}`);
+        if (badge) {
+          badge.textContent = color;
+          badge.className = `text-[10px] font-bold px-1.5 py-0.5 rounded ${
+            color === "GREEN"  ? "bg-emerald-500/20 text-emerald-400" :
+            color === "ORANGE" ? "bg-amber-500/20 text-amber-400" :
+                                 "bg-rose-500/20 text-rose-400"
+          }`;
+        }
+        if (cnt) {
+          cnt.textContent = countdown;
+          cnt.className = `text-2xl font-mono font-extrabold ${
+            color === "GREEN"  ? "text-emerald-400" :
+            color === "ORANGE" ? "text-amber-400" :
+                                 "text-rose-400"
+          }`;
+        }
+
+        // Physical Card Signal Lenses
+        const lR = document.getElementById(`lamp${u}_R`);
+        const lO = document.getElementById(`lamp${u}_O`);
+        const lG = document.getElementById(`lamp${u}_G`);
+
+        if (lR) {
+          lR.className = color === "RED"
+            ? "w-7 h-7 rounded-full bg-rose-500 glow-red border border-rose-300 transition-all"
+            : "w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all";
+        }
+        if (lO) {
+          lO.className = color === "ORANGE"
+            ? "w-7 h-7 rounded-full bg-amber-500 glow-orange border border-amber-300 transition-all"
+            : "w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all";
+        }
+        if (lG) {
+          lG.className = color === "GREEN"
+            ? "w-7 h-7 rounded-full bg-emerald-500 glow-green border border-emerald-300 transition-all"
+            : "w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all";
+        }
+
+        // SVG Map Lights
+        const sR = document.getElementById(`svgLight${u}_R`);
+        const sO = document.getElementById(`svgLight${u}_O`);
+        const sG = document.getElementById(`svgLight${u}_G`);
+        if (sR) {
+          sR.setAttribute("fill", color === "RED" ? "#ef4444" : "#334155");
+          sR.setAttribute("class", color === "RED" ? "glow-red" : "");
+        }
+        if (sO) {
+          sO.setAttribute("fill", color === "ORANGE" ? "#f59e0b" : "#334155");
+          sO.setAttribute("class", color === "ORANGE" ? "glow-orange" : "");
+        }
+        if (sG) {
+          sG.setAttribute("fill", color === "GREEN" ? "#10b981" : "#334155");
+          sG.setAttribute("class", color === "GREEN" ? "glow-green" : "");
+        }
+      });
+    }
+
+    // =========================================================================
+    // CONTROL MODE & TIMING CONFIGURATION
+    // =========================================================================
+    function handleModeToggle(isAdaptive) {
+      const newMode = isAdaptive ? "ADAPTIVE" : "MANUAL";
+      setControlMode(newMode);
+
+      publishMqtt(MQTT_CONFIG.topics.controlMode, {
+        mode: newMode,
+        operator_id: "OP-94",
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    function setControlMode(mode) {
+      state.mode = mode;
+      const isAdaptive = (mode === "ADAPTIVE");
+
+      el.toggleAdaptiveMode.checked = isAdaptive;
+      el.headerModeBadge.textContent = mode;
+      el.headerModeBadge.className = isAdaptive
+        ? "px-2 py-0.5 rounded text-xs font-bold bg-brand-500/20 text-brand-400 border border-brand-500/30"
+        : "px-2 py-0.5 rounded text-xs font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30";
+
+      // Enable/disable manual inputs
+      el.manualTimingPanel.classList.toggle("opacity-60", isAdaptive);
+      el.manualLockNotice.textContent = isAdaptive ? "LOCKED (IN ADAPTIVE)" : "ACTIVE (MANUAL CONFIG)";
+      el.manualLockNotice.className = isAdaptive
+        ? "text-[10px] text-amber-400 font-mono bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20"
+        : "text-[10px] text-emerald-400 font-mono bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20";
+
+      el.inputGreenSec.disabled = isAdaptive;
+      el.inputOrangeSec.disabled = isAdaptive;
+      el.inputRedSec.disabled = isAdaptive;
+      el.btnPublishTiming.disabled = isAdaptive;
+      el.btnStepNext.disabled = isAdaptive;
+    }
+
+    function publishManualTimings() {
+      const g = parseInt(el.inputGreenSec.value, 10) || 15;
+      const o = parseInt(el.inputOrangeSec.value, 10) || 3;
+      const r = parseInt(el.inputRedSec.value, 10) || 2;
+
+      state.timings.greenSec = g;
+      state.timings.orangeSec = o;
+      state.timings.redSec = r;
+
+      publishMqtt(MQTT_CONFIG.topics.controlTiming, {
+        green_sec: g,
+        orange_sec: o,
+        red_sec: r,
+        operator_id: "OP-94",
+        timestamp: new Date().toISOString()
+      });
+
+      // Quick visual feedback
+      el.btnPublishTiming.innerHTML = `<span>✓ Published to Hardware</span>`;
+      setTimeout(() => {
+        el.btnPublishTiming.innerHTML = `
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Publish Custom Timings via MQTT
+        `;
+      }, 1500);
+    }
+
+    function stepNextPhaseManual() {
+      if (state.mode === "ADAPTIVE") return;
+      state.countdownSec = 1; // Force expiration immediately
+    }
+
+    function sendEmergencyAllRed() {
+      publishMqtt(MQTT_CONFIG.topics.controlCommand, {
+        command: "EMERGENCY_ALL_RED",
+        operator_id: "OP-94",
+        timestamp: new Date().toISOString()
+      });
+      state.currentPhase = "ALL_RED_1";
+      state.countdownSec = 30; // 30s emergency freeze
+    }
+
+    // =========================================================================
+    // LAW BREAKERS CCTV & RED-LIGHT VIOLATION SECTION
+    // =========================================================================
+    function initCctvRenderer() {
+      const canvas = el.cctvCanvas;
+      canvas.width = 400;
+      canvas.height = 225;
+    }
+
+    function switchCctv(lane) {
+      state.activeCam = lane;
+      el.cctvCamLabel.textContent = `CAM-0${lane === 'north'?1:lane==='south'?2:lane==='east'?3:4} [${lane.toUpperCase()}]`;
+    }
+
+    function startCctvRenderLoop() {
+      const canvas = el.cctvCanvas;
+      const ctx = canvas.getContext("2d");
+
+      function draw() {
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw simulated asphalt lane perspective
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath();
+        ctx.moveTo(80, canvas.height);
+        ctx.lineTo(160, 70);
+        ctx.lineTo(240, 70);
+        ctx.lineTo(320, canvas.height);
+        ctx.fill();
+
+        // White lane markings
+        ctx.strokeStyle = "rgba(255,255,255,0.4)";
+        ctx.lineWidth = 2;
+        ctx.setLineDash([12, 10]);
+        ctx.beginPath();
+        ctx.moveTo(200, 70);
+        ctx.lineTo(200, canvas.height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Red stop line
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(140, 130);
+        ctx.lineTo(260, 130);
+        ctx.stroke();
+
+        // Traffic Light pole
+        ctx.fillStyle = "#020617";
+        ctx.fillRect(275, 45, 14, 38);
+        const activeColor = state.lights[state.activeCam].color;
+        ctx.fillStyle = (activeColor === "RED") ? "#ef4444" : "#1e293b";
+        ctx.beginPath(); ctx.arc(282, 52, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = (activeColor === "ORANGE") ? "#f59e0b" : "#1e293b";
+        ctx.beginPath(); ctx.arc(282, 64, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = (activeColor === "GREEN") ? "#10b981" : "#1e293b";
+        ctx.beginPath(); ctx.arc(282, 76, 4, 0, Math.PI * 2); ctx.fill();
+
+        // Simulated car traversing
+        const t = (Date.now() / 30) % 200;
+        ctx.fillStyle = "#f43f5e";
+        ctx.fillRect(180, 200 - t, 40, 24);
+        ctx.fillStyle = "#0f172a";
+        ctx.fillRect(185, 205 - t, 30, 8);
+
+        // Update live timestamp overlay
+        el.cctvTimestamp.textContent = new Date().toISOString().replace("T", " ").substring(0, 19);
+
+        requestAnimationFrame(draw);
+      }
+      requestAnimationFrame(draw);
+    }
+
+    function triggerSimulatedViolation() {
+      const plates = ["KBC-1928", "XYZ-4491", "TX-8910", "RAD-2045", "DL-9081"];
+      const lanes = ["west", "east", "south", "north"];
+      const chosenLane = lanes[Math.floor(Math.random() * lanes.length)];
+      const chosenPlate = plates[Math.floor(Math.random() * plates.length)];
+      const speed = (62 + Math.random() * 24).toFixed(1);
+
+      const alertPayload = {
+        violation_id: "VIO-" + Date.now().toString(36).toUpperCase(),
+        timestamp: new Date().toLocaleTimeString(),
+        type: "RED_LIGHT_RUNNER",
+        lane: chosenLane,
+        speed_kmh: parseFloat(speed),
+        plate_number: chosenPlate,
+        vehicle_color: "Crimson",
+        vehicle_type: "SUV"
+      };
+
+      publishMqtt(MQTT_CONFIG.topics.alertsViolations, alertPayload);
+    }
+
+    function pushViolationRecord(record, shouldBeep) {
+      state.violations.unshift(record);
+      if (state.violations.length > 20) state.violations.pop();
+
+      // Audio notification
+      if (shouldBeep && state.audioEnabled) {
+        playViolationAlertChime();
+      }
+
+      renderViolationsList();
+    }
+
+    function renderViolationsList() {
+      el.violationList.innerHTML = "";
+
+      state.violations.forEach((v, idx) => {
+        const item = document.createElement("div");
+        item.className = "bg-slate-950 border border-slate-800 hover:border-rose-500/60 p-2 rounded-lg flex items-center justify-between text-xs cursor-pointer transition";
+        item.onclick = () => openViolationModal(v);
+
+        item.innerHTML = `
+          <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded bg-rose-950/80 border border-rose-800 flex items-center justify-center text-rose-400 font-bold text-xs shrink-0">
+              ⚡
+            </div>
+            <div>
+              <div class="flex items-center gap-1.5">
+                <span class="font-bold text-white">${v.plate_number}</span>
+                <span class="text-[10px] text-rose-400 font-mono font-bold bg-rose-500/10 px-1 rounded">${v.speed_kmh} km/h</span>
+              </div>
+              <div class="text-[10px] text-slate-400">
+                Lane: <span class="uppercase font-semibold text-slate-200">${v.lane}</span> &bull; ${v.timestamp}
+              </div>
+            </div>
+          </div>
+          <span class="text-[10px] text-slate-400 hover:text-white underline">Inspect</span>
+        `;
+        el.violationList.appendChild(item);
+      });
+    }
+
+    function openViolationModal(v) {
+      document.getElementById("modalVioId").textContent = v.violation_id;
+      document.getElementById("modalTimestamp").textContent = v.timestamp;
+      document.getElementById("modalLane").textContent = v.lane;
+      document.getElementById("modalPlate").textContent = v.plate_number;
+      document.getElementById("modalSpeed").textContent = `${v.speed_kmh} km/h`;
+      document.getElementById("modalVehicle").textContent = `${v.vehicle_color || 'Dark'} ${v.vehicle_type || 'Vehicle'}`;
+
+      // Draw snapshot preview onto modal canvas
+      const canvas = document.getElementById("modalSnapshotCanvas");
+      canvas.width = 320;
+      canvas.height = 180;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#f43f5e";
+      ctx.fillRect(110, 50, 100, 60);
+      ctx.fillStyle = "#020617";
+      ctx.fillRect(125, 65, 70, 25);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 12px monospace";
+      ctx.fillText(v.plate_number, 130, 105);
+
+      document.getElementById("violationModal").classList.remove("hidden");
+    }
+
+    function closeViolationModal() {
+      document.getElementById("violationModal").classList.add("hidden");
+    }
+
+    function confirmFineIssued() {
+      alert("Citation generated & queued for municipal automated ticketing dispatch.");
+      closeViolationModal();
+    }
+
+    // =========================================================================
+    // SYSTEM HEALTH & HARDWARE DIAGNOSTICS
+    // =========================================================================
+    function updateHealthFromPayload(payload) {
+      if (payload.status) state.health.status = payload.status;
+      if (payload.heartbeat_ms) state.health.heartbeatMs = payload.heartbeat_ms;
+      renderHealthUI();
+    }
+
+    function renderHealthUI() {
+      const isHealthy = (state.health.status === "HEALTHY");
+      const isWarn = (state.health.status === "WARNING");
+
+      const dot = document.getElementById("healthDot");
+      const badge = document.getElementById("healthOverallBadge");
+      const banner = el.hardwareFaultBanner;
+
+      if (isHealthy) {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-400";
+        badge.textContent = "ALL HEALTHY";
+        badge.className = "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+        banner.classList.add("hidden");
+      } else {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse";
+        badge.textContent = `WARNING (${state.health.faults.length})`;
+        badge.className = "text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30";
+        banner.classList.remove("hidden");
+        el.hardwareFaultText.textContent = state.health.faults.join(" • ");
+      }
+
+      document.getElementById("heartbeatMs").textContent = `${state.health.heartbeatMs} ms`;
+    }
+
+    function dismissFaultBanner() {
+      el.hardwareFaultBanner.classList.add("hidden");
+    }
+
+    function injectMockFault() {
+      state.health.status = "WARNING";
+      state.health.faults = [
+        "West Lane Sensor 1 Disconnected",
+        "East Orange Lamp Burnt-out Warning",
+        "West Camera Offline (Ping timeout)"
+      ];
+      renderHealthUI();
+      publishMqtt(MQTT_CONFIG.topics.health, {
+        intersection_id: "INT-01",
+        status: "WARNING",
+        faults: state.health.faults,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    function clearAllFaults() {
+      state.health.status = "HEALTHY";
+      state.health.faults = [];
+      renderHealthUI();
+      publishMqtt(MQTT_CONFIG.topics.health, {
+        intersection_id: "INT-01",
+        status: "HEALTHY",
+        faults: [],
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // =========================================================================
+    // AUDIO NOTIFICATION CHIME (WEB AUDIO API SYNTHESIZER)
+    // =========================================================================
+    function toggleAudioAlerts() {
+      state.audioEnabled = !state.audioEnabled;
+      document.getElementById("iconUnmuted").classList.toggle("hidden", !state.audioEnabled);
+      document.getElementById("iconMuted").classList.toggle("hidden", state.audioEnabled);
+    }
+
+    function playViolationAlertChime() {
+      try {
+        if (!state.audioCtx) {
+          state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        const ctx = state.audioCtx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = "sawtooth";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.35);
+
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start();
+        osc.stop(ctx.currentTime + 0.36);
+      } catch (_) {}
+    }
+
+    // =========================================================================
+    // LIVE MQTT LOG TERMINAL
+    // =========================================================================
+    function logMqttMessage(tag, content) {
+      state.msgCount++;
+      el.mqttMsgCounter.textContent = `Messages: ${state.msgCount}`;
+
+      const line = document.createElement("div");
+      const timeStr = new Date().toLocaleTimeString();
+      line.className = "hover:bg-slate-900/60 px-1 rounded flex items-start gap-2";
+
+      let tagColor = "text-slate-400";
+      if (tag.includes("alerts")) tagColor = "text-rose-400 font-bold";
+      else if (tag.includes("status")) tagColor = "text-emerald-400 font-bold";
+      else if (tag.includes("sensors")) tagColor = "text-amber-400";
+      else if (tag.includes("TX")) tagColor = "text-cyan-400 font-bold";
+
+      line.innerHTML = `
+        <span class="text-slate-600 shrink-0">[${timeStr}]</span>
+        <span class="${tagColor} shrink-0">${tag}:</span>
+        <span class="text-slate-300 break-all">${escapeHtml(content)}</span>
+      `;
+
+      el.mqttConsole.appendChild(line);
+      el.mqttConsole.scrollTop = el.mqttConsole.scrollHeight;
+
+      // Limit memory buffer
+      if (el.mqttConsole.childNodes.length > 150) {
+        el.mqttConsole.removeChild(el.mqttConsole.firstChild);
+      }
+    }
+
+    function clearMqttLog() {
+      el.mqttConsole.innerHTML = '<div class="text-slate-500">// Terminal log cleared.</div>';
+      state.msgCount = 0;
+      el.mqttMsgCounter.textContent = "Messages: 0";
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>
+

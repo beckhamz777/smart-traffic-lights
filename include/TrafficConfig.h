@@ -105,7 +105,7 @@ constexpr RhtMovementDescriptor RHT_MOVEMENT_DESCRIPTORS[static_cast<size_t>(Mov
         MovementId::PED_CROSSING_2,
         "PED_CROSSING_2",
         "Side Road T-Stem Crosswalk (East-West across T-stem carriageway)",
-        "Pedestrian Group 2 crossing across Side Road T-stem approach (Walk=GPIO17, DW=GPIO16, Btn=GPIO4)",
+        "Pedestrian Group 2 crossing across Side Road T-stem approach (Walk=GPIO16, DW=GPIO17, Btn=GPIO4)",
         false,
         false
     }
@@ -120,8 +120,8 @@ constexpr RhtMovementDescriptor RHT_MOVEMENT_DESCRIPTORS[static_cast<size_t>(Mov
 //
 // Vehicle Traffic Lights (3 x RYG Modules):
 //   - Main road     : Red = GPIO 27, Yellow = GPIO 26, Green = GPIO 25
-//   - Side road     : Red = GPIO 13, Yellow = GPIO 12, Green = GPIO 14
-//   - Turn movement : Red = GPIO 23, Yellow = GPIO 22, Green = GPIO 21
+//   - Side road     : Red = GPIO 14, Yellow = GPIO 12, Green = GPIO 13
+//   - Turn movement : Red = GPIO 22, Yellow = GPIO 23, Green = GPIO 21
 //
 // Vehicle Detection (6 x IR Sensors, 2 per road):
 //   - Main road     : Sensor 1 = GPIO 33, Sensor 2 = GPIO 34
@@ -130,7 +130,7 @@ constexpr RhtMovementDescriptor RHT_MOVEMENT_DESCRIPTORS[static_cast<size_t>(Mov
 //
 // Pedestrian Signals & Buttons:
 //   - Pedestrian 1  : Walk = GPIO 19, Don't Walk = GPIO 18, Button 1 = GPIO 32
-//   - Pedestrian 2  : Walk = GPIO 17, Don't Walk = GPIO 16, Button 2 = GPIO 4
+//   - Pedestrian 2  : Walk = GPIO 16, Don't Walk = GPIO 17, Button 2 = GPIO 4
 
 // Vehicle Signal Group 1: Main Road (RYG)
 constexpr uint8_t PIN_MAIN_RED                    = 27; // OUTPUT (Locked: Main Road Red)
@@ -139,16 +139,16 @@ constexpr uint8_t PIN_MAIN_GREEN                  = 25; // OUTPUT (Locked: Main 
 
 // Vehicle Signal Group 2: Side Road (RYG)
 // Note on GPIO 12: ESP32 MTDI boot-strapping pin (selects VDD_SDIO flash voltage
-// at reset: LOW = 3.3V, HIGH = 1.8V). Connected to the Side Green LED anode
+// at reset: LOW = 3.3V, HIGH = 1.8V). Connected to the Side Yellow LED anode
 // (cathode to GND), which holds GPIO 12 at 0V (LOW) during reset; do not
 // attach external pull-ups to GPIO 12.
 constexpr uint8_t PIN_SIDE_RED                    = 14; // OUTPUT (Locked: Side Road Red)
-constexpr uint8_t PIN_SIDE_YELLOW                 = 13; // OUTPUT (Locked: Side Road Yellow)
-constexpr uint8_t PIN_SIDE_GREEN                  = 12; // OUTPUT (Locked: Side Road Green; MTDI strap)
+constexpr uint8_t PIN_SIDE_YELLOW                 = 12; // OUTPUT (Locked: Side Road Yellow; MTDI strap)
+constexpr uint8_t PIN_SIDE_GREEN                  = 13; // OUTPUT (Locked: Side Road Green)
 
 // Vehicle Signal Group 3: Turn Movement / Protected Turn (RYG)
-constexpr uint8_t PIN_TURN_RED                    = 23; // OUTPUT (Locked: Turn Movement Red)
-constexpr uint8_t PIN_TURN_YELLOW                 = 22; // OUTPUT (Locked: Turn Movement Yellow)
+constexpr uint8_t PIN_TURN_RED                    = 22; // OUTPUT (Locked: Turn Movement Red)
+constexpr uint8_t PIN_TURN_YELLOW                 = 23; // OUTPUT (Locked: Turn Movement Yellow)
 constexpr uint8_t PIN_TURN_GREEN                  = 21; // OUTPUT (Locked: Turn Movement Green)
 
 // Pedestrian Signal Group 1 (Walk = Green, Don't Walk = Red)
@@ -159,8 +159,8 @@ constexpr uint8_t PIN_PED_WALK                    = PIN_PED1_WALK;
 constexpr uint8_t PIN_PED_DONT_WALK               = PIN_PED1_DONT_WALK;
 
 // Pedestrian Signal Group 2 (Walk = Green, Don't Walk = Red)
-constexpr uint8_t PIN_PED2_WALK                   = 17; // OUTPUT (Locked: Pedestrian 2 Walk)
-constexpr uint8_t PIN_PED2_DONT_WALK              = 16; // OUTPUT (Locked: Pedestrian 2 Don't Walk)
+constexpr uint8_t PIN_PED2_WALK                   = 16; // OUTPUT (Locked: Pedestrian 2 Walk)
+constexpr uint8_t PIN_PED2_DONT_WALK              = 17; // OUTPUT (Locked: Pedestrian 2 Don't Walk)
 
 // Pedestrian Pushbutton Inputs (Active LOW with INPUT_PULLUP)
 constexpr uint8_t PIN_PED1_BUTTON                 = 32; // INPUT_PULLUP (Locked: Pedestrian Button 1)
@@ -271,26 +271,26 @@ constexpr uint8_t SIGNAL_OUTPUT_PINS[TOTAL_SIGNAL_OUTPUTS] = {
     PIN_MAIN_GREEN,     // [0]  GPIO 25
     PIN_MAIN_YELLOW,    // [1]  GPIO 26
     PIN_MAIN_RED,       // [2]  GPIO 27
-    PIN_SIDE_GREEN,     // [3]  GPIO 12
-    PIN_SIDE_YELLOW,    // [4]  GPIO 13
+    PIN_SIDE_GREEN,     // [3]  GPIO 13 (was 12)
+    PIN_SIDE_YELLOW,    // [4]  GPIO 12 (was 13)
     PIN_SIDE_RED,       // [5]  GPIO 14
     PIN_TURN_GREEN,     // [6]  GPIO 21
-    PIN_TURN_YELLOW,    // [7]  GPIO 22
-    PIN_TURN_RED,       // [8]  GPIO 23
+    PIN_TURN_YELLOW,    // [7]  GPIO 23 (was 22)
+    PIN_TURN_RED,       // [8]  GPIO 22 (was 23)
     PIN_PED1_WALK,      // [9]  GPIO 19
     PIN_PED1_DONT_WALK, // [10] GPIO 18
-    PIN_PED2_WALK,      // [11] GPIO 17
-    PIN_PED2_DONT_WALK  // [12] GPIO 16
+    PIN_PED2_WALK,      // [11] GPIO 16 (was 17)
+    PIN_PED2_DONT_WALK  // [12] GPIO 17 (was 16)
 };
 
 // ============================================================================
 // ELECTRICAL DRIVER & HARDWARE VALIDATION CONFIGURATION
 // ============================================================================
 // Confirmed physical wiring topology:
-//   - All 9 vehicle lamp channels (MAIN 27/26/25, SIDE 14/13/12, TURN 23/22/21)
+//   - All 9 vehicle lamp channels (MAIN 27/26/25, SIDE 14/12/13, TURN 22/23/21)
 //     are connected directly to ESP32 GPIOs (OutputDriverType::DIRECT_ACTIVE_HIGH:
 //     logical ON = ESP32 GPIO HIGH 3.3V, logical OFF = ESP32 GPIO LOW 0V).
-//   - All 4 pedestrian lamp channels (PED1 19/18, PED2 17/16) are connected
+//   - All 4 pedestrian lamp channels (PED1 19/18, PED2 16/17) are connected
 //     through ULN2003A low-side Darlington drivers (OutputDriverType::LOW_SIDE_ULN2003A_ACTIVE_HIGH:
 //     logical ON = ESP32 GPIO HIGH -> ULN2003A output sinks current LOW to GND).
 //
@@ -325,8 +325,19 @@ constexpr bool VEHICLE_DRIVER_VERIFIED            = true;
 constexpr bool VEHICLE_HIGH_SIDE_DRIVER_VERIFIED  = true;
 constexpr bool PED_ULN2003A_DRIVER_VERIFIED       = true;
 constexpr bool PHYSICAL_IR_VALIDATED              = true;
+// RHT Protected Turn Geometry Verified for production deployment:
+// Bidirectional 5x5 RHT conflict matrix verified in DEFAULT_CONFLICT_MATRIX
+// and TrafficPhaseManager::applyConflictMatrix().
 constexpr bool PROTECTED_TURN_GEOMETRY_VERIFIED   = true;
 #endif
+
+// Safety gate: Simultaneous multi-movement ALL-GREEN activation is strictly prohibited
+// in normal diagnostic and commissioning modes to prevent catastrophic conflicting greens
+// on live traffic junctions. Only permissible with explicit compile-time bench unlock.
+#ifndef ALLOW_UNSAFE_ALL_GREEN_BENCH_TEST
+#define ALLOW_UNSAFE_ALL_GREEN_BENCH_TEST 0
+#endif
+constexpr bool PERMIT_ALL_GREEN_BENCH_TEST = (ALLOW_UNSAFE_ALL_GREEN_BENCH_TEST != 0);
 
 // Input Polarity & Filtering Defaults
 constexpr bool     PED_BTN_ACTIVE_LOW    = true;
@@ -336,6 +347,9 @@ constexpr uint32_t IR_STABILITY_MS       = 100;   // 100 ms IR sensor stability 
 constexpr uint32_t MAX_INPUT_STUCK_MS    = 30000; // 30 s stuck-sensor/button fault timeout
 constexpr uint32_t IR_CHATTER_WINDOW_MS  = 1000;  // 1 s window for disconnected/noisy chatter detection
 constexpr uint8_t  IR_MAX_TRANSITIONS_PER_WINDOW = 12; // >12 transitions/sec indicates floating/chattering input
+constexpr uint32_t PASSAGE_BOTH_CONGESTION_MS    = 5000;  // Simultaneous front+rear >=5.0s = congestion (allows slow vehicles up to 5s overlap)
+constexpr uint32_t PASSAGE_SEQUENCE_TIMEOUT_MS   = 15000; // Incomplete zone occupancy timeout (15s)
+constexpr uint32_t PASSAGE_ROLLING_WINDOW_MS     = 60000; // 60s rolling window for passage count & arrival rate
 
 // ============================================================================
 // BENCH-TEST DEMONSTRATION PHASE TIMINGS (MILLISECONDS)
@@ -381,10 +395,10 @@ constexpr uint32_t PROTOTYPE_SIDE_MIN_GREEN_MS = 20000; // 20 s
 constexpr uint32_t PROTOTYPE_SIDE_MAX_GREEN_MS = 25000; // 25 s
 constexpr uint32_t PROTOTYPE_SIDE_CLEAR_GAP_MS = 2000;  // 2 s
 constexpr uint32_t PROTOTYPE_SIDE_YELLOW_MS    = 3000;  // 3 s
-constexpr uint32_t PROTOTYPE_TURN_MIN_GREEN_MS = 2000;  // 2 s
-constexpr uint32_t PROTOTYPE_TURN_MAX_GREEN_MS = 6000;  // 6 s
-constexpr uint32_t PROTOTYPE_TURN_CLEAR_GAP_MS = 2000;  // 2 s
-constexpr uint32_t PROTOTYPE_TURN_YELLOW_MS    = 2000;  // 2 s
+constexpr uint32_t PROTOTYPE_TURN_MIN_GREEN_MS = 10000; // 10 s
+constexpr uint32_t PROTOTYPE_TURN_MAX_GREEN_MS = 20000; // 20 s
+constexpr uint32_t PROTOTYPE_TURN_CLEAR_GAP_MS = 3000;  // 3 s
+constexpr uint32_t PROTOTYPE_TURN_YELLOW_MS    = 3000;  // 3 s
 constexpr uint32_t PROTOTYPE_PED_WALK_MS       = 5000;  // 5 s
 constexpr uint32_t PROTOTYPE_PED_CLEARANCE_MS  = 2000;  // 2 s
 
@@ -392,11 +406,19 @@ constexpr uint32_t PROTOTYPE_PED_CLEARANCE_MS  = 2000;  // 2 s
 constexpr uint32_t MIN_ALLOWED_INTERVAL_MS = 500;
 constexpr uint32_t MAX_ALLOWED_INTERVAL_MS = 120000;
 
-// Adaptive Demand Scoring Parameters
-constexpr uint32_t DEFAULT_WAIT_TIME_WEIGHT_MS   = 2000; // Every 2 s waiting adds +1 demand score
-constexpr uint8_t  DEFAULT_ACTIVE_SENSOR_WEIGHT  = 3;    // Each active sensor on approach adds +3 demand score
-constexpr uint8_t  DEFAULT_STARVATION_SKIP_LIMIT = 2;    // After 2 skipped cycles, approach receives starvation boost
-constexpr uint8_t  DEFAULT_STARVATION_BOOST      = 25;   // Score boost applied when starvation threshold is reached
+// Adaptive Demand Scoring & Normalized Priority Weights
+constexpr uint32_t DEFAULT_WAIT_TIME_WEIGHT_MS   = 2000;  // Legacy ms per +1 wait score
+constexpr uint8_t  DEFAULT_ACTIVE_SENSOR_WEIGHT  = 3;     // Legacy weight per active sensor
+constexpr uint8_t  DEFAULT_STARVATION_SKIP_LIMIT = 2;     // Skipped cycles before starvation boost
+constexpr uint8_t  DEFAULT_STARVATION_BOOST      = 25;    // Legacy starvation boost
+constexpr uint8_t  DEFAULT_WEIGHT_DEMAND_PCT     = 30;    // 0.30 * Demand Score
+constexpr uint8_t  DEFAULT_WEIGHT_WAITING_PCT    = 30;    // 0.30 * Waiting Score
+constexpr uint8_t  DEFAULT_WEIGHT_FAIRNESS_PCT   = 20;    // 0.20 * Fairness Score
+constexpr uint8_t  DEFAULT_WEIGHT_CONTINUOUS_PCT = 20;    // 0.20 * Continuous Demand Score
+constexpr uint32_t DEFAULT_URGENCY_WAIT_MS       = 30000; // 30s waiting urgency increase
+constexpr uint32_t DEFAULT_MAX_WAIT_LIMIT_MS     = 45000; // 45s maximum-wait protection
+constexpr uint32_t DEFAULT_PED_URGENCY_WAIT_MS   = 20000; // 20s pedestrian max-wait protection
+constexpr uint32_t DEFAULT_CONTINUOUS_SAT_MS     = 15000; // 15s continuous presence -> 100 score
 
 // Aggregate TimingConfig structure.
 // First 9 fields match v1.1.0-hardware-ready in exact order so legacy 9-field
@@ -506,6 +528,15 @@ struct DemandConfig {
     uint8_t  starvationSkipLimit;       // Max skipped cycles before starvation priority boost
     uint8_t  starvationBoostScore;      // Priority score boost when starved
     uint8_t  highDemandSensorThreshold; // Number of active sensors on approach to indicate multi-sensor queue
+    // Normalized 0..100 Priority Model Weights (sum = 100%)
+    uint8_t  weightDemandPct;           // Default 30%
+    uint8_t  weightWaitingPct;          // Default 30%
+    uint8_t  weightFairnessPct;         // Default 20%
+    uint8_t  weightContinuousPct;       // Default 20%
+    uint32_t urgencyWaitThresholdMs;    // Default 30,000 ms (urgency increase)
+    uint32_t maxWaitLimitMs;            // Default 45,000 ms (maximum-wait protection)
+    uint32_t pedUrgencyWaitMs;          // Default 20,000 ms (pedestrian max-wait protection)
+    uint32_t continuousDemandSatMs;     // Default 15,000 ms (continuous presence saturation)
 };
 
 constexpr DemandConfig DEFAULT_DEMAND_CONFIG = {
@@ -513,7 +544,15 @@ constexpr DemandConfig DEFAULT_DEMAND_CONFIG = {
     DEFAULT_ACTIVE_SENSOR_WEIGHT,
     DEFAULT_STARVATION_SKIP_LIMIT,
     DEFAULT_STARVATION_BOOST,
-    2
+    2,
+    DEFAULT_WEIGHT_DEMAND_PCT,
+    DEFAULT_WEIGHT_WAITING_PCT,
+    DEFAULT_WEIGHT_FAIRNESS_PCT,
+    DEFAULT_WEIGHT_CONTINUOUS_PCT,
+    DEFAULT_URGENCY_WAIT_MS,
+    DEFAULT_MAX_WAIT_LIMIT_MS,
+    DEFAULT_PED_URGENCY_WAIT_MS,
+    DEFAULT_CONTINUOUS_SAT_MS
 };
 
 // Explicit Movement Conflict Matrix Configuration

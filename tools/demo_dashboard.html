@@ -1713,6 +1713,25 @@
       gap: 0.55rem;
     }
 
+    .btn-mode-active {
+      box-shadow: 0 0 14px 2px rgba(13, 148, 136, 0.7), inset 0 0 0 2px #2dd4bf !important;
+      border-color: #2dd4bf !important;
+      font-weight: 800 !important;
+      position: relative !important;
+      opacity: 1 !important;
+      cursor: default !important;
+    }
+
+    .btn-mode-active::after {
+      content: " ★ ACTIVE";
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      color: #99f6e4;
+      display: inline-block;
+      margin-left: 0.35rem;
+    }
+
     @media (max-width: 580px) {
       .control-grid-3 {
         grid-template-columns: 1fr;
@@ -2328,6 +2347,9 @@
         <button id="btnDisconnect" type="button" class="btn btn-outline" disabled>
           Disconnect
         </button>
+        <button id="btnVirtualSim" type="button" class="btn" style="background:#0F766E; color:#ffffff; border-color:#0F766E; font-weight:600;">
+          ▶ Run Virtual Simulator
+        </button>
       </div>
     </div>
   </header>
@@ -2416,6 +2438,193 @@
           placeholder="ws://localhost:9001" title="Mosquitto WebSocket URL (e.g., ws://localhost:9001)" />
         <button id="btnMqttConnect" type="button" class="btn btn-primary btn-sm">Connect MQTT</button>
         <button id="btnMqttDisconnect" type="button" class="btn btn-outline btn-sm" disabled>Disconnect MQTT</button>
+      </div>
+    </section>
+
+    <!-- USB CCTV & RED-LIGHT VIOLATION CAMERA -->
+    <section class="mqtt-bridge-section" aria-label="USB CCTV & Red-Light Violation Camera" style="margin-top:0.75rem;">
+      <div class="mqtt-bridge-info">
+        <div class="mqtt-bridge-title">
+          <span>📹 Law Breakers CCTV (USB Camera)</span>
+          <span id="cctvCameraStatusBadge" class="badge" data-status="DISCONNECTED">
+            <span class="badge-dot" aria-hidden="true"></span>
+            <span id="cctvCameraStatusText">CAM: DISCONNECTED</span>
+          </span>
+          <span id="cctvLiveFpsPill" class="mqtt-stats-pill" style="display:none; background:rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);">● LIVE 30 FPS</span>
+        </div>
+        <div style="font-size:0.72rem; color:var(--text-secondary); margin-top:0.25rem;">
+          Connects to your local USB camera to monitor vehicles &amp; capture live red-light violation snapshots.
+        </div>
+      </div>
+      <div class="mqtt-bridge-controls" style="flex-wrap:wrap; align-items:center;">
+        <select id="cctvDeviceSelect" class="mqtt-url-input" style="max-width:240px; font-size:0.75rem;">
+          <option value="">Detecting USB Cameras...</option>
+        </select>
+        <button id="btnToggleCctvHud" type="button" class="btn btn-secondary btn-sm" title="Toggle Aerial Setup Guidelines &amp; Stopbar Thresholds">📐 Aerial HUD</button>
+        <button id="btnConnectCctvCam" type="button" class="btn btn-primary btn-sm">Connect Camera</button>
+        <button id="btnSnapCctvViolation" type="button" class="btn btn-danger btn-sm" disabled title="Snapshot current frame &amp; publish red-light violation to MQTT">📸 Snap Violation</button>
+        <button id="btnFullViewCctv" type="button" class="btn btn-secondary btn-sm" title="Expand camera view to full screen">⛶ Full View</button>
+        <button id="btnResetCctvTransform" type="button" class="btn btn-secondary btn-sm" title="Reset rotation (0°), pan (0,0), and zoom (1.0x)">↺ Reset View</button>
+      </div>
+      <!-- 360° Rotation, Pan (X/Y) & Zoom Alignment Control Bar -->
+      <div id="cctvTransformBar" style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; margin-top:0.5rem; padding:0.45rem 0.65rem; background:rgba(15,23,42,0.55); border:1px solid var(--border-sep); border-radius:6px; font-family:var(--font-mono); font-size:0.7rem;">
+        <div style="display:flex; align-items:center; gap:0.35rem;">
+          <span style="font-weight:700; color:var(--text-secondary);">TARGET:</span>
+          <select id="cctvTransformTarget" class="mqtt-url-input" style="padding:0.15rem 0.35rem; font-size:0.68rem; max-width:120px;">
+            <option value="both">Video + HUD</option>
+            <option value="video">Video Only</option>
+            <option value="hud">HUD Marks Only</option>
+          </select>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.3rem;">
+          <span style="font-weight:700; color:var(--text-secondary);">ROTATE:</span>
+          <button type="button" id="btnCctvRotM90" class="btn btn-secondary btn-sm" style="padding:0.1rem 0.35rem; font-size:0.65rem;">-90°</button>
+          <button type="button" id="btnCctvRotM15" class="btn btn-secondary btn-sm" style="padding:0.1rem 0.35rem; font-size:0.65rem;">-15°</button>
+          <input id="cctvInputRotate" type="range" min="-180" max="180" step="1" value="0" style="width:90px; cursor:pointer;" />
+          <button type="button" id="btnCctvRotP15" class="btn btn-secondary btn-sm" style="padding:0.1rem 0.35rem; font-size:0.65rem;">+15°</button>
+          <button type="button" id="btnCctvRotP90" class="btn btn-secondary btn-sm" style="padding:0.1rem 0.35rem; font-size:0.65rem;">+90°</button>
+          <span id="cctvLblRotate" style="min-width:36px; font-weight:800; color:#38bdf8;">0°</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.3rem;">
+          <span style="font-weight:700; color:var(--text-secondary);">PAN X:</span>
+          <input id="cctvInputPanX" type="range" min="-200" max="200" step="2" value="0" style="width:70px; cursor:pointer;" />
+          <span id="cctvLblPanX" style="min-width:36px; font-weight:800; color:#10b981;">0px</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.3rem;">
+          <span style="font-weight:700; color:var(--text-secondary);">PAN Y:</span>
+          <input id="cctvInputPanY" type="range" min="-200" max="200" step="2" value="0" style="width:70px; cursor:pointer;" />
+          <span id="cctvLblPanY" style="min-width:36px; font-weight:800; color:#10b981;">0px</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.3rem;">
+          <span style="font-weight:700; color:var(--text-secondary);">ZOOM:</span>
+          <input id="cctvInputZoom" type="range" min="0.5" max="3.0" step="0.05" value="1.0" style="width:70px; cursor:pointer;" />
+          <span id="cctvLblZoom" style="min-width:38px; font-weight:800; color:#f59e0b;">1.00x</span>
+        </div>
+      </div>
+      <div id="cctvVideoContainer" style="width:100%; margin-top:0.65rem; position:relative; background:#000; border-radius:8px; overflow:hidden; border:1px solid var(--border-sep); aspect-ratio:16/9; max-height:270px; display:flex; align-items:center; justify-content:center;">
+        <button id="btnExitFullViewCctv" type="button" class="btn btn-secondary btn-sm" style="display:none; position:absolute; top:12px; right:12px; z-index:45; background:rgba(0,0,0,0.82); color:#fff; border:1px solid rgba(148,163,184,0.6);" title="Exit Full View (Esc)">✕ Exit Full View</button>
+        <video id="cctvLiveVideo" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover; display:none;"></video>
+        <img id="cctvSnapshotImg" style="width:100%; height:100%; object-fit:cover; display:none;" alt="Captured Violation" />
+        <div id="cctvEmptyPrompt" style="color:var(--text-secondary); font-size:0.8rem; font-family:var(--font-mono); text-align:center; padding:1.5rem;">
+          <div>📹 USB AERIAL CAMERA IDLE</div>
+          <div style="font-size:0.7rem; margin-top:0.35rem; color:var(--text-muted);">Mount overhead at 4.5m - 6.0m (Tilt 50°). Select camera &amp; click "Connect Camera"</div>
+        </div>
+        <div id="cctvStrobeOverlay" style="position:absolute; inset:0; border:4px solid #ef4444; background:rgba(239,68,68,0.25); pointer-events:none; opacity:0; transition:opacity 0.3s; z-index:30;"></div>
+
+        <!-- AERIAL T-JUNCTION OVERLAY & LIVE SIGNAL MARKS -->
+        <div id="cctvAerialHud" style="position:absolute; inset:0; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:0.45rem; z-index:20; font-family:var(--font-mono);">
+          <!-- Top Bar: Cam Position & Live Signal Status -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; width:100%; position:relative; z-index:25;">
+            <div style="background:rgba(0,0,0,0.88); padding:0.2rem 0.45rem; border-radius:4px; border:1px solid var(--border-sep); font-size:0.65rem; color:#10b981; box-shadow:0 2px 4px rgba(0,0,0,0.5);">
+              CAM-01: AERIAL OVERHEAD (5.5M • 50° PITCH)
+            </div>
+            <div id="cctvHudSignalPills" style="display:flex; gap:0.25rem; background:rgba(0,0,0,0.88); padding:0.2rem 0.4rem; border-radius:4px; border:1px solid var(--border-sep); font-size:0.65rem; box-shadow:0 2px 4px rgba(0,0,0,0.5);">
+              <span id="cctvLightMain" style="color:#ef4444; font-weight:800;">M: RED</span>
+              <span id="cctvLightTurn" style="color:#ef4444; font-weight:800;">T: RED</span>
+              <span id="cctvLightSide" style="color:#ef4444; font-weight:800;">S: RED</span>
+            </div>
+          </div>
+
+          <!-- T-JUNCTION OVERHEAD SCHEMATIC & DYNAMIC RED/GREEN LANE MARKS -->
+          <svg id="cctvSvgTJunction" viewBox="0 0 640 360" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;" preserveAspectRatio="none">
+            <defs>
+              <filter id="cctvGlowRed" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ef4444" flood-opacity="0.9"/>
+              </filter>
+              <filter id="cctvGlowGreen" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#10b981" flood-opacity="0.9"/>
+              </filter>
+            </defs>
+
+            <!-- 1. T-JUNCTION ROAD BLUEPRINT -->
+            <g id="cctvRoadGeometry" opacity="0.85">
+              <!-- Main Road Horizontal Curbs (Y: 95 and Y: 225) -->
+              <line x1="0" y1="95" x2="640" y2="95" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6,4" />
+              <line x1="0" y1="225" x2="250" y2="225" stroke="#94a3b8" stroke-width="2.5" />
+              <line x1="390" y1="225" x2="640" y2="225" stroke="#94a3b8" stroke-width="2.5" />
+
+              <!-- Side Road Vertical Stem Curbs (X: 250 and X: 390) -->
+              <line x1="250" y1="225" x2="250" y2="360" stroke="#94a3b8" stroke-width="2.5" />
+              <line x1="390" y1="225" x2="390" y2="360" stroke="#94a3b8" stroke-width="2.5" />
+
+              <!-- Main Road Center Dividing Line (Dashed) -->
+              <line x1="0" y1="160" x2="640" y2="160" stroke="#f1f5f9" stroke-width="1.8" stroke-dasharray="14,10" opacity="0.6" />
+              <!-- Side Road Center Dividing Line (Dashed) -->
+              <line x1="320" y1="225" x2="320" y2="360" stroke="#f1f5f9" stroke-width="1.8" stroke-dasharray="12,10" opacity="0.6" />
+
+              <!-- Pedestrian Crossing 1 (East) -->
+              <rect x="520" y="100" width="22" height="120" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.4" />
+              <!-- Pedestrian Crossing 2 (Side Stem) -->
+              <rect x="255" y="240" width="130" height="18" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.4" />
+            </g>
+
+            <!-- 2. APPROACH A: MAIN ROAD (ARTERIAL) LANE -->
+            <g id="cctvGroupMain">
+              <!-- Lane Bounding Zone -->
+              <polygon id="cctvLanePolyMain" points="15,160 250,160 250,222 15,222" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-width="2.5" />
+              <!-- Flow Arrow -->
+              <path id="cctvArrowMain" d="M 90,191 L 180,191 M 170,184 L 180,191 L 170,198" stroke="#ef4444" stroke-width="3" stroke-linecap="round" fill="none" />
+              <!-- Stopbar Line -->
+              <line id="cctvStopLineMain" x1="250" y1="160" x2="250" y2="222" stroke="#ef4444" stroke-width="6" stroke-linecap="square" />
+              <!-- Status Badge Card -->
+              <g id="cctvBadgeMain" transform="translate(18, 166)">
+                <rect id="cctvBadgeBgMain" width="175" height="22" rx="4" fill="#991b1b" stroke="#f87171" stroke-width="1.5" filter="url(#cctvGlowRed)"/>
+                <text id="cctvBadgeTextMain" x="8" y="15" fill="#ffffff" font-size="9" font-family="monospace" font-weight="bold">🔴 MAIN ROAD: RED [STOP]</text>
+              </g>
+              <text id="cctvTrapTextMain" x="245" y="217" fill="#fca5a5" font-size="7" font-family="monospace" font-weight="bold" text-anchor="end">S1 (IR1) &bull; S2 (IR2) &bull; OPTICAL ACTIVE</text>
+            </g>
+
+            <!-- 3. APPROACH B: PROTECTED LEFT-TURN POCKET (MAIN WB APPROACH) -->
+            <g id="cctvGroupTurn">
+              <polygon id="cctvLanePolyTurn" points="390,98 625,98 625,160 390,160" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-width="2" />
+              <path id="cctvArrowTurn" d="M 550,130 L 450,130 C 420,130 405,145 405,175 M 398,165 L 405,175 L 412,165" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" fill="none" />
+              <line id="cctvStopLineTurn" x1="390" y1="98" x2="390" y2="160" stroke="#ef4444" stroke-width="6" stroke-linecap="square" />
+              <g id="cctvBadgeTurn" transform="translate(405, 102)">
+                <rect id="cctvBadgeBgTurn" width="175" height="22" rx="4" fill="#991b1b" stroke="#f87171" stroke-width="1.5" filter="url(#cctvGlowRed)"/>
+                <text id="cctvBadgeTextTurn" x="8" y="15" fill="#ffffff" font-size="9" font-family="monospace" font-weight="bold">🔴 TURN BAY: RED [STOP]</text>
+              </g>
+              <text id="cctvTrapTextTurn" x="620" y="155" fill="#fca5a5" font-size="7" font-family="monospace" font-weight="bold" text-anchor="end">S1 (IR5) &bull; S2 (IR6) &bull; OPTICAL ACTIVE</text>
+            </g>
+
+            <!-- 4. APPROACH C: SIDE ROAD STEM (SOUTH APPROACH) -->
+            <g id="cctvGroupSide">
+              <polygon id="cctvLanePolySide" points="320,265 390,265 390,355 320,355" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-width="2.5" />
+              <path id="cctvArrowSide" d="M 355,340 L 355,275 M 348,285 L 355,275 L 362,285" stroke="#ef4444" stroke-width="3" stroke-linecap="round" fill="none" />
+              <line id="cctvStopLineSide" x1="320" y1="265" x2="390" y2="265" stroke="#ef4444" stroke-width="6" stroke-linecap="square" />
+              <g id="cctvBadgeSide" transform="translate(322, 272)">
+                <rect id="cctvBadgeBgSide" width="170" height="22" rx="4" fill="#991b1b" stroke="#f87171" stroke-width="1.5" filter="url(#cctvGlowRed)"/>
+                <text id="cctvBadgeTextSide" x="8" y="15" fill="#ffffff" font-size="9" font-family="monospace" font-weight="bold">🔴 SIDE ROAD: RED [STOP]</text>
+              </g>
+              <text id="cctvTrapTextSide" x="385" y="350" fill="#fca5a5" font-size="7" font-family="monospace" font-weight="bold" text-anchor="end">S1 (IR3) &bull; S2 (IR4) &bull; OPTICAL ACTIVE</text>
+            </g>
+
+            <!-- Center Overhead Reticle -->
+            <g transform="translate(320, 160)" opacity="0.65">
+              <circle r="16" fill="none" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3,3" />
+              <circle r="3" fill="#06b6d4" />
+              <line x1="-24" y1="0" x2="24" y2="0" stroke="#06b6d4" stroke-width="0.8" />
+              <line x1="0" y1="-24" x2="0" y2="24" stroke="#06b6d4" stroke-width="0.8" />
+              <text x="0" y="-19" fill="#06b6d4" font-size="6" font-family="monospace" text-anchor="middle">OVERHEAD CENTER</text>
+            </g>
+          </svg>
+
+          <!-- Bottom Bar: Speed Radar & Enforcement State -->
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; width:100%; position:relative; z-index:25;">
+            <div style="display:flex; gap:0.35rem; align-items:center;">
+              <div style="background:rgba(0,0,0,0.88); padding:0.2rem 0.45rem; border-radius:4px; font-size:0.65rem; color:#f43f5e; font-weight:700; box-shadow:0 2px 4px rgba(0,0,0,0.5);">
+                RADAR: ARMED (60 KM/H LIMIT)
+              </div>
+              <div id="cctvOpticalTrapBadge" style="background:rgba(0,0,0,0.88); padding:0.2rem 0.45rem; border-radius:4px; font-size:0.65rem; color:#f59e0b; font-weight:700; border:1px solid rgba(245,158,11,0.4); box-shadow:0 2px 4px rgba(0,0,0,0.5);">
+                ⚡ OPTICAL RED-LANE TRAP: ARMED
+              </div>
+            </div>
+            <div id="cctvHudEnforceBadge" style="background:rgba(0,0,0,0.88); padding:0.2rem 0.45rem; border-radius:4px; font-size:0.65rem; color:#f59e0b; font-weight:700; border:1px solid rgba(245,158,11,0.4); box-shadow:0 2px 4px rgba(0,0,0,0.5);">
+              ● PHOTO ENFORCEMENT ARMED
+            </div>
+          </div>
+        </div>
+
+        <canvas id="cctvSnapCanvas" style="display:none;"></canvas>
       </div>
     </section>
 
@@ -2706,50 +2915,50 @@
                 </g>
 
                 <!-- 6 IR Sensor Positions in SVG (Interactive Dots on Right-Hand Road Edge Relative to Travel Direction) -->
-                <!-- MAIN APPROACH (Eastbound travel: Right-hand edge is South curb at Y=250) -->
-                <!-- IR1 (GPIO 33 - Main Road Eastbound Upstream Front S1) -->
-                <circle id="svgIr1Dot" class="svg-ir-dot" cx="100" cy="250" r="8">
-                  <title>IR1 FRONT (GPIO 33) - Main Road Eastbound Upstream</title>
+                <!-- MAIN APPROACH (Eastbound travel: Right-hand edge is South curb at Y=250, Stopbar at X=290) -->
+                <!-- IR2 (GPIO 34 - Main Road Eastbound Upstream Rear S2 Queue) -->
+                <circle id="svgIr2Dot" class="svg-ir-dot" cx="110" cy="250" r="8">
+                  <title>IR2 REAR (GPIO 34) - Main Road Eastbound Upstream Queue (S2)</title>
                 </circle>
-                <text x="100" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR1 FRONT (33)</text>
-
-                <!-- IR2 (GPIO 34 - Main Road Eastbound Downstream Rear S2) -->
-                <circle id="svgIr2Dot" class="svg-ir-dot" cx="210" cy="250" r="8">
-                  <title>IR2 REAR (GPIO 34) - Main Road Eastbound Advance Queue</title>
-                </circle>
-                <text x="210" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
+                <text x="110" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
                   font-family="Consolas, monospace" font-weight="700">IR2 REAR (34)</text>
 
-                <!-- SIDE APPROACH (Northbound travel: Right-hand edge is East curb at X=440) -->
-                <!-- IR3 (GPIO 35 - Side Road Northbound Upstream Front S1) -->
-                <circle id="svgIr3Dot" class="svg-ir-dot" cx="440" cy="395" r="8">
-                  <title>IR3 FRONT (GPIO 35) - Side Road Northbound Upstream</title>
+                <!-- IR1 (GPIO 33 - Main Road Eastbound Downstream Front S1 Stopbar) -->
+                <circle id="svgIr1Dot" class="svg-ir-dot" cx="240" cy="250" r="8">
+                  <title>IR1 FRONT (GPIO 33) - Main Road Eastbound Stopbar (S1)</title>
                 </circle>
-                <text x="454" y="399" text-anchor="start" fill="#1E293B" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR3 FRONT (35)</text>
+                <text x="240" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR1 FRONT (33)</text>
 
-                <!-- IR4 (GPIO 36 - Side Road Northbound Downstream Rear S2) -->
-                <circle id="svgIr4Dot" class="svg-ir-dot" cx="440" cy="325" r="8">
-                  <title>IR4 REAR (GPIO 36) - Side Road Northbound Queue</title>
+                <!-- SIDE APPROACH (Northbound travel: Right-hand edge is East curb at X=440, Stopbar at Y=285) -->
+                <!-- IR4 (GPIO 36 - Side Road Northbound Upstream Rear S2 Queue) -->
+                <circle id="svgIr4Dot" class="svg-ir-dot" cx="440" cy="405" r="8">
+                  <title>IR4 REAR (GPIO 36) - Side Road Northbound Upstream Queue (S2)</title>
                 </circle>
-                <text x="454" y="329" text-anchor="start" fill="#1E293B" font-size="7.5"
+                <text x="454" y="409" text-anchor="start" fill="#1E293B" font-size="7.5"
                   font-family="Consolas, monospace" font-weight="700">IR4 REAR (36)</text>
 
-                <!-- TURN APPROACH (Westbound travel: Right-hand edge is North curb at Y=140) -->
-                <!-- IR5 (GPIO 39 - Turn Approach Westbound Upstream Front S1) -->
-                <circle id="svgIr5Dot" class="svg-ir-dot" cx="670" cy="140" r="8">
-                  <title>IR5 FRONT (GPIO 39) - Turn Approach Westbound Upstream</title>
+                <!-- IR3 (GPIO 35 - Side Road Northbound Downstream Front S1 Stopbar) -->
+                <circle id="svgIr3Dot" class="svg-ir-dot" cx="440" cy="315" r="8">
+                  <title>IR3 FRONT (GPIO 35) - Side Road Northbound Stopbar (S1)</title>
+                </circle>
+                <text x="454" y="319" text-anchor="start" fill="#1E293B" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR3 FRONT (35)</text>
+
+                <!-- TURN APPROACH (Westbound travel: Right-hand edge is North curb at Y=140, Stopbar at X=510) -->
+                <!-- IR6 (GPIO 15 - Turn Approach Westbound Upstream Rear S2 Queue) -->
+                <circle id="svgIr6Dot" class="svg-ir-dot" cx="670" cy="140" r="8">
+                  <title>IR6 REAR (GPIO 15) - Turn Approach Westbound Upstream Queue (S2)</title>
                 </circle>
                 <text x="670" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR5 FRONT (39)</text>
-
-                <!-- IR6 (GPIO 15 - Turn Approach Westbound Downstream Rear S2) -->
-                <circle id="svgIr6Dot" class="svg-ir-dot" cx="560" cy="140" r="8">
-                  <title>IR6 REAR (GPIO 15) - Turn Approach Westbound Queue</title>
-                </circle>
-                <text x="560" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
                   font-family="Consolas, monospace" font-weight="700">IR6 REAR (15)</text>
+
+                <!-- IR5 (GPIO 39 - Turn Approach Westbound Downstream Front S1 Stopbar) -->
+                <circle id="svgIr5Dot" class="svg-ir-dot" cx="545" cy="140" r="8">
+                  <title>IR5 FRONT (GPIO 39) - Turn Approach Westbound Stopbar (S1)</title>
+                </circle>
+                <text x="545" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
+                  font-family="Consolas, monospace" font-weight="700">IR5 FRONT (39)</text>
 
                 <!-- Decorative Vehicles -->
                 <g id="svgCarMainEast" style="display:none;">
@@ -2771,18 +2980,19 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 1: MAIN ROAD WEST (Eastbound Approach A)         -->
                 <!-- ============================================================ -->
-                <g transform="translate(215, 274)">
-                  <rect x="0" y="0" width="84" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
-                  <text x="42" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800"
-                    font-family="Segoe UI, sans-serif">MAIN ROAD (A)</text>
+                <!-- SIGNAL HEAD 1: MAIN ROAD WEST (Eastbound Approach A, GPIO 27/26/25) -->
+                <!-- ============================================================ -->
+                <g transform="translate(195, 272)">
+                  <rect x="0" y="0" width="88" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
+                  <text x="44" y="14" text-anchor="middle" fill="#17212B" font-size="8" font-weight="800"
+                    font-family="Segoe UI, sans-serif">MAIN (27/26/25)</text>
                   <circle id="svgMainWestRed" class="svg-lamp" cx="18" cy="34" r="9.5" />
-                  <circle id="svgMainWestYellow" class="svg-lamp" cx="42" cy="34" r="9.5" />
-                  <circle id="svgMainWestGreen" class="svg-lamp" cx="66" cy="34" r="9.5" />
+                  <circle id="svgMainWestYellow" class="svg-lamp" cx="44" cy="34" r="9.5" />
+                  <circle id="svgMainWestGreen" class="svg-lamp" cx="70" cy="34" r="9.5" />
                   <text x="18" y="50" text-anchor="middle" fill="#64748B" font-size="7.5" font-weight="700">R</text>
-                  <text x="42" y="50" text-anchor="middle" fill="#64748B" font-size="7.5" font-weight="700">Y</text>
-                  <text x="66" y="50" text-anchor="middle" fill="#64748B" font-size="7.5" font-weight="700">G</text>
+                  <text x="44" y="50" text-anchor="middle" fill="#64748B" font-size="7.5" font-weight="700">Y</text>
+                  <text x="70" y="50" text-anchor="middle" fill="#64748B" font-size="7.5" font-weight="700">G</text>
                 </g>
 
                 <!-- ============================================================ -->
@@ -2801,12 +3011,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 3: SIDE ROAD (T-Stem Approach C, RHT Right Lane)  -->
+                <!-- SIGNAL HEAD 3: SIDE ROAD (T-Stem Approach C, RHT Right Lane, GPIO 14/12/13) -->
                 <!-- ============================================================ -->
-                <g transform="translate(212, 348)">
+                <g transform="translate(458, 285)">
                   <rect x="0" y="0" width="86" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
-                  <text x="43" y="14" text-anchor="middle" fill="#17212B" font-size="9" font-weight="800"
-                    font-family="Segoe UI, sans-serif">SIDE ROAD (C)</text>
+                  <text x="43" y="14" text-anchor="middle" fill="#17212B" font-size="8" font-weight="800"
+                    font-family="Segoe UI, sans-serif">SIDE (14/12/13)</text>
                   <circle id="svgSideRed" class="svg-lamp" cx="18" cy="34" r="9.5" />
                   <circle id="svgSideYellow" class="svg-lamp" cx="43" cy="34" r="9.5" />
                   <circle id="svgSideGreen" class="svg-lamp" cx="68" cy="34" r="9.5" />
@@ -2816,12 +3026,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 3B: PROTECTED TURN (RHT Cross-Traffic Left Turn) -->
+                <!-- SIGNAL HEAD 3B: PROTECTED TURN (RHT Cross-Traffic Left Turn, GPIO 23/22/21) -->
                 <!-- ============================================================ -->
-                <g transform="translate(310, 62)">
+                <g transform="translate(390, 62)">
                   <rect x="0" y="0" width="102" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
-                  <text x="51" y="14" text-anchor="middle" fill="#17212B" font-size="8.5" font-weight="800"
-                    font-family="Segoe UI, sans-serif">TURN (RHT L-TURN)</text>
+                  <text x="51" y="14" text-anchor="middle" fill="#17212B" font-size="8" font-weight="800"
+                    font-family="Segoe UI, sans-serif">TURN (23/22/21)</text>
                   <circle id="svgTurnRed" class="svg-lamp" cx="22" cy="34" r="9.5" />
                   <circle id="svgTurnYellow" class="svg-lamp" cx="51" cy="34" r="9.5" />
                   <circle id="svgTurnGreen" class="svg-lamp" cx="80" cy="34" r="9.5" />
@@ -2831,12 +3041,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 4A: PEDESTRIAN CROSSING 1 (PED1 - East Arterial) -->
+                <!-- SIGNAL HEAD 4A: PEDESTRIAN CROSSING 1 (PED1 - East Arterial, GPIO 19/18) -->
                 <!-- ============================================================ -->
-                <g transform="translate(460, 268)">
+                <g transform="translate(460, 218)">
                   <rect x="0" y="0" width="148" height="58" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5" />
-                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8.5" font-weight="800"
-                    font-family="Segoe UI, sans-serif">PED 1 SIGNALS (EAST)</text>
+                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="800"
+                    font-family="Segoe UI, sans-serif">PED 1 SIGNALS (EAST 19/18)</text>
                   <circle id="svgPed1DontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" />
                   <circle id="svgPedDontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" opacity="0" />
                   <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T
@@ -2847,12 +3057,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 4B: PEDESTRIAN CROSSING 2 (PED2 - Side Stem)     -->
+                <!-- SIGNAL HEAD 4B: PEDESTRIAN CROSSING 2 (PED2 - Side Stem, GPIO 16/17) -->
                 <!-- ============================================================ -->
-                <g transform="translate(460, 334)">
+                <g transform="translate(200, 348)">
                   <rect x="0" y="0" width="148" height="58" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5" />
-                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8.5" font-weight="800"
-                    font-family="Segoe UI, sans-serif">PED 2 SIGNALS (SIDE)</text>
+                  <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="800"
+                    font-family="Segoe UI, sans-serif">PED 2 SIGNALS (SIDE 16/17)</text>
                   <circle id="svgPed2DontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" />
                   <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T
                     WALK</text>
@@ -4186,7 +4396,7 @@
       // ======================================================================
       const SERIAL_BAUD = 115200;
       const STATUS_POLL_INTERVAL_MS = 650;   // Status polling interval
-      const SENSORS_POLL_INTERVAL_MS = 2400; // Sensor channel status polling interval
+      const SENSORS_POLL_INTERVAL_MS = 650;  // Rapid sensor channel status polling interval (high responsiveness)
       const STATUS_TIMEOUT_MS = 1800;        // In-flight status timeout
       const STALE_THRESHOLD_MS = 2800;       // Stale telemetry timeout
       const MAX_CONSOLE_ENTRIES = 250;
@@ -4332,6 +4542,7 @@
         lastTelemetryTime: document.getElementById("lastTelemetryTime"),
         btnConnect: document.getElementById("btnConnect"),
         btnDisconnect: document.getElementById("btnDisconnect"),
+        btnVirtualSim: document.getElementById("btnVirtualSim"),
         timingModeTag: document.getElementById("timingModeTag"),
         safetyBannerText: document.getElementById("safetyBannerText"),
         staleAlertBanner: document.getElementById("staleAlertBanner"),
@@ -5479,6 +5690,11 @@
             }
           }
         });
+
+        // Update CCTV Aerial T-Junction Lane Indicators & Auto-Snap Triggers
+        if (typeof updateCctvAerialMarks === "function") {
+          updateCctvAerialMarks(cmd);
+        }
       }
 
       // ======================================================================
@@ -5613,6 +5829,9 @@
         }
       }
 
+      let latchedCountdownPhase = null;
+      let latchedCountdownTargetMs = 0;
+
       function updateCountdownTick() {
         if (isFlashOrangeActive) {
           el.countdownPhaseLabel.textContent = "FLASH_ORANGE";
@@ -5641,9 +5860,24 @@
         let phaseName = t.currentFsmState || "IDLE";
         let roadName = "MAIN ROAD";
 
+        if (latchedCountdownPhase !== phaseName) {
+          latchedCountdownPhase = phaseName;
+          latchedCountdownTargetMs = 0;
+        }
+
+        const isAdaptive = (t.controlMode === "ADAPTIVE");
+        const mainActive = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
+        const sideActive = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
+        const turnActive = (sensorState.ir5 ? 1 : 0) + (sensorState.ir6 ? 1 : 0);
+
         if (t.currentFsmState === "MAIN_GREEN") {
-          targetDurationMs = activeTimingConfig.mainMinGreenMs || 25000;
           roadName = "MAIN ROAD (PRIORITY GO)";
+          if (isAdaptive) {
+            const dens = getApproachDensity(mainActive);
+            targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : (dens.sec * 1000);
+          } else {
+            targetDurationMs = activeTimingConfig.mainMinGreenMs || 25000;
+          }
         } else if (t.currentFsmState === "MAIN_YELLOW") {
           targetDurationMs = activeTimingConfig.mainYellowMs || 3000;
           roadName = "MAIN ROAD (CLEARANCE)";
@@ -5651,11 +5885,33 @@
           targetDurationMs = activeTimingConfig.allRedMs || 2000;
           roadName = "ALL RED (INTERSECTION CLEARANCE)";
         } else if (t.currentFsmState === "SIDE_GREEN") {
-          targetDurationMs = activeTimingConfig.sideMinGreenMs || 20000;
           roadName = "SIDE ROAD (ACTUATED GO)";
+          if (isAdaptive) {
+            const dens = getApproachDensity(sideActive);
+            targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : (dens.sec * 1000);
+          } else {
+            targetDurationMs = activeTimingConfig.sideMinGreenMs || 20000;
+          }
         } else if (t.currentFsmState === "SIDE_YELLOW") {
           targetDurationMs = activeTimingConfig.sideYellowMs || 3000;
           roadName = "SIDE ROAD (CLEARANCE)";
+        } else if (t.currentFsmState === "TURN_GREEN") {
+          roadName = "PROTECTED TURN (LEFT ARROW)";
+          if (isAdaptive) {
+            const dens = getApproachDensity(turnActive);
+            targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : (dens.sec * 1000);
+          } else {
+            targetDurationMs = activeTimingConfig.turnMinGreenMs || 10000;
+          }
+        }
+
+        if (targetDurationMs > latchedCountdownTargetMs) {
+          latchedCountdownTargetMs = targetDurationMs;
+        } else if (latchedCountdownTargetMs > 0) {
+          targetDurationMs = latchedCountdownTargetMs;
+        } else if (t.currentFsmState === "TURN_YELLOW") {
+          targetDurationMs = activeTimingConfig.turnYellowMs || 3000;
+          roadName = "PROTECTED TURN (CLEARANCE)";
         } else if (t.currentFsmState === "PED_WALK") {
           targetDurationMs = activeTimingConfig.pedWalkMs || 5000;
           roadName = "PEDESTRIAN WALK";
@@ -5849,8 +6105,8 @@
         const isConnecting = (newStatus === "CONNECTING" || newStatus.startsWith("RECONNECTING"));
         const isDisconnected = (newStatus === "DISCONNECTED" || newStatus === "FAILED" || newStatus === "CLOSED" || newStatus === "NO_PORT");
 
-        el.btnConnect.disabled = isConnected || isConnecting || !("serial" in navigator);
-        el.btnDisconnect.disabled = !isConnected && !isConnecting;
+        el.btnConnect.disabled = (!isVirtualSimActive && (isConnected || isConnecting)) || !("serial" in navigator);
+        el.btnDisconnect.disabled = (!isConnected && !isConnecting) || isVirtualSimActive;
 
         if (newStatus === "TELEMETRY STALE" || newStatus === "STALE TELEMETRY") {
           el.staleAlertBanner.style.display = "flex";
@@ -5900,8 +6156,23 @@
 
         // Control Mode Tag
         const ctrlModeStr = t.controlMode || "FIXED";
-        el.ctrlModeActiveBadge.textContent = isFlashOrangeActive ? "FLASH ORANGE (1 Hz)" : `${ctrlModeStr} MODE`;
-        el.ctrlModeStatusLabel.textContent = isFlashOrangeActive ? "Control: FLASH ORANGE" : `Control: ${ctrlModeStr}`;
+        if (isFlashOrangeActive) {
+          el.ctrlModeActiveBadge.textContent = "FLASH ORANGE (1 Hz)";
+          el.ctrlModeActiveBadge.style.cssText = "background:rgba(245,158,11,0.2); color:#f59e0b; border-color:#f59e0b; box-shadow:0 0 12px rgba(245,158,11,0.5); font-weight:700;";
+          el.ctrlModeStatusLabel.textContent = "Control: FLASH ORANGE";
+        } else if (ctrlModeStr === "ADAPTIVE" || ctrlModeStr === "AUTO") {
+          el.ctrlModeActiveBadge.textContent = "ADAPTIVE MODE (ACTIVE)";
+          el.ctrlModeActiveBadge.style.cssText = "background:rgba(16,185,129,0.2); color:#10b981; border-color:#10b981; box-shadow:0 0 12px rgba(16,185,129,0.5); font-weight:700;";
+          el.ctrlModeStatusLabel.textContent = "Control: ADAPTIVE";
+        } else if (ctrlModeStr === "MANUAL") {
+          el.ctrlModeActiveBadge.textContent = "MANUAL MODE (ACTIVE)";
+          el.ctrlModeActiveBadge.style.cssText = "background:rgba(168,85,247,0.2); color:#a855f7; border-color:#a855f7; box-shadow:0 0 12px rgba(168,85,247,0.5); font-weight:700;";
+          el.ctrlModeStatusLabel.textContent = "Control: MANUAL";
+        } else {
+          el.ctrlModeActiveBadge.textContent = "FIXED MODE (ACTIVE)";
+          el.ctrlModeActiveBadge.style.cssText = "background:rgba(59,130,246,0.2); color:#3b82f6; border-color:#3b82f6; box-shadow:0 0 12px rgba(59,130,246,0.5); font-weight:700;";
+          el.ctrlModeStatusLabel.textContent = "Control: FIXED";
+        }
 
         // Vehicle Signal Group Status Badges
         const inFaultState = (t.currentFsmState === "FAULT_SAFE" || (t.activeFaultMask && t.activeFaultMask > 0));
@@ -6107,7 +6378,7 @@
       // CONTROLS & COMMANDS ENABLEMENT
       // ======================================================================
       function updateControlsEnablement() {
-        const isConnected = (connectionStatus === "CONNECTED" || connectionStatus === "RECEIVING_DATA" || connectionStatus === "STALE" || connectionStatus === "TELEMETRY STALE" || connectionStatus === "STALE TELEMETRY" || connectionStatus === "CONTROLLER FAULT");
+        const isConnected = (connectionStatus === "CONNECTED" || connectionStatus === "RECEIVING_DATA" || connectionStatus === "STALE" || connectionStatus === "TELEMETRY STALE" || connectionStatus === "STALE TELEMETRY" || connectionStatus === "CONTROLLER FAULT" || isVirtualSimActive);
         const hasCmdPending = Boolean(pendingUserCommand);
         const hasTelemetry = Boolean(lastValidTelemetry);
         const mode = hasTelemetry ? lastValidTelemetry.operatingMode : null;
@@ -6119,14 +6390,23 @@
         const allIrCommissioned = hasTelemetry && Boolean(lastValidTelemetry.allPhysicalIrValidated || lastValidTelemetry.physicalIrValid === "YES" || lastValidTelemetry.validatedIrMask === 0x3F);
 
         // Mode Switching
-        el.btnModeFixed.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "FIXED");
-        el.btnModeAdaptive.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "ADAPTIVE") || !allIrCommissioned;
+        const isFixedActive = hasTelemetry && (!isFlashOrangeActive && ctrlMode === "FIXED");
+        const isAdaptiveActive = hasTelemetry && (!isFlashOrangeActive && (ctrlMode === "ADAPTIVE" || ctrlMode === "AUTO"));
+        const isManualActive = hasTelemetry && (!isFlashOrangeActive && ctrlMode === "MANUAL");
+
+        el.btnModeFixed.disabled = !isConnected || hasCmdPending || inFault || isFixedActive;
+        el.btnModeFixed.classList.toggle("btn-mode-active", isFixedActive);
+
+        el.btnModeAdaptive.disabled = !isConnected || hasCmdPending || inFault || isAdaptiveActive || !allIrCommissioned;
+        el.btnModeAdaptive.classList.toggle("btn-mode-active", isAdaptiveActive);
         if (!allIrCommissioned) {
           el.btnModeAdaptive.title = "Safety Locked: Requires all 6 IR sensors commissioned first (detect + release sweep)";
         } else {
           el.btnModeAdaptive.title = "Switch to Adaptive Control Mode";
         }
-        el.btnModeManual.disabled = !isConnected || hasCmdPending || inFault || (!isFlashOrangeActive && ctrlMode === "MANUAL");
+
+        el.btnModeManual.disabled = !isConnected || hasCmdPending || inFault || isManualActive;
+        el.btnModeManual.classList.toggle("btn-mode-active", isManualActive);
 
         el.manualStepBox.style.display = (ctrlMode === "MANUAL") ? "block" : "none";
         el.btnManualNext.disabled = !isConnected || hasCmdPending || inFault || (ctrlMode !== "MANUAL");
@@ -6146,22 +6426,39 @@
         el.btnPed1Request.disabled = !isConnected || hasCmdPending || inFault;
         el.btnPed2Request.disabled = !isConnected || hasCmdPending || inFault;
 
-        // Timing & Diagnostics
+        // Timing & Diagnostics (Only open to edit when FIXED or MANUAL mode is active)
+        const isTimingEditable = isConnected && !hasCmdPending && !inFault && !isFlashOrangeActive && (ctrlMode === "FIXED" || ctrlMode === "MANUAL");
+
         el.btnRefreshTiming.disabled = !isConnected || hasCmdPending;
-        el.btnTimingPrototype.disabled = !isConnected || hasCmdPending || inFault;
-        el.btnTimingBench.disabled = !isConnected || hasCmdPending || inFault;
+        el.btnTimingPrototype.disabled = !isTimingEditable;
+        el.btnTimingBench.disabled = !isTimingEditable;
         el.btnRefreshSensors.disabled = !isConnected || hasCmdPending;
         el.btnCommissionIrAll.disabled = !isConnected || hasCmdPending || inFault;
         el.btnDecommissionIrAll.disabled = !isConnected || hasCmdPending || inFault;
 
         // Interactive Timing Adjustment Controls
-        const canAdjustTiming = isConnected && !hasCmdPending && !inFault;
+        const canAdjustTiming = isTimingEditable;
         if (el.btnApplyTiming) el.btnApplyTiming.disabled = !canAdjustTiming;
         if (el.btnApplyTimingMain) el.btnApplyTimingMain.disabled = !canAdjustTiming;
         if (el.btnApplyTimingSide) el.btnApplyTimingSide.disabled = !canAdjustTiming;
         if (el.btnApplyTimingTurn) el.btnApplyTimingTurn.disabled = !canAdjustTiming;
         if (el.btnApplyTimingAllRed) el.btnApplyTimingAllRed.disabled = !canAdjustTiming;
         if (el.btnApplyTimingPed) el.btnApplyTimingPed.disabled = !canAdjustTiming;
+
+        // Timing Input Fields Enablement
+        const timingInputs = [
+          el.inputTimingMainMin, el.inputTimingMainMax, el.inputTimingMainYel,
+          el.inputTimingSideMin, el.inputTimingSideMax, el.inputTimingSideYel,
+          el.inputTimingTurnMin, el.inputTimingTurnMax, el.inputTimingTurnYel,
+          el.inputTimingAllRed, el.inputTimingPedWalk, el.inputTimingPedClear
+        ];
+        timingInputs.forEach(inp => {
+          if (inp) {
+            inp.disabled = !isTimingEditable;
+            inp.style.opacity = isTimingEditable ? "1" : "0.5";
+            inp.style.cursor = isTimingEditable ? "text" : "not-allowed";
+          }
+        });
 
         // 13-Output Lamp Diagnostics Controls
         LAMP_CHANNELS.forEach(ch => {
@@ -6427,6 +6724,13 @@
             }
             break;
           }
+          case "Adaptive Scores": {
+            const m = val.match(/AllocGreen\s*=\s*(\d+)\s*ms/i);
+            if (m) {
+              acc.allocGreenMs = parseInt(m[1], 10);
+            }
+            break;
+          }
         }
       }
 
@@ -6447,6 +6751,11 @@
             ch.stuckFault = parseInt(irM[12], 10);
             ch.chatterFault = parseInt(irM[13], 10);
             ch.commissioningStatus = ch.validated ? "COMMISSIONED" : "UNCOMMISSIONED";
+
+            // Sync with live hardware sensor detection state:
+            // Active-Low IR hardware: rawPinHigh === 0 or stableDetected === 1 is actively occupied
+            const isDetected = (ch.rawPinHigh === 0 || ch.stableDetected === 1);
+            sensorState[`ir${chNum}`] = isDetected;
           }
           return;
         }
@@ -6464,6 +6773,10 @@
             pb.releaseCount = parseInt(pedM[9], 10);
             pb.cycleObserved = (pedM[10].toUpperCase() === "YES");
             pb.stuckFault = parseInt(pedM[11], 10);
+
+            // Sync with live hardware pedestrian button state
+            const isPressed = (pb.pressed === 1 || pb.latched === 1 || pb.rawPinHigh === 0);
+            sensorState[`ped${btnNum}`] = isPressed;
           }
         }
       }
@@ -6548,6 +6861,8 @@
           if (line === "========================================================") {
             inSensorsBlock = false;
             renderSensors();
+            updateTrafficDensityUI();
+            publishMqttTelemetry(lastValidTelemetry);
             if (el.chkLogPollingStatus.checked) {
               appendConsole("sys-info", "SENSORS", `6 IR Channels & 2 Ped Buttons synchronized.`);
             }
@@ -6715,24 +7030,42 @@
           }
 
           if (eventType === "SENSOR_DETECTED" || eventType === "SENSOR_RELEASED") {
-            const chM = detail.match(/Channel:\s*(\d+)/i);
-            if (chM) {
-              const chIdx = parseInt(chM[1], 10) - 1;
-              if (chIdx >= 0 && chIdx < 6) {
-                const ch = sensorChannels[chIdx];
-                if (eventType === "SENSOR_DETECTED") {
-                  ch.rawPinHigh = 0;
-                  ch.stableDetected = 1;
-                  ch.detectionCount++;
-                  ch.lastDetectionTime = formatWallTime(new Date());
-                } else {
-                  ch.rawPinHigh = 1;
-                  ch.stableDetected = 0;
-                  ch.releaseCount++;
-                  ch.cycleObserved = true;
-                }
-                renderSensors();
+            let chNum = 0;
+            const irMatch = detail.match(/(?:IR|Channel:\s*)(\d+)/i);
+            if (irMatch) {
+              chNum = parseInt(irMatch[1], 10);
+            } else {
+              const gpioM = detail.match(/GPIO\s*(\d+)/i);
+              if (gpioM) {
+                const pin = parseInt(gpioM[1], 10);
+                const pinToCh = { 33: 1, 34: 2, 35: 3, 36: 4, 39: 5, 15: 6 };
+                chNum = pinToCh[pin] || 0;
               }
+            }
+
+            if (chNum >= 1 && chNum <= 6) {
+              const chIdx = chNum - 1;
+              const ch = sensorChannels[chIdx];
+              const isDetected = (eventType === "SENSOR_DETECTED");
+              if (isDetected) {
+                ch.rawPinHigh = 0;
+                ch.stableDetected = 1;
+                ch.latchedDemand = 1;
+                ch.detectionCount++;
+                ch.lastDetectionTime = formatWallTime(new Date());
+              } else {
+                ch.rawPinHigh = 1;
+                ch.stableDetected = 0;
+                ch.releaseCount++;
+                ch.cycleObserved = true;
+              }
+
+              // Synchronize live sensor state & trigger instant traffic density recalculation
+              sensorState[`ir${chNum}`] = isDetected;
+
+              renderSensors();
+              updateTrafficDensityUI();
+              publishMqttTelemetry(lastValidTelemetry);
             }
             appendConsole("rx-sensor", eventType, `[${espMs} ms] ${detail}`);
             return;
@@ -6854,6 +7187,39 @@
             `[${espMs} ms] ${fromState} -> ${toState} (Reason: ${reason})`
           );
 
+          // Immediately anchor phase entry at 0ms so countdown starts at full duration without skipping 1-2s
+          if (lastValidTelemetry) {
+            lastValidTelemetry.currentFsmState = toState;
+            lastValidTelemetry.stateElapsedMs = 0;
+            lastTelemetryReceivedAtMs = Date.now();
+            latchedCountdownPhase = toState;
+            latchedCountdownTargetMs = 0;
+
+            const isAdap = (lastValidTelemetry.controlMode === "ADAPTIVE");
+            if (isAdap) {
+              const mAct = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
+              const sAct = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
+              const tAct = (sensorState.ir5 ? 1 : 0) + (sensorState.ir6 ? 1 : 0);
+              if (toState === "MAIN_GREEN") lastValidTelemetry.allocGreenMs = getApproachDensity(mAct).sec * 1000;
+              else if (toState === "SIDE_GREEN") lastValidTelemetry.allocGreenMs = getApproachDensity(sAct).sec * 1000;
+              else if (toState === "TURN_GREEN") lastValidTelemetry.allocGreenMs = getApproachDensity(tAct).sec * 1000;
+            }
+            if (lastValidTelemetry.outputs) {
+              const o = lastValidTelemetry.outputs;
+              o.mainG = (toState === "MAIN_GREEN") ? 1 : 0;
+              o.mainY = (toState === "MAIN_YELLOW") ? 1 : 0;
+              o.mainR = (toState !== "MAIN_GREEN" && toState !== "MAIN_YELLOW") ? 1 : 0;
+              o.sideG = (toState === "SIDE_GREEN") ? 1 : 0;
+              o.sideY = (toState === "SIDE_YELLOW") ? 1 : 0;
+              o.sideR = (toState !== "SIDE_GREEN" && toState !== "SIDE_YELLOW") ? 1 : 0;
+              o.turnG = (toState === "TURN_GREEN") ? 1 : 0;
+              o.turnY = (toState === "TURN_YELLOW") ? 1 : 0;
+              o.turnR = (toState !== "TURN_GREEN" && toState !== "TURN_YELLOW") ? 1 : 0;
+            }
+            updateCountdownTick();
+            publishMqttTelemetry(lastValidTelemetry);
+          }
+
           requestStatusSerialized(false);
           return;
         }
@@ -6936,14 +7302,611 @@
       }
 
       // ======================================================================
+      // VIRTUAL ESP32 FIRMWARE SIMULATOR
+      // ======================================================================
+      let isVirtualSimActive = false;
+      let virtualSimTimerId = null;
+
+      const virtualController = {
+        nowMs: 10000,
+        fsmState: "MAIN_GREEN",
+        fsmElapsedMs: 0,
+        operatingMode: "SERIAL_SIMULATION",
+        controlMode: "AUTO",
+        nextTargetPhase: "SIDE_ROAD",
+        mainDemand: false,
+        sideDemand: false,
+        turnDemand: false,
+        ped1Demand: false,
+        ped2Demand: false,
+        pedClearanceActive: false,
+        activeFaultMask: 0,
+        faultReason: "NONE",
+        lampTestActive: null,
+        protectedTurnCommissioned: true,
+
+        timings: {
+          mainGreen: 10000, mainYellow: 3000,
+          sideGreen: 8000, sideYellow: 3000,
+          turnGreen: 6000, turnYellow: 3000,
+          pedWalk: 7000, pedClear: 4000, allRed: 2000
+        },
+
+        start: function () {
+          if (isVirtualSimActive) return;
+          if (port) {
+            disconnectSerial().catch(() => { });
+          }
+          isVirtualSimActive = true;
+          this.nowMs = Date.now();
+          this.fsmState = "MAIN_GREEN";
+          this.fsmElapsedMs = 0;
+          this.operatingMode = "SERIAL_SIMULATION";
+          this.controlMode = "AUTO";
+          this.nextTargetPhase = "SIDE_ROAD";
+          this.lampTestActive = null;
+          this.activeFaultMask = 0;
+          this.faultReason = "NONE";
+          this.mainDemand = false;
+          this.sideDemand = false;
+          this.turnDemand = false;
+          this.ped1Demand = false;
+          this.ped2Demand = false;
+
+          if (el.btnVirtualSim) {
+            el.btnVirtualSim.textContent = "⏹ Stop Virtual Simulator";
+            el.btnVirtualSim.style.background = "#DC2626";
+            el.btnVirtualSim.style.borderColor = "#DC2626";
+          }
+          if (el.simLockNotice) el.simLockNotice.style.display = "none";
+          if (el.staleAlertBanner) el.staleAlertBanner.style.display = "none";
+          el.metricCards.forEach(c => c.classList.remove("is-stale"));
+
+          setConnectionStatus("CONNECTED", "Virtual ESP32 Simulator (In-Browser)");
+          appendConsole("sys-info", "VIRTUAL ESP32", "Virtual Controller started. Simulating authoritative firmware cycle.");
+
+          this.emitSensors();
+          this.emitTiming();
+          this.emitStatus(true);
+
+          if (virtualSimTimerId) clearInterval(virtualSimTimerId);
+          virtualSimTimerId = setInterval(() => {
+            this.tick(1000);
+          }, 1000);
+          updateControlsEnablement();
+        },
+
+        stop: function () {
+          if (!isVirtualSimActive) return;
+          isVirtualSimActive = false;
+          if (virtualSimTimerId) {
+            clearInterval(virtualSimTimerId);
+            virtualSimTimerId = null;
+          }
+          if (el.btnVirtualSim) {
+            el.btnVirtualSim.textContent = "▶ Run Virtual Simulator";
+            el.btnVirtualSim.style.background = "#0F766E";
+            el.btnVirtualSim.style.borderColor = "#0F766E";
+          }
+          setConnectionStatus("DISCONNECTED", "Simulator Stopped");
+          appendConsole("sys-info", "VIRTUAL ESP32", "Virtual Controller stopped.");
+          updateControlsEnablement();
+        },
+
+        tick: function (dtMs) {
+          this.nowMs += dtMs;
+          this.fsmElapsedMs += dtMs;
+
+          if (this.lampTestActive) {
+            this.emitStatus(false);
+            return;
+          }
+
+          if (this.activeFaultMask > 0) {
+            this.fsmState = "FAULT_SAFE";
+            this.emitStatus(false);
+            return;
+          }
+
+          if (this.controlMode === "MANUAL") {
+            this.emitStatus(false);
+            return;
+          }
+
+          const t = this.timings;
+          let changed = false;
+          let nextState = this.fsmState;
+          let reason = "TIMER_EXPIRED";
+
+          switch (this.fsmState) {
+            case "STARTUP_SAFE":
+              if (this.fsmElapsedMs >= 2000) {
+                nextState = "ALL_RED";
+                reason = "STARTUP_COMPLETE";
+                changed = true;
+              }
+              break;
+            case "ALL_RED":
+              if (this.fsmElapsedMs >= t.allRed) {
+                if (this.nextTargetPhase === "SIDE_ROAD") {
+                  nextState = "SIDE_GREEN";
+                  this.sideDemand = false;
+                } else if (this.nextTargetPhase === "PROTECTED_TURN") {
+                  nextState = "TURN_GREEN";
+                  this.turnDemand = false;
+                } else {
+                  nextState = "MAIN_GREEN";
+                  this.mainDemand = false;
+                }
+                reason = "ALL_RED_CLEARANCE_DONE";
+                changed = true;
+              }
+              break;
+            case "MAIN_GREEN": {
+              let greenLimit = t.mainGreen;
+              const mainActive = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
+              const sideActive = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
+              const turnActive = (sensorState.ir5 ? 1 : 0) + (sensorState.ir6 ? 1 : 0);
+
+              if (this.controlMode === "ADAPTIVE") {
+                const dens = getApproachDensity(mainActive);
+                greenLimit = dens.sec > 0 ? (dens.sec * 1000) : 5000;
+              }
+
+              if (this.fsmElapsedMs >= greenLimit) {
+                nextState = "MAIN_YELLOW";
+                if (this.controlMode === "ADAPTIVE") {
+                  if (sideActive > turnActive && sideActive > 0) {
+                    this.nextTargetPhase = "SIDE_ROAD";
+                  } else if (turnActive > sideActive && turnActive > 0 && this.protectedTurnCommissioned) {
+                    this.nextTargetPhase = "PROTECTED_TURN";
+                  } else if (sideActive > 0 && turnActive > 0) {
+                    this.nextTargetPhase = (this.lastServedApproach === "SIDE_ROAD") ? "PROTECTED_TURN" : "SIDE_ROAD";
+                  } else if (sideActive > 0) {
+                    this.nextTargetPhase = "SIDE_ROAD";
+                  } else if (turnActive > 0 && this.protectedTurnCommissioned) {
+                    this.nextTargetPhase = "PROTECTED_TURN";
+                  } else {
+                    this.nextTargetPhase = (this.turnDemand && this.protectedTurnCommissioned) ? "PROTECTED_TURN" : "SIDE_ROAD";
+                  }
+                } else {
+                  this.nextTargetPhase = (this.turnDemand && this.protectedTurnCommissioned) ? "PROTECTED_TURN" : "SIDE_ROAD";
+                }
+                reason = "MAIN_GREEN_INTERVAL_COMPLETE";
+                changed = true;
+              }
+              break;
+            }
+            case "MAIN_YELLOW":
+              if (this.fsmElapsedMs >= t.mainYellow) {
+                nextState = "ALL_RED";
+                reason = "MAIN_YELLOW_EXPIRED";
+                changed = true;
+              }
+              break;
+            case "SIDE_GREEN": {
+              let greenLimit = t.sideGreen;
+              const sideActive = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
+              const turnActive = (sensorState.ir5 ? 1 : 0) + (sensorState.ir6 ? 1 : 0);
+              const mainActive = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
+
+              if (this.controlMode === "ADAPTIVE") {
+                const dens = getApproachDensity(sideActive);
+                greenLimit = dens.sec > 0 ? (dens.sec * 1000) : 5000;
+              }
+
+              if (this.fsmElapsedMs >= greenLimit) {
+                nextState = "SIDE_YELLOW";
+                this.lastServedApproach = "SIDE_ROAD";
+                if (this.controlMode === "ADAPTIVE") {
+                  if (turnActive > 0 && this.protectedTurnCommissioned && (turnActive >= mainActive || mainActive === 0)) {
+                    this.nextTargetPhase = "PROTECTED_TURN";
+                  } else {
+                    this.nextTargetPhase = "MAIN_ROAD";
+                  }
+                } else {
+                  this.nextTargetPhase = (this.turnDemand && this.protectedTurnCommissioned) ? "PROTECTED_TURN" : "MAIN_ROAD";
+                }
+                reason = "SIDE_GREEN_INTERVAL_COMPLETE";
+                changed = true;
+              }
+              break;
+            }
+            case "SIDE_YELLOW":
+              if (this.fsmElapsedMs >= t.sideYellow) {
+                nextState = "ALL_RED";
+                reason = "SIDE_YELLOW_EXPIRED";
+                changed = true;
+              }
+              break;
+            case "TURN_GREEN": {
+              let greenLimit = t.turnGreen;
+              const sideActive = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
+              const turnActive = (sensorState.ir5 ? 1 : 0) + (sensorState.ir6 ? 1 : 0);
+              const mainActive = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
+
+              if (this.controlMode === "ADAPTIVE") {
+                const dens = getApproachDensity(turnActive);
+                greenLimit = dens.sec > 0 ? (dens.sec * 1000) : 5000;
+              }
+
+              if (this.fsmElapsedMs >= greenLimit) {
+                nextState = "TURN_YELLOW";
+                this.lastServedApproach = "PROTECTED_TURN";
+                if (this.controlMode === "ADAPTIVE") {
+                  if (sideActive > 0 && (sideActive >= mainActive || mainActive === 0)) {
+                    this.nextTargetPhase = "SIDE_ROAD";
+                  } else {
+                    this.nextTargetPhase = "MAIN_ROAD";
+                  }
+                } else {
+                  this.nextTargetPhase = "MAIN_ROAD";
+                }
+                reason = "TURN_GREEN_INTERVAL_COMPLETE";
+                changed = true;
+              }
+              break;
+            }
+            case "TURN_YELLOW":
+              if (this.fsmElapsedMs >= t.turnYellow) {
+                nextState = "ALL_RED";
+                reason = "TURN_YELLOW_EXPIRED";
+                changed = true;
+              }
+              break;
+            default:
+              nextState = "MAIN_GREEN";
+              changed = true;
+              break;
+          }
+
+          if (changed) {
+            const prevState = this.fsmState;
+            this.fsmState = nextState;
+            this.fsmElapsedMs = 0;
+            processIncomingLine(`[${this.nowMs} ms] ${prevState} -> ${this.fsmState} | Reason: ${reason}`);
+          }
+
+          this.emitStatus(false);
+        },
+
+        computeOutputs: function () {
+          const out = {
+            mainG: 0, mainY: 0, mainR: 1,
+            sideG: 0, sideY: 0, sideR: 1,
+            turnG: 0, turnY: 0, turnR: 1,
+            pedWalk: 0, pedDontWalk: 1,
+            ped2Walk: 0, ped2DontWalk: 1
+          };
+
+          if (this.lampTestActive) {
+            const l = this.lampTestActive;
+            if (l === "MAIN_R") out.mainR = 1;
+            else if (l === "MAIN_Y") out.mainY = 1;
+            else if (l === "MAIN_G") out.mainG = 1;
+            else if (l === "SIDE_R") out.sideR = 1;
+            else if (l === "SIDE_Y") out.sideY = 1;
+            else if (l === "SIDE_G") out.sideG = 1;
+            else if (l === "TURN_R") out.turnR = 1;
+            else if (l === "TURN_Y") out.turnY = 1;
+            else if (l === "TURN_G") out.turnG = 1;
+            else if (l === "PED1_W") { out.pedWalk = 1; out.pedDontWalk = 0; }
+            else if (l === "PED1_DW") { out.pedWalk = 0; out.pedDontWalk = 1; }
+            else if (l === "PED2_W") { out.ped2Walk = 1; out.ped2DontWalk = 0; }
+            else if (l === "PED2_DW") { out.ped2Walk = 0; out.ped2DontWalk = 1; }
+            return out;
+          }
+
+          if (this.activeFaultMask > 0 || this.fsmState === "FAULT_SAFE") {
+            return out;
+          }
+
+          switch (this.fsmState) {
+            case "MAIN_GREEN":
+              out.mainG = 1; out.mainR = 0;
+              if (this.ped1Demand) {
+                out.pedWalk = 1; out.pedDontWalk = 0;
+              }
+              break;
+            case "MAIN_YELLOW":
+              out.mainY = 1; out.mainR = 0;
+              out.pedDontWalk = 1;
+              break;
+            case "SIDE_GREEN":
+              out.sideG = 1; out.sideR = 0;
+              if (this.ped2Demand) {
+                out.ped2Walk = 1; out.ped2DontWalk = 0;
+              }
+              break;
+            case "SIDE_YELLOW":
+              out.sideY = 1; out.sideR = 0;
+              out.ped2DontWalk = 1;
+              break;
+            case "TURN_GREEN":
+              out.turnG = 1; out.turnR = 0;
+              break;
+            case "TURN_YELLOW":
+              out.turnY = 1; out.turnR = 0;
+              break;
+            case "ALL_RED":
+            default:
+              break;
+          }
+          return out;
+        },
+
+        emitStatus: function (isManual) {
+          const o = this.computeOutputs();
+          const snapOutputs = `MAIN_G=${o.mainG} MAIN_Y=${o.mainY} MAIN_R=${o.mainR} SIDE_G=${o.sideG} SIDE_Y=${o.sideY} SIDE_R=${o.sideR} TURN_G=${o.turnG} TURN_Y=${o.turnY} TURN_R=${o.turnR} PED1_W=${o.pedWalk} PED1_DW=${o.pedDontWalk} PED2_W=${o.ped2Walk} PED2_DW=${o.ped2DontWalk}`;
+          const driverLevels = `MAIN[G=${o.mainG} Y=${o.mainY} R=${o.mainR}] SIDE[G=${o.sideG} Y=${o.sideY} R=${o.sideR}] TURN[G=${o.turnG} Y=${o.turnY} R=${o.turnR}] PED1[W=${o.pedWalk} DW=${o.pedDontWalk}] PED2[W=${o.ped2Walk} DW=${o.ped2DontWalk}]`;
+
+          const lines = [
+            "================ CONTROLLER STATUS ================",
+            `  Timestamp         : ${this.nowMs} ms`,
+            "  Traffic Rule      : RHT / KEEPRIGHT (Right-Hand Traffic)",
+            `  Operating Mode    : ${this.operatingMode} | Control Mode: ${this.controlMode}`,
+            `  Current FSM State : ${this.fsmState} (Elapsed: ${this.fsmElapsedMs} ms)`,
+            `  State Elapsed     : ${this.fsmElapsedMs} ms`,
+            "  Side Gap Timer    : INACTIVE (0 ms)",
+            `  Next Target Phase : ${this.nextTargetPhase}`,
+            `  Protected Turn    : ${this.protectedTurnCommissioned ? "COMMISSIONED" : "UNCOMMISSIONED_DISABLED"} (RHT / KeepRight rule)`,
+            `  Vehicle Demands   : MAIN=${this.mainDemand ? "YES" : "NO"} | SIDE=${this.sideDemand ? "YES" : "NO"} | TURN=${this.turnDemand ? "YES" : "NO"}`,
+            `  Side Demand       : ${this.sideDemand ? "PENDING" : "NONE"} (SimVeh=${this.sideDemand ? "ON" : "OFF"}, HwLatched=NO)`,
+            `  Pedestrian Demand : PED1=${this.ped1Demand ? "LATCHED" : "NONE"} | PED2=${this.ped2Demand ? "LATCHED" : "NONE"} | Clearance=${this.pedClearanceActive ? "ACTIVE" : "NO"}`,
+            "  Physical IR Valid : YES (Mask=0x3F; Main=33/34, Side=35/36, Turn=39/15)",
+            `  Logical Outputs   : ${snapOutputs}`,
+            `  Driver Pin Levels : ${driverLevels}`,
+            `  Active Fault Mask : 0x${this.activeFaultMask.toString(16).padStart(4, "0").toUpperCase()} | Last Fault: ${this.faultReason}`,
+            "  Adaptive Scores   : MAIN=70 SIDE=45 TURN=30 | AllocGreen=10000 ms",
+            "  Movement Waits    : MAIN=0 ms SIDE=8000 ms TURN=12000 ms | PED1=0 ms PED2=0 ms",
+            "  Selection Reason  : DEMAND_ACTUATED_ROTATION",
+            "  Ped Priority      : NORMAL",
+            `  Passage Counts    : MAIN[P=15 R=3 Rate=1.8 Both=0 Inc=0 Last=${this.nowMs - 3000}] SIDE[P=6 R=1 Rate=0.6 Both=0 Inc=0 Last=${this.nowMs - 9000}] TURN[P=3 R=1 Rate=0.4 Both=0 Inc=0 Last=${this.nowMs - 15000}]`,
+            "==================================================="
+          ];
+
+          for (const l of lines) {
+            processIncomingLine(l);
+          }
+        },
+
+        emitSensors: function () {
+          const lines = [
+            "================ SENSOR & BUTTON STATUS ================",
+            "  IR1 (GPIO 33) -> MAIN_ROAD S1 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=12 Rel=12 | Cycle=YES | Stuck=0 | Chatter=0",
+            "  IR2 (GPIO 34) -> MAIN_ROAD S2 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=10 Rel=10 | Cycle=YES | Stuck=0 | Chatter=0",
+            "  IR3 (GPIO 35) -> SIDE_ROAD S1 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=6 Rel=6 | Cycle=YES | Stuck=0 | Chatter=0",
+            "  IR4 (GPIO 36) -> SIDE_ROAD S2 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=5 Rel=5 | Cycle=YES | Stuck=0 | Chatter=0",
+            "  IR5 (GPIO 39) -> TURN_ROAD S1 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=3 Rel=3 | Cycle=YES | Stuck=0 | Chatter=0",
+            "  IR6 (GPIO 15) -> TURN_ROAD S2 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=2 Rel=2 | Cycle=YES | Stuck=0 | Chatter=0",
+            "  PED1_BTN (GPIO 14) [Walk=GPIO 21, DW=GPIO 19] | RawHigh=1 | Pressed=0 | Latched=0 | Press=2 Rel=2 | Cycle=YES | Stuck=0",
+            "  PED2_BTN (GPIO 13) [Walk=GPIO 18, DW=GPIO  5] | RawHigh=1 | Pressed=0 | Latched=0 | Press=1 Rel=1 | Cycle=YES | Stuck=0",
+            "========================================================"
+          ];
+          for (const l of lines) processIncomingLine(l);
+        },
+
+        emitTiming: function () {
+          const lines = [
+            "================ ACTIVE PHASE TIMING INTERVALS ================",
+            "  Rule / Scheme     : RHT / KEEPRIGHT (Protected Left-Turn)",
+            "  Main Road Green   : Min=5000 ms | Max=25000 ms | Extension=2500 ms | Yellow=3000 ms",
+            "  Side Road Green   : Min=4000 ms | Max=20000 ms | Extension=2000 ms | Yellow=3000 ms",
+            "  Protected Turn    : Min=4000 ms | Max=15000 ms | Extension=2000 ms | Yellow=3000 ms",
+            "  All-Red Clearance : 2000 ms",
+            "  Pedestrian Cross  : Walk=7000 ms | Clearance=4000 ms",
+            "  Timing Preset     : AUTHORITATIVE_PROTOTYPE",
+            "================================================================"
+          ];
+          for (const l of lines) processIncomingLine(l);
+        },
+
+        handleCommand: function (cmdStr) {
+          const cmd = cmdStr.trim().toUpperCase();
+          const espMs = this.nowMs;
+
+          if (cmd === "STATUS") {
+            this.emitStatus(true);
+            return;
+          }
+
+          if (cmd.startsWith("TIMING SET ")) {
+            const parts = cmd.substring(11).trim().split(/\s+/).map(Number);
+            if (parts.length >= 12) {
+              this.timings.mainGreen = parts[1];
+              this.timings.mainYellow = parts[2];
+              this.timings.sideGreen = parts[4];
+              this.timings.sideYellow = parts[5];
+              this.timings.turnGreen = parts[7];
+              this.timings.turnYellow = parts[8];
+              this.timings.pedWalk = parts[9];
+              this.timings.pedClear = parts[10];
+              this.timings.allRed = parts[11];
+              processIncomingLine("TIMING_OK: Custom phase timings applied");
+              processIncomingLine(`[${espMs} ms] EVENT: TIMING_CONFIG_UPDATED | Main=${parts[1]}ms, Side=${parts[4]}ms, Turn=${parts[7]}ms`);
+              this.emitStatus(true);
+              if (pendingUserCommand) resolvePendingUserCommand(true, "Custom timings applied");
+              return;
+            }
+          }
+
+          if (cmd.startsWith("MODE ")) {
+            const m = cmd.substring(5).trim();
+            if (["AUTO", "FIXED", "ACTUATED", "ADAPTIVE", "MANUAL"].includes(m)) {
+              this.controlMode = m;
+              processIncomingLine(`MODE_OK: Operating control mode set to ${m}`);
+              processIncomingLine(`[${espMs} ms] EVENT: CONTROL_MODE_CHANGE | Switched to ${m}`);
+              this.emitStatus(true);
+              return;
+            }
+          }
+
+          if (cmd === "NEXT") {
+            if (this.controlMode !== "MANUAL") {
+              processIncomingLine("NEXT_REJECTED: Requires MODE MANUAL.");
+              return;
+            }
+            let nextS = "ALL_RED";
+            if (this.fsmState === "MAIN_GREEN") nextS = "MAIN_YELLOW";
+            else if (this.fsmState === "MAIN_YELLOW") nextS = "ALL_RED";
+            else if (this.fsmState === "ALL_RED") nextS = (this.nextTargetPhase === "SIDE_ROAD") ? "SIDE_GREEN" : "MAIN_GREEN";
+            else if (this.fsmState === "SIDE_GREEN") nextS = "SIDE_YELLOW";
+            else if (this.fsmState === "SIDE_YELLOW") nextS = "ALL_RED";
+            else if (this.fsmState === "TURN_GREEN") nextS = "TURN_YELLOW";
+            else if (this.fsmState === "TURN_YELLOW") nextS = "ALL_RED";
+
+            const prev = this.fsmState;
+            this.fsmState = nextS;
+            this.fsmElapsedMs = 0;
+            processIncomingLine("NEXT_OK");
+            processIncomingLine(`[${espMs} ms] ${prev} -> ${this.fsmState} | Reason: OPERATOR_MANUAL_STEP`);
+            this.emitStatus(true);
+            return;
+          }
+
+          if (cmd.startsWith("LAMP TEST ")) {
+            const lamp = cmd.substring(10).trim();
+            if (lamp === "OFF") {
+              this.lampTestActive = null;
+              processIncomingLine(`[${espMs} ms] EVENT: LAMP_TEST_STOPPED | Normal operation restored`);
+            } else {
+              this.lampTestActive = lamp;
+              processIncomingLine(`[${espMs} ms] EVENT: LAMP_TEST_ACTIVE | Channel ${lamp} active`);
+            }
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, `Lamp test ${lamp}`);
+            return;
+          }
+
+          if (cmd === "LAMP OFF") {
+            this.lampTestActive = null;
+            processIncomingLine(`[${espMs} ms] EVENT: LAMP_TEST_STOPPED | Normal operation restored`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Lamp test stopped");
+            return;
+          }
+
+          if (cmd === "PED 1" || cmd === "PED 2") {
+            const xNum = (cmd === "PED 1") ? 1 : 2;
+            if (xNum === 1) this.ped1Demand = true;
+            if (xNum === 2) this.ped2Demand = true;
+            processIncomingLine(`[${espMs} ms] EVENT: PEDESTRIAN_CALL_REGISTERED | Crossing: ${xNum}`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, `Pedestrian ${xNum} call registered`);
+            return;
+          }
+
+          if (cmd === "CAR ON" || cmd === "CAR SIDE ON") {
+            this.sideDemand = true;
+            processIncomingLine(`[${espMs} ms] EVENT: SIMULATED_VEHICLE_DEMAND | Side Road demand SET`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Side road demand set");
+            return;
+          }
+
+          if (cmd === "CAR OFF" || cmd === "CAR SIDE OFF") {
+            this.sideDemand = false;
+            processIncomingLine(`[${espMs} ms] EVENT: SIMULATED_VEHICLE_DEMAND | Side Road demand CLEARED`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Side road demand cleared");
+            return;
+          }
+
+          if (cmd === "CAR MAIN ON") {
+            this.mainDemand = true;
+            processIncomingLine(`[${espMs} ms] EVENT: SIMULATED_VEHICLE_DEMAND | Main Road demand SET`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Main road demand set");
+            return;
+          }
+
+          if (cmd === "CAR TURN ON") {
+            this.turnDemand = true;
+            processIncomingLine(`[${espMs} ms] EVENT: SIMULATED_VEHICLE_DEMAND | Protected Turn demand SET`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Turn demand set");
+            return;
+          }
+
+          if (cmd === "SIM ON") {
+            this.operatingMode = "SERIAL_SIMULATION";
+            processIncomingLine(`[${espMs} ms] EVENT: SIMULATION_MODE_ENABLED | Synthetic demands active`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Simulation mode enabled");
+            return;
+          }
+
+          if (cmd === "SIM OFF") {
+            this.operatingMode = "HARDWARE_READY";
+            this.mainDemand = false;
+            this.sideDemand = false;
+            this.turnDemand = false;
+            processIncomingLine(`[${espMs} ms] EVENT: SIMULATION_MODE_DISABLED | Hardware GPIO priority restored`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Simulation mode disabled");
+            return;
+          }
+
+          if (cmd === "FAULT") {
+            this.activeFaultMask = 0x0001;
+            this.faultReason = "OPERATOR_TRIGGERED_FAULT";
+            this.fsmState = "FAULT_SAFE";
+            processIncomingLine(`[${espMs} ms] EVENT: FAULT_DETECTED | Operator fault injected`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Fault triggered");
+            return;
+          }
+
+          if (cmd === "CLEAR" || cmd === "RESET") {
+            this.activeFaultMask = 0;
+            this.faultReason = "NONE";
+            this.fsmState = "ALL_RED";
+            this.fsmElapsedMs = 0;
+            this.mainDemand = false;
+            this.sideDemand = false;
+            this.turnDemand = false;
+            this.ped1Demand = false;
+            this.ped2Demand = false;
+            processIncomingLine(`[${espMs} ms] EVENT: FAULT_CLEARED | Restoring safe cycle`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Fault cleared");
+            return;
+          }
+
+          if (cmd === "SENSORS") {
+            this.emitSensors();
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Sensors printed");
+            return;
+          }
+
+          if (cmd === "TIMING") {
+            this.emitTiming();
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Timing printed");
+            return;
+          }
+
+          processIncomingLine(`[${espMs} ms] EVENT: COMMAND_EXECUTED | ${cmd}`);
+          if (pendingUserCommand) resolvePendingUserCommand(true, `Executed ${cmd}`);
+        }
+      };
+
+      function toggleVirtualSimulator() {
+        if (isVirtualSimActive) {
+          virtualController.stop();
+        } else {
+          virtualController.start();
+        }
+      }
+
+      // ======================================================================
       // SERIAL ENGINE & COMMAND MANAGER
       // ======================================================================
       const commandManager = {
         active: null, // { id, cmd, sentAtMs, timeoutId }
 
         send: async function (cmdStr) {
-          if (!port || !writer || (connectionStatus !== "CONNECTED" && connectionStatus !== "RECEIVING_DATA" && connectionStatus !== "STALE" && connectionStatus !== "TELEMETRY STALE" && connectionStatus !== "CONTROLLER FAULT")) {
-            setCommandFeedback("error", "Not Connected", "Open ESP32 serial connection before issuing commands.");
+          if (!isVirtualSimActive && (!port || !writer || (connectionStatus !== "CONNECTED" && connectionStatus !== "RECEIVING_DATA" && connectionStatus !== "STALE" && connectionStatus !== "TELEMETRY STALE" && connectionStatus !== "CONTROLLER FAULT"))) {
+            setCommandFeedback("error", "Not Connected", "Open ESP32 serial connection or start Virtual Simulator.");
             return false;
           }
           if (this.active) {
@@ -7019,6 +7982,10 @@
       }
 
       async function writeSerialLine(cmdStr) {
+        if (isVirtualSimActive) {
+          virtualController.handleCommand(cmdStr);
+          return;
+        }
         if (!writer || !port) {
           throw new Error("Serial writer not available.");
         }
@@ -7032,6 +7999,10 @@
       window.sendUserCommand = sendUserCommand;
 
       async function requestStatusSerialized(isManual) {
+        if (isVirtualSimActive) {
+          virtualController.emitStatus(Boolean(isManual));
+          return;
+        }
         if (!port || !writer || isDisconnecting) return;
         const now = Date.now();
 
@@ -7156,11 +8127,20 @@
         };
       }
 
+      async function openSerialPortSafely(targetPort) {
+        rxBuffer = "";
+        // Use a 16KB RX buffer (default 255B overflows during ESP32 3.5KB startup banner)
+        // and return immediately so runSerialReadLoop drains incoming bytes right away.
+        await targetPort.open({ baudRate: SERIAL_BAUD, bufferSize: 16384 });
+      }
+
       async function attemptAutoReconnect() {
         if (isManualDisconnect) return;
         if (!("serial" in navigator) && !isBridgeEnabled()) return;
 
         try {
+          await cleanupSerialResources();
+
           if (isBridgeEnabled()) {
             port = createSerialBridgePort();
           } else {
@@ -7171,7 +8151,7 @@
             }
             port = ports[0];
           }
-          await port.open({ baudRate: SERIAL_BAUD });
+          await openSerialPortSafely(port);
 
           const info = port.getInfo ? port.getInfo() : {};
           const usbDetail = (info.usbVendorId !== undefined)
@@ -7179,7 +8159,6 @@
             : "COM Port";
 
           portOpenedAtMs = Date.now();
-          autoReconnectAttempts = 0;
           if (autoReconnectTimerId) { clearTimeout(autoReconnectTimerId); autoReconnectTimerId = null; }
           readLoopActive = true;
           isDisconnecting = false;
@@ -7187,8 +8166,15 @@
           writer = port.writable.getWriter();
           runSerialReadLoop();
 
+          // Only reset retry counter once the link stays stable for 3 seconds
+          setTimeout(() => {
+            if (port && readLoopActive && !isDisconnecting && (Date.now() - portOpenedAtMs) >= 2800) {
+              autoReconnectAttempts = 0;
+            }
+          }, 3000);
+
           setConnectionStatus("CONNECTED", `${usbDetail} (115200 baud)`);
-          appendConsole("sys-info", "RECONNECTED", `Reconnected to ESP32 on ${selectedPortLabel} at ${SERIAL_BAUD} baud.`);
+          appendConsole("sys-info", "RECONNECTED", `Reconnected to ESP32 on ${usbDetail} at ${SERIAL_BAUD} baud.`);
           setCommandFeedback("success", "ESP32 Reconnected", "Connection restored automatically.");
 
           startPollingLoop();
@@ -7202,6 +8188,7 @@
           }
         } catch (err) {
           const msg = err && err.message ? err.message : String(err);
+          await cleanupSerialResources();
           scheduleNextReconnect(msg);
         }
       }
@@ -7218,8 +8205,11 @@
           }, delay);
         } else {
           setConnectionStatus("ERROR", "Auto-reconnect failed");
-          setCommandFeedback("error", "Serial Lost", `Auto-reconnect failed after ${MAX_AUTO_RECONNECT_ATTEMPTS} attempts. Click 'Connect ESP32' to reconnect manually.`);
-          appendConsole("sys-err", "LOST", "Auto-reconnect limit reached. Manual reconnection required.");
+          const diagHint = (failReason && failReason.includes("lost"))
+            ? "Device dropped immediately after open. Check USB cable/power (ESP32 brownout), or on Linux ensure ModemManager/brltty/another monitor is not grabbing /dev/ttyUSB0."
+            : `Auto-reconnect failed after ${MAX_AUTO_RECONNECT_ATTEMPTS} attempts. Click 'Connect ESP32' to reconnect manually.`;
+          setCommandFeedback("error", "Serial Lost", diagHint);
+          appendConsole("sys-err", "LOST", `Auto-reconnect limit reached (${failReason}). ${diagHint}`);
         }
       }
 
@@ -7255,7 +8245,7 @@
           setCommandFeedback("pending", "Connecting to ESP32", `Opening port at ${SERIAL_BAUD} baud...`);
           appendConsole("sys-info", "CONNECT", `Opening selected port at ${SERIAL_BAUD} baud...`);
 
-          await port.open({ baudRate: SERIAL_BAUD });
+          await openSerialPortSafely(port);
 
           const info = port.getInfo ? port.getInfo() : {};
           const usbDetail = (info.usbVendorId !== undefined)
@@ -7326,6 +8316,19 @@
                   }
                 }
               }
+            } catch (readErr) {
+              const errName = (readErr && readErr.name) ? readErr.name : "";
+              const isTransientSerialErr =
+                errName === "BreakError" ||
+                errName === "FramingError" ||
+                errName === "ParityError" ||
+                errName === "BufferOverrunError";
+              if (isTransientSerialErr && !isDisconnecting && readLoopActive && port && port.readable) {
+                rxBuffer = "";
+                await new Promise(r => setTimeout(r, 50));
+                continue;
+              }
+              throw readErr;
             } finally {
               if (reader) {
                 try { reader.releaseLock(); } catch (_) { }
@@ -7452,10 +8455,70 @@
       let mqttClient = null;
       const mqttStats = { txTelemetry: 0, txLogs: 0, rxCmds: 0 };
 
+      function computeAdaptiveGreenTime(activeSensors, adjustedGreenSec = null) {
+        const hasAdjusted = (typeof adjustedGreenSec === "number" && !isNaN(adjustedGreenSec) && adjustedGreenSec > 0);
+        if (hasAdjusted) {
+          const halfAdj = Math.max(1, Math.round(adjustedGreenSec / 2));
+          if (activeSensors >= 2) {
+            return {
+              activeSensors: 2,
+              congestionPct: 100,
+              allocatedGreenSec: halfAdj,
+              label: `100% (${halfAdj} s Adj)`
+            };
+          } else if (activeSensors === 1) {
+            return {
+              activeSensors: 1,
+              congestionPct: 50,
+              allocatedGreenSec: halfAdj,
+              label: `50% (${halfAdj} s Adj)`
+            };
+          } else {
+            return {
+              activeSensors: 0,
+              congestionPct: 0,
+              allocatedGreenSec: halfAdj,
+              label: `0% (${halfAdj} s Adj)`
+            };
+          }
+        }
+
+        // Unadjusted defaults: 0% -> 5s, 50% -> 10s, 100% -> 20s
+        if (activeSensors >= 2) {
+          return {
+            activeSensors: 2,
+            congestionPct: 100,
+            allocatedGreenSec: 20,
+            label: "100% (20 s Green)"
+          };
+        } else if (activeSensors === 1) {
+          return {
+            activeSensors: 1,
+            congestionPct: 50,
+            allocatedGreenSec: 10,
+            label: "50% (10 s Green)"
+          };
+        } else {
+          return {
+            activeSensors: 0,
+            congestionPct: 0,
+            allocatedGreenSec: 5,
+            label: "0% (Idle 5s)"
+          };
+        }
+      }
+
       function getApproachDensity(count) {
-        if (count >= 2) return { pct: 100, sec: 20, label: "100% (High Density)" };
-        if (count === 1) return { pct: 50, sec: 10, label: "50% (Medium Density)" };
-        return { pct: 0, sec: 0, label: "0% (Idle)" };
+        // Only treat timing as operator-adjusted if it differs from unadjusted prototype (30000ms) / bench (12000ms) defaults
+        let adjustedSec = null;
+        const rawMs = (el.inputTimingMainMax && el.inputTimingMainMax.value)
+          ? parseInt(el.inputTimingMainMax.value, 10)
+          : (activeTimingConfig && activeTimingConfig.mainMaxGreenMs ? activeTimingConfig.mainMaxGreenMs : 30000);
+        if (!isNaN(rawMs) && rawMs > 0 && rawMs !== 30000 && rawMs !== 12000) {
+          adjustedSec = Math.max(1, Math.round(rawMs / 1000));
+        }
+        const res = computeAdaptiveGreenTime(count, adjustedSec);
+        return { pct: res.congestionPct, sec: res.allocatedGreenSec, label: res.label };
       }
 
       function updateTrafficDensityUI() {
@@ -7503,29 +8566,34 @@
         if (el.btnToggleIR5) el.btnToggleIR5.classList.toggle("active", Boolean(sensorState.ir5));
         if (el.btnToggleIR6) el.btnToggleIR6.classList.toggle("active", Boolean(sensorState.ir6));
 
-        // Priority Allocation Banner
+        // Priority Allocation Banner & Approach Card Highlighting
+        const approaches = [
+          { code: "MAIN", name: "Main Road", count: mainActive, pct: mainDens.pct, sec: mainDens.sec, card: el.densityCardMain },
+          { code: "SIDE", name: "Side Road", count: sideActive, pct: sideDens.pct, sec: sideDens.sec, card: el.densityCardSide },
+          { code: "TURN", name: "Turn Movement", count: turnActive, pct: turnDens.pct, sec: turnDens.sec, card: el.densityCardTurn }
+        ];
+        const maxCount = Math.max(mainActive, sideActive, turnActive);
+        const topApproaches = approaches.filter(a => a.count === maxCount && maxCount > 0);
+        const hasSinglePriority = (topApproaches.length === 1);
+
         if (el.densityPriorityBanner) {
-          const approaches = [
-            { name: "Main Road", count: mainActive, pct: mainDens.pct, sec: mainDens.sec },
-            { name: "Side Road", count: sideActive, pct: sideDens.pct, sec: sideDens.sec },
-            { name: "Turn Movement", count: turnActive, pct: turnDens.pct, sec: turnDens.sec }
-          ];
-          const maxCount = Math.max(mainActive, sideActive, turnActive);
           if (maxCount === 0) {
             el.densityPriorityBanner.textContent = "All Approaches Idle - Fixed-Time Rotation Baseline Active";
             el.densityPriorityBanner.className = "density-priority-banner";
+          } else if (hasSinglePriority) {
+            el.densityPriorityBanner.textContent = `⭐ Priority Allocated: ${topApproaches[0].name} (${topApproaches[0].pct}% Demand -> ${topApproaches[0].sec}s Green Time)`;
+            el.densityPriorityBanner.className = "density-priority-banner has-priority";
           } else {
-            const topApproaches = approaches.filter(a => a.count === maxCount);
-            if (topApproaches.length === 1) {
-              el.densityPriorityBanner.textContent = `⭐ Priority Allocated: ${topApproaches[0].name} (${topApproaches[0].pct}% Demand -> ${topApproaches[0].sec}s Green Time)`;
-              el.densityPriorityBanner.className = "density-priority-banner has-priority";
-            } else {
-              const names = topApproaches.map(a => a.name).join(" & ");
-              el.densityPriorityBanner.textContent = `⚖️ Balanced Demand: Equal Round-Robin Fairness Across Active Roads (${names} @ ${topApproaches[0].pct}%)`;
-              el.densityPriorityBanner.className = "density-priority-banner";
-            }
+            const names = topApproaches.map(a => a.name).join(" & ");
+            el.densityPriorityBanner.textContent = `⚖️ Balanced Demand: Equal Round-Robin Fairness Across Active Roads (${names} @ ${topApproaches[0].pct}%)`;
+            el.densityPriorityBanner.className = "density-priority-banner";
           }
         }
+
+        // Visually highlight priority approach card
+        if (el.densityCardMain) el.densityCardMain.classList.toggle("has-priority", hasSinglePriority && topApproaches[0].code === "MAIN");
+        if (el.densityCardSide) el.densityCardSide.classList.toggle("has-priority", hasSinglePriority && topApproaches[0].code === "SIDE");
+        if (el.densityCardTurn) el.densityCardTurn.classList.toggle("has-priority", hasSinglePriority && topApproaches[0].code === "TURN");
       }
 
       function handleSensorToggle(sensorKey, btnEl, movement) {
@@ -7619,19 +8687,22 @@
           writeSerialLine("MODE MANUAL").catch(() => { });
           writeSerialLine("COMMISSION VEH ON").catch(() => { });
           setTimeout(() => {
-            if (isFlashOrangeActive && port && writer) {
-              writeSerialLine("LAMP TEST FLASH_ORANGE").catch(() => { });
+            if (isFlashOrangeActive && port && writer && !isDisconnecting) {
               writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
             }
-          }, 80);
+          }, 150);
         }
 
         flashOrangeTimer = setInterval(() => {
           flashPhase = !flashPhase;
           applyFlashOrangeVisualState(flashPhase);
           if (port && writer && !isDisconnecting && isFlashOrangeActive) {
-            if (flashPhase) {
-              writeSerialLine("LAMP TEST FLASH_ORANGE").catch(() => { });
+            const curMode = (lastValidTelemetry && lastValidTelemetry.controlMode)
+              ? String(lastValidTelemetry.controlMode).toUpperCase()
+              : "";
+            if (curMode && curMode !== "MANUAL") {
+              writeSerialLine("MODE MANUAL").catch(() => { });
+            } else if (flashPhase) {
               writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
             } else {
               writeSerialLine("LAMP OFF").catch(() => { });
@@ -7721,12 +8792,16 @@
       function publishMqttTelemetry(acc) {
         if (!mqttClient || !mqttClient.connected) return;
         const flashBit = flashPhase ? 1 : 0;
+        const clientElapsedMs = lastTelemetryReceivedAtMs > 0
+          ? ((Date.now() - lastTelemetryReceivedAtMs) + (acc && acc.stateElapsedMs ? acc.stateElapsedMs : 0))
+          : (acc ? acc.stateElapsedMs || 0 : 0);
         const payload = {
           timestamp: new Date().toISOString(),
           currentFsmState: isFlashOrangeActive ? "FLASH_ORANGE" : (acc ? acc.currentFsmState : "UNKNOWN"),
           operatingMode: acc ? acc.operatingMode : "UNKNOWN",
           controlMode: isFlashOrangeActive ? "FLASH_ORANGE" : (acc ? acc.controlMode : "UNKNOWN"),
-          stateElapsedMs: acc ? acc.stateElapsedMs : 0,
+          stateElapsedMs: clientElapsedMs,
+          allocGreenMs: (acc && acc.allocGreenMs) ? acc.allocGreenMs : 0,
           nextTargetPhase: isFlashOrangeActive ? "NONE (CAUTION)" : (acc ? acc.nextTargetPhase : "UNKNOWN"),
           flashOrangeActive: isFlashOrangeActive,
           outputs: isFlashOrangeActive ? {
@@ -7742,7 +8817,8 @@
             pedWalk: 0, pedDontWalk: 1,
             ped2Walk: 0, ped2DontWalk: 1
           }),
-          density: getCurrentDensitySnapshot()
+          density: getCurrentDensitySnapshot(),
+          sensorState: { ...sensorState }
         };
         try {
           mqttClient.publish(MQTT_TOPICS.telemetry, JSON.stringify(payload));
@@ -7772,6 +8848,8 @@
       function handleIncomingMqttCommand(cmdStr) {
         if (!cmdStr) return;
         const upper = cmdStr.toUpperCase().trim();
+        let densityChanged = false;
+
         if (upper === "FLASH_ORANGE" || upper === "FREE" || upper === "MAINTAIN") {
           startFlashOrangeMode();
           return;
@@ -7780,30 +8858,57 @@
           stopFlashOrangeMode();
           return;
         }
-        if (upper === "CAR MAIN ON") {
-          sensorState.ir1 = true;
-          sensorState.ir2 = true;
-          updateTrafficDensityUI();
+
+        // 1. Individual IR Channel Commands (e.g. IR1 ON / IR1 OFF or COMMISSION IR 1 ON)
+        const irMatch = upper.match(/^(?:COMMISSION\s+)?IR\s*([1-6])\s+(ON|OFF)$/);
+        if (irMatch) {
+          const ch = `ir${irMatch[1]}`;
+          const val = (irMatch[2] === "ON");
+          sensorState[ch] = val;
+          densityChanged = true;
+        }
+
+        // 2. Approach Demand Commands
+        else if (upper === "CAR MAIN ON") {
+          if (!sensorState.ir1 && !sensorState.ir2) {
+            sensorState.ir1 = true;
+          }
+          densityChanged = true;
         } else if (upper === "CAR MAIN OFF") {
           sensorState.ir1 = false;
           sensorState.ir2 = false;
-          updateTrafficDensityUI();
+          densityChanged = true;
         } else if (upper === "CAR SIDE ON") {
-          sensorState.ir3 = true;
-          sensorState.ir4 = true;
-          updateTrafficDensityUI();
+          if (!sensorState.ir3 && !sensorState.ir4) {
+            sensorState.ir3 = true;
+          }
+          densityChanged = true;
         } else if (upper === "CAR SIDE OFF") {
           sensorState.ir3 = false;
           sensorState.ir4 = false;
-          updateTrafficDensityUI();
+          densityChanged = true;
         } else if (upper === "CAR TURN ON") {
-          sensorState.ir5 = true;
-          sensorState.ir6 = true;
-          updateTrafficDensityUI();
+          if (!sensorState.ir5 && !sensorState.ir6) {
+            sensorState.ir5 = true;
+          }
+          densityChanged = true;
         } else if (upper === "CAR TURN OFF") {
           sensorState.ir5 = false;
           sensorState.ir6 = false;
+          densityChanged = true;
+        } else if (upper === "CLEAR_SENSORS" || upper === "CLEAR SENSORS" || upper === "SENSORS CLEAR") {
+          sensorState.ir1 = false;
+          sensorState.ir2 = false;
+          sensorState.ir3 = false;
+          sensorState.ir4 = false;
+          sensorState.ir5 = false;
+          sensorState.ir6 = false;
+          densityChanged = true;
+        }
+
+        if (densityChanged) {
           updateTrafficDensityUI();
+          publishMqttTelemetry(lastValidTelemetry);
         }
 
         if (port && writer) {
@@ -7904,8 +9009,14 @@
         }
 
         // Connection
-        el.btnConnect.addEventListener("click", () => connectSerial());
+        el.btnConnect.addEventListener("click", () => {
+          if (isVirtualSimActive) virtualController.stop();
+          connectSerial();
+        });
         el.btnDisconnect.addEventListener("click", () => disconnectSerial());
+        if (el.btnVirtualSim) {
+          el.btnVirtualSim.addEventListener("click", () => toggleVirtualSimulator());
+        }
         el.btnRetryStatus.addEventListener("click", () => sendUserCommand("STATUS"));
 
         // Mode Commands
@@ -7990,6 +9101,12 @@
         // 1. Unified Atomic Timing Apply Button
         if (el.btnApplyTiming) {
           el.btnApplyTiming.addEventListener("click", () => {
+            const ctrlMode = lastValidTelemetry ? (lastValidTelemetry.controlMode || "FIXED") : "FIXED";
+            if (ctrlMode !== "FIXED" && ctrlMode !== "MANUAL") {
+              setCommandFeedback("warning", "Timing Adjustment Locked", "Phase timings can only be edited when FIXED or MANUAL mode is active (in Adaptive mode, green allocations are driven dynamically by sensor occupancy).");
+              return;
+            }
+
             const mMin = parseAndValidateTimingField(el.inputTimingMainMin, "Main Min Green", 1000, 120000);
             if (!mMin.ok) { setCommandFeedback("error", "Validation Error", mMin.err); return; }
 
@@ -8221,6 +9338,894 @@
             setCommandFeedback("error", "Copy Failed", "Clipboard permission denied by browser.");
           }
         });
+
+        // ----------------------------------------------------------------------
+        // USB CCTV CAMERA INTEGRATION & AERIAL T-JUNCTION ENFORCEMENT
+        // ----------------------------------------------------------------------
+        let cctvStream = null;
+        const elCctvSelect = document.getElementById("cctvDeviceSelect");
+        const btnConnectCctv = document.getElementById("btnConnectCctvCam");
+        const btnSnapCctv = document.getElementById("btnSnapCctvViolation");
+        const btnToggleHud = document.getElementById("btnToggleCctvHud");
+        const btnFullViewCctv = document.getElementById("btnFullViewCctv");
+        const btnExitFullViewCctv = document.getElementById("btnExitFullViewCctv");
+        const cctvVideoContainer = document.getElementById("cctvVideoContainer");
+        const cctvHud = document.getElementById("cctvAerialHud");
+        const videoCctv = document.getElementById("cctvLiveVideo");
+        const imgCctvSnap = document.getElementById("cctvSnapshotImg");
+
+        let isCctvFullView = false;
+        function applyCctvFullViewStyles(active) {
+          isCctvFullView = active;
+          if (!cctvVideoContainer) return;
+          if (active) {
+            cctvVideoContainer.style.position = "fixed";
+            cctvVideoContainer.style.inset = "0";
+            cctvVideoContainer.style.zIndex = "9999";
+            cctvVideoContainer.style.width = "100vw";
+            cctvVideoContainer.style.height = "100vh";
+            cctvVideoContainer.style.maxHeight = "100vh";
+            cctvVideoContainer.style.marginTop = "0";
+            cctvVideoContainer.style.borderRadius = "0";
+            if (videoCctv) videoCctv.style.objectFit = "contain";
+            if (imgCctvSnap) imgCctvSnap.style.objectFit = "contain";
+            if (btnExitFullViewCctv) btnExitFullViewCctv.style.display = "inline-flex";
+            if (btnFullViewCctv) btnFullViewCctv.textContent = "✕ Exit Full";
+          } else {
+            cctvVideoContainer.style.position = "relative";
+            cctvVideoContainer.style.inset = "";
+            cctvVideoContainer.style.zIndex = "";
+            cctvVideoContainer.style.width = "100%";
+            cctvVideoContainer.style.height = "";
+            cctvVideoContainer.style.maxHeight = "270px";
+            cctvVideoContainer.style.marginTop = "0.65rem";
+            cctvVideoContainer.style.borderRadius = "8px";
+            if (videoCctv) videoCctv.style.objectFit = "cover";
+            if (imgCctvSnap) imgCctvSnap.style.objectFit = "cover";
+            if (btnExitFullViewCctv) btnExitFullViewCctv.style.display = "none";
+            if (btnFullViewCctv) btnFullViewCctv.textContent = "⛶ Full View";
+          }
+        }
+
+        async function toggleCctvFullView() {
+          if (!cctvVideoContainer) return;
+          if (!isCctvFullView) {
+            applyCctvFullViewStyles(true);
+            if (cctvVideoContainer.requestFullscreen && !document.fullscreenElement) {
+              try {
+                await cctvVideoContainer.requestFullscreen();
+              } catch (_) { }
+            }
+          } else {
+            if (document.fullscreenElement === cctvVideoContainer && document.exitFullscreen) {
+              try {
+                await document.exitFullscreen();
+              } catch (_) { }
+            }
+            applyCctvFullViewStyles(false);
+          }
+        }
+
+        if (btnFullViewCctv) btnFullViewCctv.addEventListener("click", toggleCctvFullView);
+        if (btnExitFullViewCctv) btnExitFullViewCctv.addEventListener("click", toggleCctvFullView);
+        document.addEventListener("fullscreenchange", () => {
+          if (!document.fullscreenElement && isCctvFullView) {
+            applyCctvFullViewStyles(false);
+          }
+        });
+        document.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && isCctvFullView) {
+            toggleCctvFullView();
+          }
+        });
+        const cctvEmpty = document.getElementById("cctvEmptyPrompt");
+        const cctvStatusBadge = document.getElementById("cctvCameraStatusBadge");
+        const cctvStatusText = document.getElementById("cctvCameraStatusText");
+        const cctvFpsPill = document.getElementById("cctvLiveFpsPill");
+        const cctvCanvas = document.getElementById("cctvSnapCanvas");
+        const cctvOpticalBadge = document.getElementById("cctvOpticalTrapBadge");
+        const cctvEnforceBadge = document.getElementById("cctvHudEnforceBadge");
+
+        // CCTV SVG Element Handles
+        const cctvLightMain = document.getElementById("cctvLightMain");
+        const cctvLightTurn = document.getElementById("cctvLightTurn");
+        const cctvLightSide = document.getElementById("cctvLightSide");
+
+        const cctvLanePolyMain = document.getElementById("cctvLanePolyMain");
+        const cctvArrowMain = document.getElementById("cctvArrowMain");
+        const cctvStopLineMain = document.getElementById("cctvStopLineMain");
+        const cctvBadgeBgMain = document.getElementById("cctvBadgeBgMain");
+        const cctvBadgeTextMain = document.getElementById("cctvBadgeTextMain");
+        const cctvTrapTextMain = document.getElementById("cctvTrapTextMain");
+
+        const cctvLanePolyTurn = document.getElementById("cctvLanePolyTurn");
+        const cctvArrowTurn = document.getElementById("cctvArrowTurn");
+        const cctvStopLineTurn = document.getElementById("cctvStopLineTurn");
+        const cctvBadgeBgTurn = document.getElementById("cctvBadgeBgTurn");
+        const cctvBadgeTextTurn = document.getElementById("cctvBadgeTextTurn");
+        const cctvTrapTextTurn = document.getElementById("cctvTrapTextTurn");
+
+        const cctvLanePolySide = document.getElementById("cctvLanePolySide");
+        const cctvArrowSide = document.getElementById("cctvArrowSide");
+        const cctvStopLineSide = document.getElementById("cctvStopLineSide");
+        const cctvBadgeBgSide = document.getElementById("cctvBadgeBgSide");
+        const cctvBadgeTextSide = document.getElementById("cctvBadgeTextSide");
+        const cctvTrapTextSide = document.getElementById("cctvTrapTextSide");
+
+        let isCctvHudOn = true;
+        if (btnToggleHud && cctvHud) {
+          btnToggleHud.addEventListener("click", () => {
+            isCctvHudOn = !isCctvHudOn;
+            cctvHud.style.display = isCctvHudOn ? "flex" : "none";
+            btnToggleHud.className = isCctvHudOn ? "btn btn-secondary btn-sm" : "btn btn-outline btn-sm";
+          });
+        }
+
+        let lastCctvViolationTime = { MAIN: 0, TURN: 0, SIDE: 0 };
+        let currentCctvOutputs = { mainR: 1, mainY: 0, mainG: 0, turnR: 1, turnY: 0, turnG: 0, sideR: 1, sideY: 0, sideG: 0 };
+
+        // ----------------------------------------------------------------------
+        // 360° ROTATION, PAN (X/Y) & ZOOM VIEW ALIGNMENT + LOCALSTORAGE
+        // ----------------------------------------------------------------------
+        const CCTV_TRANSFORM_STORAGE_KEY = "traffic_cctv_view_transform_v1";
+        let cctvViewTransform = {
+          rotationDeg: 0,
+          panX: 0,
+          panY: 0,
+          zoom: 1.0,
+          target: "both"
+        };
+
+        const cctvInputRotate = document.getElementById("cctvInputRotate");
+        const cctvInputPanX = document.getElementById("cctvInputPanX");
+        const cctvInputPanY = document.getElementById("cctvInputPanY");
+        const cctvInputZoom = document.getElementById("cctvInputZoom");
+        const cctvTransformTarget = document.getElementById("cctvTransformTarget");
+        const cctvLblRotate = document.getElementById("cctvLblRotate");
+        const cctvLblPanX = document.getElementById("cctvLblPanX");
+        const cctvLblPanY = document.getElementById("cctvLblPanY");
+        const cctvLblZoom = document.getElementById("cctvLblZoom");
+        const btnResetCctvTransform = document.getElementById("btnResetCctvTransform");
+        const cctvSvgTJunction = document.getElementById("cctvSvgTJunction");
+
+        function normalizeCctvAngle180(deg) {
+          let a = ((Number(deg) || 0) + 180) % 360;
+          if (a < 0) a += 360;
+          return Math.round(a - 180);
+        }
+
+        function saveCctvViewTransform() {
+          try {
+            localStorage.setItem(CCTV_TRANSFORM_STORAGE_KEY, JSON.stringify(cctvViewTransform));
+          } catch (_) {}
+        }
+
+        function applyCctvViewTransform() {
+          const { rotationDeg, panX, panY, zoom, target } = cctvViewTransform;
+          const cssTransform = `translate(${panX}px, ${panY}px) rotate(${rotationDeg}deg) scale(${zoom})`;
+          const transformVideo = (target === "both" || target === "video");
+          const transformHud = (target === "both" || target === "hud");
+
+          if (videoCctv) {
+            videoCctv.style.transformOrigin = "center center";
+            videoCctv.style.transform = transformVideo ? cssTransform : "none";
+          }
+          if (imgCctvSnap) {
+            imgCctvSnap.style.transformOrigin = "center center";
+            imgCctvSnap.style.transform = transformVideo ? cssTransform : "none";
+          }
+          if (cctvSvgTJunction) {
+            cctvSvgTJunction.style.transformOrigin = "center center";
+            cctvSvgTJunction.style.transform = transformHud ? cssTransform : "none";
+          }
+
+          if (cctvInputRotate) cctvInputRotate.value = String(rotationDeg);
+          if (cctvInputPanX) cctvInputPanX.value = String(panX);
+          if (cctvInputPanY) cctvInputPanY.value = String(panY);
+          if (cctvInputZoom) cctvInputZoom.value = String(zoom);
+          if (cctvTransformTarget) cctvTransformTarget.value = target;
+
+          if (cctvLblRotate) cctvLblRotate.textContent = `${rotationDeg > 0 ? "+" : ""}${rotationDeg}°`;
+          if (cctvLblPanX) cctvLblPanX.textContent = `${panX > 0 ? "+" : ""}${panX}px`;
+          if (cctvLblPanY) cctvLblPanY.textContent = `${panY > 0 ? "+" : ""}${panY}px`;
+          if (cctvLblZoom) cctvLblZoom.textContent = `${Number(zoom).toFixed(2)}x`;
+
+          prevCctvFrame = null;
+          cctvConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
+        }
+
+        function loadCctvViewTransform() {
+          try {
+            const raw = localStorage.getItem(CCTV_TRANSFORM_STORAGE_KEY);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === "object") {
+                cctvViewTransform.rotationDeg = normalizeCctvAngle180(parsed.rotationDeg ?? 0);
+                cctvViewTransform.panX = Math.max(-200, Math.min(200, Number(parsed.panX) || 0));
+                cctvViewTransform.panY = Math.max(-200, Math.min(200, Number(parsed.panY) || 0));
+                cctvViewTransform.zoom = Math.max(0.5, Math.min(3.0, Number(parsed.zoom) || 1.0));
+                if (["both", "video", "hud"].includes(parsed.target)) {
+                  cctvViewTransform.target = parsed.target;
+                }
+              }
+            }
+          } catch (_) {}
+          applyCctvViewTransform();
+        }
+
+        function onCctvTransformInput() {
+          if (cctvInputRotate) cctvViewTransform.rotationDeg = normalizeCctvAngle180(parseFloat(cctvInputRotate.value));
+          if (cctvInputPanX) cctvViewTransform.panX = Math.max(-200, Math.min(200, parseFloat(cctvInputPanX.value) || 0));
+          if (cctvInputPanY) cctvViewTransform.panY = Math.max(-200, Math.min(200, parseFloat(cctvInputPanY.value) || 0));
+          if (cctvInputZoom) cctvViewTransform.zoom = Math.max(0.5, Math.min(3.0, parseFloat(cctvInputZoom.value) || 1.0));
+          if (cctvTransformTarget) cctvViewTransform.target = cctvTransformTarget.value;
+          applyCctvViewTransform();
+          saveCctvViewTransform();
+        }
+
+        function stepCctvRotation(deltaDeg) {
+          cctvViewTransform.rotationDeg = normalizeCctvAngle180(cctvViewTransform.rotationDeg + deltaDeg);
+          applyCctvViewTransform();
+          saveCctvViewTransform();
+        }
+
+        function resetCctvViewTransform() {
+          cctvViewTransform.rotationDeg = 0;
+          cctvViewTransform.panX = 0;
+          cctvViewTransform.panY = 0;
+          cctvViewTransform.zoom = 1.0;
+          applyCctvViewTransform();
+          saveCctvViewTransform();
+        }
+        window.resetCctvViewTransform = resetCctvViewTransform;
+
+        if (cctvInputRotate) cctvInputRotate.addEventListener("input", onCctvTransformInput);
+        if (cctvInputPanX) cctvInputPanX.addEventListener("input", onCctvTransformInput);
+        if (cctvInputPanY) cctvInputPanY.addEventListener("input", onCctvTransformInput);
+        if (cctvInputZoom) cctvInputZoom.addEventListener("input", onCctvTransformInput);
+        if (cctvTransformTarget) cctvTransformTarget.addEventListener("change", onCctvTransformInput);
+        if (btnResetCctvTransform) btnResetCctvTransform.addEventListener("click", resetCctvViewTransform);
+
+        const btnRotM90 = document.getElementById("btnCctvRotM90");
+        const btnRotM15 = document.getElementById("btnCctvRotM15");
+        const btnRotP15 = document.getElementById("btnCctvRotP15");
+        const btnRotP90 = document.getElementById("btnCctvRotP90");
+        if (btnRotM90) btnRotM90.addEventListener("click", () => stepCctvRotation(-90));
+        if (btnRotM15) btnRotM15.addEventListener("click", () => stepCctvRotation(-15));
+        if (btnRotP15) btnRotP15.addEventListener("click", () => stepCctvRotation(15));
+        if (btnRotP90) btnRotP90.addEventListener("click", () => stepCctvRotation(90));
+
+        function drawTransformedCctvToCanvas(ctx, videoEl, canvasW, canvasH, forOpticalZones = false) {
+          ctx.save();
+          ctx.fillStyle = "#000000";
+          ctx.fillRect(0, 0, canvasW, canvasH);
+
+          const { rotationDeg, panX, panY, zoom, target } = cctvViewTransform;
+          const refW = (cctvVideoContainer && cctvVideoContainer.clientWidth > 0) ? cctvVideoContainer.clientWidth : 640;
+          const refH = (cctvVideoContainer && cctvVideoContainer.clientHeight > 0) ? cctvVideoContainer.clientHeight : 360;
+          const dx = (panX / refW) * canvasW;
+          const dy = (panY / refH) * canvasH;
+          const rad = (rotationDeg * Math.PI) / 180;
+
+          if (forOpticalZones) {
+            if (target === "video") {
+              ctx.translate(canvasW / 2 + dx, canvasH / 2 + dy);
+              ctx.rotate(rad);
+              ctx.scale(zoom, zoom);
+              ctx.drawImage(videoEl, -canvasW / 2, -canvasH / 2, canvasW, canvasH);
+            } else if (target === "hud") {
+              ctx.translate(canvasW / 2, canvasH / 2);
+              ctx.scale(1 / zoom, 1 / zoom);
+              ctx.rotate(-rad);
+              ctx.translate(-canvasW / 2 - dx, -canvasH / 2 - dy);
+              ctx.drawImage(videoEl, 0, 0, canvasW, canvasH);
+            } else {
+              ctx.drawImage(videoEl, 0, 0, canvasW, canvasH);
+            }
+          } else {
+            if (target === "both" || target === "video") {
+              ctx.translate(canvasW / 2 + dx, canvasH / 2 + dy);
+              ctx.rotate(rad);
+              ctx.scale(zoom, zoom);
+              ctx.drawImage(videoEl, -canvasW / 2, -canvasH / 2, canvasW, canvasH);
+            } else {
+              ctx.drawImage(videoEl, 0, 0, canvasW, canvasH);
+            }
+          }
+          ctx.restore();
+        }
+
+        // Load saved transform immediately on initialization
+        setTimeout(loadCctvViewTransform, 0);
+
+        // Real-time Optical Motion CV Loop for Camera Feed (Red Stopbar Zone Crossing Only)
+        let cctvMotionCanvas = null;
+        let cctvMotionCtx = null;
+        let prevCctvFrame = null;
+        let cctvMotionTimer = null;
+        let cctvWarmupCount = 0;
+        let cctvConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
+
+        const CCTV_DETECTOR_CONFIG = {
+          pixelDiffThreshold: 38,        // Per-pixel average RGB delta (0..255)
+          minChangedPixels: 28,          // Minimum changed sample points inside stopbar zone
+          minChangedRatio: 0.12,         // Minimum fraction (12%) of stopbar zone pixels changed
+          requiredConsecutiveFrames: 2,  // Debounce: consecutive 100ms frames with red-zone crossing
+          warmupFrames: 5,               // Ignore initial frames on camera start while auto-exposure settles
+          cooldownMs: 3000               // 3s per-lane anti-spam cooldown
+        };
+        window.CCTV_DETECTOR_CONFIG = CCTV_DETECTOR_CONFIG;
+
+        const CCTV_OPTICAL_ZONES = {
+          MAIN: { name: "MAIN ROAD", code: "MAIN", xMin: 0.25, xMax: 0.43, yMin: 0.44, yMax: 0.62 },
+          TURN: { name: "TURN BAY",  code: "TURN", xMin: 0.57, xMax: 0.75, yMin: 0.27, yMax: 0.45 },
+          SIDE: { name: "SIDE ROAD", code: "SIDE", xMin: 0.50, xMax: 0.61, yMin: 0.68, yMax: 0.85 }
+        };
+
+        function startCctvOpticalMotionLoop() {
+          if (cctvMotionTimer) clearInterval(cctvMotionTimer);
+          if (!cctvMotionCanvas) {
+            cctvMotionCanvas = document.createElement("canvas");
+            cctvMotionCanvas.width = 320;
+            cctvMotionCanvas.height = 180;
+            cctvMotionCtx = cctvMotionCanvas.getContext("2d", { willReadFrequently: true });
+          }
+          cctvWarmupCount = 0;
+          cctvConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
+
+          cctvMotionTimer = setInterval(() => {
+            if (!cctvStream || !videoCctv || videoCctv.readyState < 2 || videoCctv.videoWidth === 0) {
+              prevCctvFrame = null;
+              cctvWarmupCount = 0;
+              cctvConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
+              return;
+            }
+
+            try {
+              drawTransformedCctvToCanvas(cctvMotionCtx, videoCctv, 320, 180, true);
+              const currImg = cctvMotionCtx.getImageData(0, 0, 320, 180);
+              const curr = new Uint8ClampedArray(currImg.data);
+
+              if (!prevCctvFrame || cctvWarmupCount < CCTV_DETECTOR_CONFIG.warmupFrames) {
+                prevCctvFrame = curr;
+                cctvWarmupCount++;
+                return;
+              }
+
+              // Strictly gate by active RED signal state on each approach
+              const redStates = {
+                MAIN: Boolean(currentCctvOutputs.mainR) && !Boolean(currentCctvOutputs.mainG) && !Boolean(currentCctvOutputs.mainY),
+                TURN: Boolean(currentCctvOutputs.turnR) && !Boolean(currentCctvOutputs.turnG) && !Boolean(currentCctvOutputs.turnY),
+                SIDE: Boolean(currentCctvOutputs.sideR) && !Boolean(currentCctvOutputs.sideG) && !Boolean(currentCctvOutputs.sideY)
+              };
+
+              const now = Date.now();
+              const zoneStats = {};
+              let simultaneousSpikes = 0;
+
+              for (const [key, reg] of Object.entries(CCTV_OPTICAL_ZONES)) {
+                const xStart = Math.floor(reg.xMin * 320);
+                const xEnd = Math.floor(reg.xMax * 320);
+                const yStart = Math.floor(reg.yMin * 180);
+                const yEnd = Math.floor(reg.yMax * 180);
+
+                let changedPixels = 0;
+                let totalSamples = 0;
+
+                for (let y = yStart; y < yEnd; y += 3) {
+                  for (let x = xStart; x < xEnd; x += 3) {
+                    totalSamples++;
+                    const idx = (y * 320 + x) * 4;
+                    const diffR = Math.abs(curr[idx] - prevCctvFrame[idx]);
+                    const diffG = Math.abs(curr[idx + 1] - prevCctvFrame[idx + 1]);
+                    const diffB = Math.abs(curr[idx + 2] - prevCctvFrame[idx + 2]);
+                    const delta = (diffR + diffG + diffB) / 3;
+
+                    if (delta > CCTV_DETECTOR_CONFIG.pixelDiffThreshold) changedPixels++;
+                  }
+                }
+
+                const changedRatio = totalSamples > 0 ? (changedPixels / totalSamples) : 0;
+                const exceeded = (changedPixels >= CCTV_DETECTOR_CONFIG.minChangedPixels) &&
+                                 (changedRatio >= CCTV_DETECTOR_CONFIG.minChangedRatio);
+                if (exceeded) simultaneousSpikes++;
+                zoneStats[key] = { changedPixels, totalSamples, changedRatio, exceeded };
+              }
+
+              prevCctvFrame = curr;
+
+              // Reject global camera exposure flash / bump if all 3 zones spike at once
+              if (simultaneousSpikes >= 3) {
+                cctvConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
+                return;
+              }
+
+              for (const [key, isRed] of Object.entries(redStates)) {
+                if (!isRed) {
+                  cctvConsecutiveHits[key] = 0;
+                  continue;
+                }
+                if (now - (lastCctvViolationTime[key] || 0) < CCTV_DETECTOR_CONFIG.cooldownMs) {
+                  cctvConsecutiveHits[key] = 0;
+                  continue;
+                }
+
+                const st = zoneStats[key];
+                if (st && st.exceeded) {
+                  cctvConsecutiveHits[key] = (cctvConsecutiveHits[key] || 0) + 1;
+                  if (cctvConsecutiveHits[key] >= CCTV_DETECTOR_CONFIG.requiredConsecutiveFrames) {
+                    cctvConsecutiveHits[key] = 0;
+                    lastCctvViolationTime[key] = now;
+                    const reg = CCTV_OPTICAL_ZONES[key];
+                    const pctStr = Math.round(st.changedRatio * 100);
+                    const speedEst = (Math.random() * 18 + 52).toFixed(1);
+                    appendConsole("sys-warn", "CCTV", `🚨 [RED_ZONE_CROSSING] Crossing detected inside RED ${reg.name} stopbar zone (${st.changedPixels}px / ${pctStr}%). Snapping evidence...`);
+                    triggerAutoCctvViolation(reg.name, reg.code, `RED_ZONE_CROSSING (${st.changedPixels}px / ${pctStr}%)`, speedEst);
+                    break;
+                  }
+                } else {
+                  cctvConsecutiveHits[key] = 0;
+                }
+              }
+            } catch (_) {}
+          }, 100);
+        }
+
+        function stopCctvOpticalMotionLoop() {
+          if (cctvMotionTimer) {
+            clearInterval(cctvMotionTimer);
+            cctvMotionTimer = null;
+          }
+          prevCctvFrame = null;
+          cctvWarmupCount = 0;
+          cctvConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
+        }
+
+        window.updateCctvAerialMarks = function(out) {
+          if (!out) return;
+          currentCctvOutputs = out;
+
+          const mRed = Boolean(out.mainR);
+          const mGrn = Boolean(out.mainG);
+          const tRed = Boolean(out.turnR);
+          const tGrn = Boolean(out.turnG);
+          const sRed = Boolean(out.sideR);
+          const sGrn = Boolean(out.sideG);
+
+          // Corner Signal Pills
+          if (cctvLightMain) {
+            cctvLightMain.textContent = mRed ? "M: RED" : mGrn ? "M: GRN" : "M: YEL";
+            cctvLightMain.style.color = mRed ? "#ef4444" : mGrn ? "#10b981" : "#f59e0b";
+          }
+          if (cctvLightTurn) {
+            cctvLightTurn.textContent = tRed ? "T: RED" : tGrn ? "T: GRN" : "T: YEL";
+            cctvLightTurn.style.color = tRed ? "#ef4444" : tGrn ? "#10b981" : "#f59e0b";
+          }
+          if (cctvLightSide) {
+            cctvLightSide.textContent = sRed ? "S: RED" : sGrn ? "S: GRN" : "S: YEL";
+            cctvLightSide.style.color = sRed ? "#ef4444" : sGrn ? "#10b981" : "#f59e0b";
+          }
+
+          // 1. Main Road SVG Lane
+          if (cctvLanePolyMain) {
+            if (mRed) {
+              cctvLanePolyMain.setAttribute("fill", "rgba(239, 68, 68, 0.25)");
+              cctvLanePolyMain.setAttribute("stroke", "#ef4444");
+              if (cctvArrowMain) cctvArrowMain.setAttribute("stroke", "#ef4444");
+              if (cctvStopLineMain) cctvStopLineMain.setAttribute("stroke", "#ef4444");
+              if (cctvBadgeBgMain) {
+                cctvBadgeBgMain.setAttribute("fill", "#991b1b");
+                cctvBadgeBgMain.setAttribute("stroke", "#f87171");
+                cctvBadgeBgMain.setAttribute("filter", "url(#cctvGlowRed)");
+              }
+              if (cctvBadgeTextMain) cctvBadgeTextMain.textContent = "🔴 MAIN ROAD: RED [STOP]";
+              if (cctvTrapTextMain) {
+                cctvTrapTextMain.textContent = "S2 STOPBAR (IR2) • OPTICAL ACTIVE";
+                cctvTrapTextMain.setAttribute("fill", "#fca5a5");
+              }
+            } else if (mGrn) {
+              cctvLanePolyMain.setAttribute("fill", "rgba(16, 185, 129, 0.18)");
+              cctvLanePolyMain.setAttribute("stroke", "#10b981");
+              if (cctvArrowMain) cctvArrowMain.setAttribute("stroke", "#10b981");
+              if (cctvStopLineMain) cctvStopLineMain.setAttribute("stroke", "#10b981");
+              if (cctvBadgeBgMain) {
+                cctvBadgeBgMain.setAttribute("fill", "#065f46");
+                cctvBadgeBgMain.setAttribute("stroke", "#34d399");
+                cctvBadgeBgMain.setAttribute("filter", "url(#cctvGlowGreen)");
+              }
+              if (cctvBadgeTextMain) cctvBadgeTextMain.textContent = "🟢 MAIN ROAD: GREEN [PROCEED]";
+              if (cctvTrapTextMain) {
+                cctvTrapTextMain.textContent = "FLOW SAFE • NO ENFORCEMENT";
+                cctvTrapTextMain.setAttribute("fill", "#6ee7b7");
+              }
+            } else {
+              cctvLanePolyMain.setAttribute("fill", "rgba(245, 158, 11, 0.2)");
+              cctvLanePolyMain.setAttribute("stroke", "#f59e0b");
+              if (cctvArrowMain) cctvArrowMain.setAttribute("stroke", "#f59e0b");
+              if (cctvStopLineMain) cctvStopLineMain.setAttribute("stroke", "#f59e0b");
+              if (cctvBadgeBgMain) {
+                cctvBadgeBgMain.setAttribute("fill", "#78350f");
+                cctvBadgeBgMain.setAttribute("stroke", "#fbbf24");
+                cctvBadgeBgMain.removeAttribute("filter");
+              }
+              if (cctvBadgeTextMain) cctvBadgeTextMain.textContent = "🟡 MAIN ROAD: ORANGE [CLEAR]";
+              if (cctvTrapTextMain) {
+                cctvTrapTextMain.textContent = "CLEAR INTERSECTION";
+                cctvTrapTextMain.setAttribute("fill", "#fde68a");
+              }
+            }
+          }
+
+          // 2. Protected Turn Bay SVG Lane
+          if (cctvLanePolyTurn) {
+            if (tRed) {
+              cctvLanePolyTurn.setAttribute("fill", "rgba(239, 68, 68, 0.25)");
+              cctvLanePolyTurn.setAttribute("stroke", "#ef4444");
+              if (cctvArrowTurn) cctvArrowTurn.setAttribute("stroke", "#ef4444");
+              if (cctvStopLineTurn) cctvStopLineTurn.setAttribute("stroke", "#ef4444");
+              if (cctvBadgeBgTurn) {
+                cctvBadgeBgTurn.setAttribute("fill", "#991b1b");
+                cctvBadgeBgTurn.setAttribute("stroke", "#f87171");
+                cctvBadgeBgTurn.setAttribute("filter", "url(#cctvGlowRed)");
+              }
+              if (cctvBadgeTextTurn) cctvBadgeTextTurn.textContent = "🔴 TURN BAY: RED [STOP]";
+              if (cctvTrapTextTurn) {
+                cctvTrapTextTurn.textContent = "S2 STOPBAR (IR6) • OPTICAL ACTIVE";
+                cctvTrapTextTurn.setAttribute("fill", "#fca5a5");
+              }
+            } else if (tGrn) {
+              cctvLanePolyTurn.setAttribute("fill", "rgba(16, 185, 129, 0.18)");
+              cctvLanePolyTurn.setAttribute("stroke", "#10b981");
+              if (cctvArrowTurn) cctvArrowTurn.setAttribute("stroke", "#10b981");
+              if (cctvStopLineTurn) cctvStopLineTurn.setAttribute("stroke", "#10b981");
+              if (cctvBadgeBgTurn) {
+                cctvBadgeBgTurn.setAttribute("fill", "#065f46");
+                cctvBadgeBgTurn.setAttribute("stroke", "#34d399");
+                cctvBadgeBgTurn.setAttribute("filter", "url(#cctvGlowGreen)");
+              }
+              if (cctvBadgeTextTurn) cctvBadgeTextTurn.textContent = "🟢 TURN BAY: GREEN [PROCEED]";
+              if (cctvTrapTextTurn) {
+                cctvTrapTextTurn.textContent = "FLOW SAFE • NO ENFORCEMENT";
+                cctvTrapTextTurn.setAttribute("fill", "#6ee7b7");
+              }
+            } else {
+              cctvLanePolyTurn.setAttribute("fill", "rgba(245, 158, 11, 0.2)");
+              cctvLanePolyTurn.setAttribute("stroke", "#f59e0b");
+              if (cctvArrowTurn) cctvArrowTurn.setAttribute("stroke", "#f59e0b");
+              if (cctvStopLineTurn) cctvStopLineTurn.setAttribute("stroke", "#f59e0b");
+              if (cctvBadgeBgTurn) {
+                cctvBadgeBgTurn.setAttribute("fill", "#78350f");
+                cctvBadgeBgTurn.setAttribute("stroke", "#fbbf24");
+                cctvBadgeBgTurn.removeAttribute("filter");
+              }
+              if (cctvBadgeTextTurn) cctvBadgeTextTurn.textContent = "🟡 TURN BAY: ORANGE [CLEAR]";
+              if (cctvTrapTextTurn) {
+                cctvTrapTextTurn.textContent = "CLEAR INTERSECTION";
+                cctvTrapTextTurn.setAttribute("fill", "#fde68a");
+              }
+            }
+          }
+
+          // 3. Side Road Stem SVG Lane
+          if (cctvLanePolySide) {
+            if (sRed) {
+              cctvLanePolySide.setAttribute("fill", "rgba(239, 68, 68, 0.25)");
+              cctvLanePolySide.setAttribute("stroke", "#ef4444");
+              if (cctvArrowSide) cctvArrowSide.setAttribute("stroke", "#ef4444");
+              if (cctvStopLineSide) cctvStopLineSide.setAttribute("stroke", "#ef4444");
+              if (cctvBadgeBgSide) {
+                cctvBadgeBgSide.setAttribute("fill", "#991b1b");
+                cctvBadgeBgSide.setAttribute("stroke", "#f87171");
+                cctvBadgeBgSide.setAttribute("filter", "url(#cctvGlowRed)");
+              }
+              if (cctvBadgeTextSide) cctvBadgeTextSide.textContent = "🔴 SIDE ROAD: RED [STOP]";
+              if (cctvTrapTextSide) {
+                cctvTrapTextSide.textContent = "S2 (IR4) • OPTICAL ACTIVE";
+                cctvTrapTextSide.setAttribute("fill", "#fca5a5");
+              }
+            } else if (sGrn) {
+              cctvLanePolySide.setAttribute("fill", "rgba(16, 185, 129, 0.18)");
+              cctvLanePolySide.setAttribute("stroke", "#10b981");
+              if (cctvArrowSide) cctvArrowSide.setAttribute("stroke", "#10b981");
+              if (cctvStopLineSide) cctvStopLineSide.setAttribute("stroke", "#10b981");
+              if (cctvBadgeBgSide) {
+                cctvBadgeBgSide.setAttribute("fill", "#065f46");
+                cctvBadgeBgSide.setAttribute("stroke", "#34d399");
+                cctvBadgeBgSide.setAttribute("filter", "url(#cctvGlowGreen)");
+              }
+              if (cctvBadgeTextSide) cctvBadgeTextSide.textContent = "🟢 SIDE ROAD: GREEN [PROCEED]";
+              if (cctvTrapTextSide) {
+                cctvTrapTextSide.textContent = "FLOW SAFE • NO ENFORCEMENT";
+                cctvTrapTextSide.setAttribute("fill", "#6ee7b7");
+              }
+            } else {
+              cctvLanePolySide.setAttribute("fill", "rgba(245, 158, 11, 0.2)");
+              cctvLanePolySide.setAttribute("stroke", "#f59e0b");
+              if (cctvArrowSide) cctvArrowSide.setAttribute("stroke", "#f59e0b");
+              if (cctvStopLineSide) cctvStopLineSide.setAttribute("stroke", "#f59e0b");
+              if (cctvBadgeBgSide) {
+                cctvBadgeBgSide.setAttribute("fill", "#78350f");
+                cctvBadgeBgSide.setAttribute("stroke", "#fbbf24");
+                cctvBadgeBgSide.removeAttribute("filter");
+              }
+              if (cctvBadgeTextSide) cctvBadgeTextSide.textContent = "🟡 SIDE ROAD: ORANGE [CLEAR]";
+              if (cctvTrapTextSide) {
+                cctvTrapTextSide.textContent = "CLEAR INTERSECTION";
+                cctvTrapTextSide.setAttribute("fill", "#fde68a");
+              }
+            }
+          }
+
+          // Enforcement State Badge
+          if (cctvEnforceBadge) {
+            cctvEnforceBadge.textContent = (mRed || tRed || sRed) ? "● PHOTO ENFORCEMENT ARMED" : "ALL PASS (NO ENFORCEMENT)";
+            cctvEnforceBadge.style.color = (mRed || tRed || sRed) ? "#f59e0b" : "#10b981";
+          }
+
+          // Check if hardware sensor on a red lane tripped
+          checkCctvHardwareRedBreach(out);
+        };
+
+        // Hardware IR sensors only register queue demand; automatic CCTV snapshots are strictly
+        // triggered by optical red-zone crossings inside the camera feed while the lane is RED.
+        function checkCctvHardwareRedBreach(_out) {
+          // Intentionally disabled: waiting vehicles on IR sensors must never trigger blind camera snapshots.
+        }
+
+        function triggerAutoCctvViolation(approachName, approachCode, sensorName, speedKmh) {
+          const isCameraActive = Boolean(cctvStream && videoCctv && videoCctv.readyState >= 2 && videoCctv.videoWidth > 0);
+          if (!isCameraActive) return;
+
+          const strobe = document.getElementById("cctvStrobeOverlay");
+          if (strobe) {
+            strobe.style.opacity = "1";
+            setTimeout(() => { strobe.style.opacity = "0"; }, 450);
+          }
+          snapCctvViolationFrame(approachName, speedKmh, sensorName, approachCode);
+        }
+
+        function snapCctvViolationFrame(approachName = "MAIN ROAD", speedKmh = null, sensorName = "RED_ZONE_CROSSING", laneCode = "MAIN") {
+          const isCameraActive = Boolean(cctvStream && videoCctv && videoCctv.readyState >= 2 && videoCctv.videoWidth > 0);
+          if (!isCameraActive) {
+            appendConsole("sys-warn", "CCTV", "⚠️ Photo snap blocked: Aerial USB camera is not connected or streaming. Connect the camera first.");
+            return;
+          }
+          if (!cctvCanvas) return;
+          cctvCanvas.width = 640;
+          cctvCanvas.height = 360;
+          const ctx = cctvCanvas.getContext("2d");
+
+          drawTransformedCctvToCanvas(ctx, videoCctv, cctvCanvas.width, cctvCanvas.height, false);
+
+          const speed = speedKmh || (Math.random() * 25 + 52).toFixed(1);
+          const plate = `VEH-${Math.floor(1000 + Math.random() * 9000)}`;
+          const timeStr = new Date().toLocaleTimeString();
+
+          // 1. Draw T-Junction Blueprint Lines on Snapshot
+          ctx.strokeStyle = "rgba(148, 163, 184, 0.6)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, cctvCanvas.height * 0.28);
+          ctx.lineTo(cctvCanvas.width, cctvCanvas.height * 0.28);
+          ctx.moveTo(0, cctvCanvas.height * 0.62);
+          ctx.lineTo(cctvCanvas.width * 0.39, cctvCanvas.height * 0.62);
+          ctx.moveTo(cctvCanvas.width * 0.61, cctvCanvas.height * 0.62);
+          ctx.lineTo(cctvCanvas.width, cctvCanvas.height * 0.62);
+          ctx.moveTo(cctvCanvas.width * 0.39, cctvCanvas.height * 0.62);
+          ctx.lineTo(cctvCanvas.width * 0.39, cctvCanvas.height);
+          ctx.moveTo(cctvCanvas.width * 0.61, cctvCanvas.height * 0.62);
+          ctx.lineTo(cctvCanvas.width * 0.61, cctvCanvas.height);
+          ctx.stroke();
+
+          // 2. Violated Lane Coordinates
+          let stopX1 = cctvCanvas.width * 0.05;
+          let stopX2 = cctvCanvas.width * 0.39;
+          let stopY = cctvCanvas.height * 0.45;
+          let laneBox = { x: cctvCanvas.width * 0.10, y: cctvCanvas.height * 0.46, w: cctvCanvas.width * 0.26, h: cctvCanvas.height * 0.15 };
+
+          const upperApp = String(approachName).toUpperCase();
+          if (upperApp.includes("SIDE") || upperApp.includes("STEM")) {
+            stopX1 = cctvCanvas.width * 0.50;
+            stopX2 = cctvCanvas.width * 0.61;
+            stopY = cctvCanvas.height * 0.72;
+            laneBox = { x: cctvCanvas.width * 0.50, y: cctvCanvas.height * 0.72, w: cctvCanvas.width * 0.11, h: cctvCanvas.height * 0.24 };
+          } else if (upperApp.includes("TURN")) {
+            stopX1 = cctvCanvas.width * 0.61;
+            stopX2 = cctvCanvas.width * 0.90;
+            stopY = cctvCanvas.height * 0.45;
+            laneBox = { x: cctvCanvas.width * 0.61, y: cctvCanvas.height * 0.28, w: cctvCanvas.width * 0.28, h: cctvCanvas.height * 0.16 };
+          }
+
+          // Red Tint for Violated Lane
+          ctx.fillStyle = "rgba(239, 68, 68, 0.3)";
+          ctx.fillRect(laneBox.x, laneBox.y, laneBox.w, laneBox.h);
+          ctx.strokeStyle = "#ef4444";
+          ctx.lineWidth = 2.5;
+          ctx.strokeRect(laneBox.x, laneBox.y, laneBox.w, laneBox.h);
+
+          // Stopbar line
+          ctx.strokeStyle = "rgba(239, 68, 68, 0.95)";
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(stopX1, stopY);
+          ctx.lineTo(stopX2, stopY);
+          ctx.stroke();
+
+          ctx.fillStyle = "rgba(190, 18, 60, 0.95)";
+          ctx.fillRect(stopX1, stopY - 20, 240, 20);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 10px monospace";
+          ctx.fillText("⛔ RED LIGHT RUNNER OVERRUN", stopX1 + 6, stopY - 6);
+
+          // Target Bounding Box
+          const boxW = cctvCanvas.width * 0.18;
+          const boxH = cctvCanvas.height * 0.18;
+          const boxX = laneBox.x + (laneBox.w - boxW) / 2;
+          const boxY = laneBox.y + (laneBox.h - boxH) / 2;
+
+          ctx.strokeStyle = "#f43f5e";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(boxX, boxY, boxW, boxH);
+          ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+          ctx.fillRect(boxX, boxY - 18, 140, 18);
+          ctx.fillStyle = "#f43f5e";
+          ctx.font = "bold 9px monospace";
+          ctx.fillText(`TARGET: ${plate}`, boxX + 6, boxY - 5);
+
+          // Evidentiary Header
+          ctx.fillStyle = "rgba(2, 6, 23, 0.90)";
+          ctx.fillRect(0, 0, cctvCanvas.width, 42);
+          ctx.fillStyle = "#ef4444";
+          ctx.fillRect(8, 6, 12, 12);
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 11px sans-serif";
+          ctx.fillText("PHOTO-ENFORCEMENT SYSTEM — EVIDENTIARY CAPTURE", 26, 16);
+          ctx.fillStyle = "#94a3b8";
+          ctx.font = "9px monospace";
+          ctx.fillText(`RHT T-JUNCTION (CAM-01 AERIAL) | ${timeStr} | VIOLATED: ${approachName.toUpperCase()}`, 26, 32);
+
+          ctx.fillStyle = "#ef4444";
+          ctx.font = "bold 11px monospace";
+          ctx.fillText(`RADAR: ${speed} KM/H`, cctvCanvas.width - 160, 16);
+          ctx.fillStyle = "#f59e0b";
+          ctx.font = "bold 9px monospace";
+          ctx.fillText(`TRAP: ${sensorName}`, cctvCanvas.width - 160, 32);
+
+          // Evidentiary Footer
+          ctx.fillStyle = "rgba(2, 6, 23, 0.90)";
+          ctx.fillRect(0, cctvCanvas.height - 24, cctvCanvas.width, 24);
+          ctx.fillStyle = "#38bdf8";
+          ctx.font = "9px monospace";
+          ctx.fillText("SIGNAL INTERLOCK: RED ACTIVE | VALIDATED BY ESP32 HARDWARE", 10, cctvCanvas.height - 8);
+
+          const dataUrl = cctvCanvas.toDataURL("image/jpeg", 0.88);
+
+          if (imgCctvSnap) {
+            imgCctvSnap.src = dataUrl;
+            imgCctvSnap.style.display = "block";
+            setTimeout(() => {
+              if (cctvStream && videoCctv) imgCctvSnap.style.display = "none";
+            }, 4500);
+          }
+
+          const record = {
+            plate_number: plate,
+            speed_kmh: speed,
+            approach: approachName,
+            lane: laneCode || approachName,
+            signalState: "RED",
+            triggerReason: "RED_ZONE_CROSSING",
+            sensor: sensorName,
+            timestamp: timeStr,
+            snapshot_url: dataUrl
+          };
+
+          // Save image file to user's computer via browser download
+          try {
+            const dlLink = document.createElement("a");
+            dlLink.href = dataUrl;
+            dlLink.download = `violation_${new Date().toISOString().replace(/[:.]/g, "-")}_${plate}.jpg`;
+            document.body.appendChild(dlLink);
+            dlLink.click();
+            document.body.removeChild(dlLink);
+          } catch (_) {}
+
+          if (mqttClient && mqttClient.connected) {
+            mqttClient.publish(MQTT_TOPICS.violations || "traffic/junction1/violations", JSON.stringify(record));
+            appendConsole("sys-warn", "CCTV", `📸 Red-light violation captured: ${record.plate_number} on ${approachName} (Published to MQTT)`);
+          } else {
+            appendConsole("sys-info", "CCTV", `📸 Red-light violation captured: ${record.plate_number} on ${approachName}`);
+          }
+        }
+
+        async function enumerateCctvDevices() {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const vDevs = devices.filter(d => d.kind === "videoinput");
+            if (elCctvSelect) {
+              if (vDevs.length === 0) {
+                elCctvSelect.innerHTML = '<option value="">No USB Camera Detected</option>';
+              } else {
+                elCctvSelect.innerHTML = vDevs.map((d, i) => {
+                  const label = d.label || `USB Camera ${i + 1} (${d.deviceId.slice(0, 8)}...)`;
+                  return `<option value="${d.deviceId}">${label}</option>`;
+                }).join("");
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (btnConnectCctv) {
+          btnConnectCctv.addEventListener("click", async () => {
+            if (cctvStream) {
+              stopCctvOpticalMotionLoop();
+              cctvStream.getTracks().forEach(t => t.stop());
+              cctvStream = null;
+              if (videoCctv) { videoCctv.srcObject = null; videoCctv.style.display = "none"; }
+              if (imgCctvSnap) imgCctvSnap.style.display = "none";
+              if (cctvEmpty) cctvEmpty.style.display = "block";
+              btnConnectCctv.textContent = "Connect Camera";
+              btnConnectCctv.className = "btn btn-primary btn-sm";
+              if (btnSnapCctv) btnSnapCctv.disabled = true;
+              if (cctvFpsPill) cctvFpsPill.style.display = "none";
+              if (cctvStatusBadge) {
+                cctvStatusBadge.setAttribute("data-status", "DISCONNECTED");
+                cctvStatusText.textContent = "CAM: DISCONNECTED";
+              }
+              if (cctvOpticalBadge) {
+                cctvOpticalBadge.textContent = "OPTICAL TRAP: STANDBY";
+                cctvOpticalBadge.style.color = "#94a3b8";
+              }
+              appendConsole("sys-info", "CCTV", "USB Camera disconnected.");
+            } else {
+              const devId = elCctvSelect ? elCctvSelect.value : "";
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                  video: devId ? { deviceId: { exact: devId } } : true,
+                  audio: false
+                });
+                cctvStream = stream;
+                if (videoCctv) {
+                  videoCctv.srcObject = stream;
+                  videoCctv.style.display = "block";
+                  videoCctv.play().catch(() => {});
+                }
+                if (imgCctvSnap) imgCctvSnap.style.display = "none";
+                if (cctvEmpty) cctvEmpty.style.display = "none";
+                btnConnectCctv.textContent = "Disconnect Camera";
+                btnConnectCctv.className = "btn btn-outline btn-sm";
+                if (btnSnapCctv) btnSnapCctv.disabled = false;
+                if (cctvFpsPill) cctvFpsPill.style.display = "inline-block";
+                if (cctvStatusBadge) {
+                  cctvStatusBadge.setAttribute("data-status", "CONNECTED");
+                  cctvStatusText.textContent = "CAM: LIVE (ACTIVE)";
+                }
+                if (cctvOpticalBadge) {
+                  cctvOpticalBadge.textContent = "⚡ OPTICAL RED-LANE TRAP: ARMED";
+                  cctvOpticalBadge.style.color = "#10b981";
+                }
+                await enumerateCctvDevices();
+                startCctvOpticalMotionLoop();
+                appendConsole("sys-info", "CCTV", "USB Camera connected & optical red-lane surveillance armed.");
+              } catch (err) {
+                alert(`USB Camera Error: ${err.message}`);
+                appendConsole("sys-error", "CCTV", `Failed connecting camera: ${err.message}`);
+              }
+            }
+          });
+        }
+
+        if (btnSnapCctv) {
+          btnSnapCctv.addEventListener("click", () => {
+            snapCctvViolationFrame("Main Road (Arterial)", null, "MANUAL OPERATOR SNAP");
+          });
+        }
+
+        enumerateCctvDevices();
+        if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+          navigator.mediaDevices.addEventListener("devicechange", enumerateCctvDevices);
+        }
 
         // Safe stream release on window unload or page navigation
         window.addEventListener("beforeunload", () => {

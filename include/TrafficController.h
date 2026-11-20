@@ -122,16 +122,18 @@ public:
         uint32_t clearanceDurationMs;
         uint8_t  currentStep;
         ControlMode restoreMode;
-        LampDiagnosticRecord records[9]; // Main R, Y, G, Side R, Y, G, Turn R, Y, G
+        uint8_t  totalLamps;
+        uint8_t  startIdx;
+        LampDiagnosticRecord records[13]; // 9 Vehicle (0..8) + 4 Pedestrian (9..12)
     };
 
-    bool startLampDiagnostics(uint32_t nowMs, uint32_t holdMs = 1000, const char** rejectReason = nullptr);
+    bool startLampDiagnostics(uint32_t nowMs, uint32_t holdMs = 1000, uint8_t groupType = 1, const char** rejectReason = nullptr);
     void cancelLampDiagnostics(uint32_t nowMs);
     bool isLampDiagnosticsActive() const { return diagSession_.active; }
     const LampDiagnosticSession& getLampDiagnosticSession() const { return diagSession_; }
 
     // ========================================================================
-    // 10-SECOND ALL-GREEN HARDWARE DIAGNOSTIC TEST (BENCH ONLY)
+    // 10-SECOND ALL-GREEN HARDWARE DIAGNOSTIC TEST (ISOLATED BENCH ONLY)
     // ========================================================================
     struct AllGreenDiagnosticSession {
         bool        active;
@@ -143,6 +145,8 @@ public:
         char        abortReason[32];
     };
 
+    void unlockBenchDiagnostics(bool unlock) { benchDiagnosticsUnlocked_ = unlock; }
+    bool isBenchDiagnosticsUnlocked() const { return benchDiagnosticsUnlocked_; }
     bool startAllGreenDiagnostics(uint32_t nowMs, uint32_t durationMs = 10000, const char** rejectReason = nullptr);
     void cancelAllGreenDiagnostics(uint32_t nowMs, const char* reason = "OPERATOR_ABORT");
     bool isAllGreenTestActive() const { return allGreenSession_.active; }
@@ -219,6 +223,8 @@ public:
     NextPhaseTarget getNextTarget() const { return nextTarget_; }
     uint32_t getStateStartTime() const { return stateStartMs_; }
     uint32_t getStateElapsed(uint32_t nowMs) const { return nowMs - stateStartMs_; }
+    uint32_t getMainGapElapsed(uint32_t nowMs) const { return mainGapTimerActive_ ? (nowMs - mainGapStartMs_) : 0; }
+    bool isMainGapTimerActive() const { return mainGapTimerActive_; }
     uint32_t getSideGapElapsed(uint32_t nowMs) const { return sideGapTimerActive_ ? (nowMs - sideGapStartMs_) : 0; }
     bool isSideGapTimerActive() const { return sideGapTimerActive_; }
     bool isPedestrianClearanceActive() const { return postPedClearanceActive_; }
@@ -246,6 +252,9 @@ public:
         return detector_.isAnyChannelFaulted();
     }
     const char* getFaultReason() const { return faultMgr_.getLastFaultReason(); }
+    const char* getSelectionReason() const { return lastSelectionReason_; }
+    uint32_t getAllocatedGreenMs(TrafficConfig::MovementId movement) const;
+    uint32_t getCurrentGreenAllocationMs() const;
 
     const FaultManager& getFaultManager() const { return faultMgr_; }
     const VehicleDetector& getVehicleDetector() const { return detector_; }
@@ -297,12 +306,16 @@ private:
     NextPhaseTarget nextTarget_;
 
     uint32_t stateStartMs_;
+    uint32_t currentPhaseAllocatedGreenMs_;
+    uint32_t mainGapStartMs_;
     uint32_t sideGapStartMs_;
     uint32_t lastUpdateMs_;
+    bool     mainGapTimerActive_;
     bool     sideGapTimerActive_;
     bool     postPedClearanceActive_;
     bool     manualStepRequested_;
     bool     allGreenHoldActive_;
+    bool     benchDiagnosticsUnlocked_;
 
     FaultManager         faultMgr_;
     VehicleDetector      detector_;
@@ -316,6 +329,7 @@ private:
 
     TransitionCallback transitionCb_;
     EventLogCallback   eventLogCb_;
+    mutable const char* lastSelectionReason_;
 };
 
 #endif // TRAFFIC_CONTROLLER_H

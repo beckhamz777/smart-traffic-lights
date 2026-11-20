@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 #include "TrafficConfig.h"
 
 #ifdef ARDUINO
@@ -16,11 +17,11 @@
 // driver behaviour across all 13 signal channels:
 //   - 9 Vehicle RYG channels:
 //       Main Road     : Red = GPIO 27, Yellow = GPIO 26, Green = GPIO 25
-//       Side Road     : Red = GPIO 13, Yellow = GPIO 12, Green = GPIO 14
-//       Turn Movement : Red = GPIO 23, Yellow = GPIO 22, Green = GPIO 21
+//       Side Road     : Red = GPIO 14, Yellow = GPIO 12, Green = GPIO 13
+//       Turn Movement : Red = GPIO 22, Yellow = GPIO 23, Green = GPIO 21
 //   - 4 Pedestrian channels:
 //       Pedestrian 1  : Walk = GPIO 19, Don't Walk = GPIO 18
-//       Pedestrian 2  : Walk = GPIO 17, Don't Walk = GPIO 16
+//       Pedestrian 2  : Walk = GPIO 16, Don't Walk = GPIO 17
 //
 // Strictly distinguishes four distinct layers per channel:
 //   1. Logical signal state   (logicalState[i])     : FSM intent (true = ON, false = OFF)
@@ -35,18 +36,18 @@ struct LogicalSignalOutputs {
     bool mainGreen;     // Main Road Green      (GPIO 25)
     bool mainYellow;    // Main Road Yellow     (GPIO 26)
     bool mainRed;       // Main Road Red        (GPIO 27)
-    bool sideGreen;     // Side Road Green      (GPIO 14)
+    bool sideGreen;     // Side Road Green      (GPIO 13)
     bool sideYellow;    // Side Road Yellow     (GPIO 12)
-    bool sideRed;       // Side Road Red        (GPIO 13)
+    bool sideRed;       // Side Road Red        (GPIO 14)
     bool pedWalk;       // Pedestrian 1 Walk    (GPIO 19)
     bool pedDontWalk;   // Pedestrian 1 Don't W (GPIO 18)
 
     // Extended v2.0.0 fields (9..13)
     bool turnGreen;     // Turn Movement Green  (GPIO 21)
-    bool turnYellow;    // Turn Movement Yellow (GPIO 22)
-    bool turnRed;       // Turn Movement Red    (GPIO 23)
-    bool ped2Walk;      // Pedestrian 2 Walk    (GPIO 17)
-    bool ped2DontWalk;  // Pedestrian 2 Don't W (GPIO 16)
+    bool turnYellow;    // Turn Movement Yellow (GPIO 23)
+    bool turnRed;       // Turn Movement Red    (GPIO 22)
+    bool ped2Walk;      // Pedestrian 2 Walk    (GPIO 16)
+    bool ped2DontWalk;  // Pedestrian 2 Don't W (GPIO 17)
 };
 
 struct ElectricalPinStates {
@@ -125,10 +126,10 @@ public:
             lampTestChannel_ = -1;
             return true;
         }
-        if (channelIdx > 13) {
+        if (channelIdx >= static_cast<int8_t>(TrafficConfig::TOTAL_SIGNAL_OUTPUTS)) {
             return false;
         }
-        if (channelIdx < 9 || channelIdx == 13) {
+        if (channelIdx < 9) {
             if (!vehicleDriverVerified_ ||
                 vehicleDriverType_ == TrafficConfig::OutputDriverType::UNVERIFIED_SAFE_DISABLED) {
                 return false;
@@ -166,13 +167,6 @@ public:
             case 10: out.pedDontWalk  = true; break;
             case 11: out.ped2Walk     = true; break;
             case 12: out.ped2DontWalk = true; break;
-            case 13:
-                out.mainYellow   = true;
-                out.sideYellow   = true;
-                out.turnYellow   = true;
-                out.pedDontWalk  = true;
-                out.ped2DontWalk = true;
-                break;
             default: break;
         }
         return out;
@@ -193,7 +187,6 @@ public:
             case 10: return "PED1_DW";
             case 11: return "PED2_W";
             case 12: return "PED2_DW";
-            case 13: return "ALL_Y";
             default: return "OFF";
         }
     }
@@ -214,11 +207,24 @@ public:
         if (strcmp(name, "PED1_DW") == 0 || strcmp(name, "PED1_DONT_WALK") == 0) return 10;
         if (strcmp(name, "PED2_W") == 0 || strcmp(name, "PED2_WALK") == 0) return 11;
         if (strcmp(name, "PED2_DW") == 0 || strcmp(name, "PED2_DONT_WALK") == 0) return 12;
-        if (strcmp(name, "ALL_Y") == 0 || strcmp(name, "ALL_YELLOW") == 0 || strcmp(name, "FLASH_ORANGE") == 0) return 13;
+
+        // Numeric channel index (0..12) or physical GPIO pin number lookup
+        char* endp = nullptr;
+        long val = strtol(name, &endp, 10);
+        if (endp && *endp == '\0' && endp != name) {
+            if (val >= 0 && val < static_cast<long>(TrafficConfig::TOTAL_SIGNAL_OUTPUTS)) {
+                return static_cast<int8_t>(val);
+            }
+            for (uint8_t i = 0; i < TrafficConfig::TOTAL_SIGNAL_OUTPUTS; ++i) {
+                if (TrafficConfig::SIGNAL_OUTPUT_PINS[i] == static_cast<uint8_t>(val)) {
+                    return static_cast<int8_t>(i);
+                }
+            }
+        }
         return -2;
     }
 
-    // Locked hardware pin configuration: Side Yellow is assigned to GPIO 13 (PIN_SIDE_YELLOW).
+    // Confirmed hardware pin configuration: Side Yellow is assigned to GPIO 12 (PIN_SIDE_YELLOW).
     void setUseSafeProposedSideYellowPin(bool /*useSafePin*/) {
         sideYellowPin_ = TrafficConfig::PIN_SIDE_YELLOW;
     }
@@ -321,7 +327,7 @@ public:
     void applyLogicalOutputs(const LogicalSignalOutputs& logical) {
         getPinList(pins_);
         const LogicalSignalOutputs effectiveLogical =
-            (lampTestChannel_ >= 0 && lampTestChannel_ <= 13)
+            (lampTestChannel_ >= 0 && lampTestChannel_ < static_cast<int8_t>(TrafficConfig::TOTAL_SIGNAL_OUTPUTS))
                 ? buildSingleLampLogicalOutputs(lampTestChannel_)
                 : logical;
         ElectricalPinStates target;
@@ -389,16 +395,16 @@ public:
         outPins[0]  = TrafficConfig::PIN_MAIN_GREEN;     // GPIO 25
         outPins[1]  = TrafficConfig::PIN_MAIN_YELLOW;    // GPIO 26
         outPins[2]  = TrafficConfig::PIN_MAIN_RED;       // GPIO 27
-        outPins[3]  = TrafficConfig::PIN_SIDE_GREEN;     // GPIO 12 (PIN_SIDE_GREEN)
-        outPins[4]  = sideYellowPin_;                    // GPIO 13 (PIN_SIDE_YELLOW)
+        outPins[3]  = TrafficConfig::PIN_SIDE_GREEN;     // GPIO 13 (PIN_SIDE_GREEN)
+        outPins[4]  = sideYellowPin_;                    // GPIO 12 (PIN_SIDE_YELLOW)
         outPins[5]  = TrafficConfig::PIN_SIDE_RED;       // GPIO 14 (PIN_SIDE_RED)
         outPins[6]  = TrafficConfig::PIN_TURN_GREEN;     // GPIO 21
-        outPins[7]  = TrafficConfig::PIN_TURN_YELLOW;    // GPIO 22
-        outPins[8]  = TrafficConfig::PIN_TURN_RED;       // GPIO 23
+        outPins[7]  = TrafficConfig::PIN_TURN_YELLOW;    // GPIO 23
+        outPins[8]  = TrafficConfig::PIN_TURN_RED;       // GPIO 22
         outPins[9]  = TrafficConfig::PIN_PED1_WALK;      // GPIO 19
         outPins[10] = TrafficConfig::PIN_PED1_DONT_WALK; // GPIO 18
-        outPins[11] = TrafficConfig::PIN_PED2_WALK;      // GPIO 17
-        outPins[12] = TrafficConfig::PIN_PED2_DONT_WALK; // GPIO 16
+        outPins[11] = TrafficConfig::PIN_PED2_WALK;      // GPIO 16
+        outPins[12] = TrafficConfig::PIN_PED2_DONT_WALK; // GPIO 17
     }
 
     int8_t findChannelByGpio(uint8_t gpioPin) const {

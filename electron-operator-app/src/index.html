@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Traffic Lights — T-Junction RHT Operator Desktop</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased select-none font-sans">
+
+  <!-- ========================================================================= -->
+  <!-- TOP OPERATOR HEADER & WEBSOCKET BRIDGE CONNECTION BAR                     -->
+  <!-- ========================================================================= -->
+  <header class="bg-slate-900 border-b border-slate-800 px-5 py-3 shrink-0 shadow-lg">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      
+      <!-- Brand & Topology Indicator -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-emerald-500 flex items-center justify-center shadow-md shadow-brand-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 8h16M12 8v12" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base font-extrabold text-white tracking-wide">T-JUNCTION RHT OPERATOR DESKTOP</h1>
+            <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-brand-950 text-brand-400 border border-brand-800">RHT / KEEPRIGHT</span>
+            <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">13-CH &bull; 6 IR</span>
+          </div>
+          <p class="text-[11px] text-slate-400">Authoritative Desktop Client linked to Web Bridge (demo_dashboard.html &bull; ws://localhost:9001)</p>
+        </div>
+      </div>
+
+      <!-- Broker Connection Bar & Live Packet Counters -->
+      <div class="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+        <label for="brokerUrlInput" class="text-xs font-semibold text-slate-400 shrink-0">BRIDGE URL:</label>
+        <input 
+          type="text" 
+          id="brokerUrlInput" 
+          value="ws://localhost:9001" 
+          placeholder="ws://localhost:9001" 
+          class="bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono w-52 focus:outline-none focus:border-brand-500 transition"
+        />
+        <button 
+          id="btnToggleConnect" 
+          onclick="handleConnectToggle()" 
+          class="px-3 py-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs transition shadow flex items-center gap-1.5"
+        >
+          Connect
+        </button>
+
+        <!-- Live Connection Status Badge -->
+        <span 
+          id="badgeConnection" 
+          class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold bg-rose-500/10 text-rose-400 border border-rose-500/30"
+        >
+          <span id="dotConnection" class="w-2 h-2 rounded-full bg-rose-500"></span>
+          <span id="textConnection">OFFLINE / WAITING FOR BRIDGE</span>
+        </span>
+      </div>
+
+      <!-- Live Traffic Stats & T-Junction Priority -->
+      <div class="flex items-center space-x-3 text-xs">
+        <!-- TX/RX Packet Stats Pill -->
+        <div class="bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800 font-mono text-[10px] text-slate-400">
+          <span id="lblPacketCounters">TX Telemetry: 0 | TX Logs: 0 | RX Cmds: 0</span>
+        </div>
+
+        <div class="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center space-x-2">
+          <span class="text-slate-400 font-medium">PRIORITY:</span>
+          <span id="headerPriority" class="font-bold text-slate-500 font-mono">--</span>
+        </div>
+        <div class="bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center space-x-2">
+          <span class="text-slate-400 font-medium">MODE:</span>
+          <span id="headerMode" class="font-bold text-slate-500 font-mono">--</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- CRITICAL HARDWARE FAULT & SAFETY INTERLOCK BANNER                         -->
+  <!-- ========================================================================= -->
+  <div id="faultBanner" class="hidden bg-rose-950/90 border-b border-rose-700 px-5 py-2.5 flex items-center justify-between text-rose-200 shadow-md">
+    <div class="flex items-center space-x-3">
+      <svg class="w-5 h-5 text-rose-400 animate-bounce shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+      <div>
+        <span class="font-bold text-white text-xs uppercase tracking-wide">FAULT / SAFETY INTERLOCK:</span>
+        <span id="faultBannerText" class="text-xs ml-2 text-rose-300 font-mono">--</span>
+      </div>
+    </div>
+    <div class="flex gap-2">
+      <button onclick="sendCommand('CLEAR')" class="text-xs bg-rose-900/60 hover:bg-rose-900 px-3 py-1 rounded text-rose-200 font-semibold transition border border-rose-700">
+        CLEAR FAULTS
+      </button>
+      <button onclick="sendCommand('RESET')" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1 rounded text-slate-300 font-semibold transition border border-slate-700">
+        RESET FSM
+      </button>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN OPERATOR WORKSPACE (3-COLUMN LAYOUT)                                -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 p-5 grid grid-cols-1 lg:grid-cols-12 gap-5 overflow-y-auto">
+
+    <!-- ======================================================================= -->
+    <!-- LEFT COLUMN: RHT T-JUNCTION SCHEMATIC & 5 SIGNAL HEADS (5 cols)         -->
+    <!-- ======================================================================= -->
+    <section class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col shadow-xl">
+      <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+          <h2 class="font-bold text-sm text-white uppercase tracking-wider">T-Junction RHT Topology</h2>
+        </div>
+        <span id="badgeCurrentPhase" class="px-2.5 py-0.5 rounded text-xs font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700">
+          STATE: WAITING FOR BRIDGE
+        </span>
+      </div>
+
+      <!-- 2D T-JUNCTION VECTOR SCHEMATIC WITH 6 IR SENSORS & 5 HEADS -->
+      <div class="w-full aspect-[4/3] bg-slate-950 rounded-xl border border-slate-800 relative overflow-hidden flex items-center justify-center p-2 shadow-inner">
+        <svg viewBox="0 0 600 450" class="w-full h-full select-none">
+          <!-- Curbs & Grass Berms (T-Junction layout: top continuous arterial road, bottom stem) -->
+          <rect x="0" y="0" width="600" height="70" fill="#022c22" opacity="0.3"/>
+          <rect x="0" y="270" width="220" height="180" fill="#022c22" opacity="0.3"/>
+          <rect x="380" y="270" width="220" height="180" fill="#022c22" opacity="0.3"/>
+
+          <!-- Asphalt Road Surfaces -->
+          <!-- Horizontal Main Arterial Road (West to East) -->
+          <rect x="0" y="70" width="600" height="200" fill="#0f172a"/>
+          <!-- Vertical Stem Road (South to North) -->
+          <rect x="220" y="270" width="160" height="180" fill="#0f172a"/>
+
+          <!-- Road Curbs (Borders) -->
+          <line x1="0" y1="70" x2="600" y2="70" stroke="#334155" stroke-width="4"/>
+          <line x1="0" y1="270" x2="220" y2="270" stroke="#334155" stroke-width="4"/>
+          <line x1="380" y1="270" x2="600" y2="270" stroke="#334155" stroke-width="4"/>
+          <line x1="220" y1="270" x2="220" y2="450" stroke="#334155" stroke-width="4"/>
+          <line x1="380" y1="270" x2="380" y2="450" stroke="#334155" stroke-width="4"/>
+
+          <!-- Yellow dashed centerlines -->
+          <line x1="0" y1="170" x2="210" y2="170" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8,6"/>
+          <line x1="390" y1="170" x2="600" y2="170" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8,6"/>
+          <line x1="300" y1="280" x2="300" y2="450" stroke="#f59e0b" stroke-width="2" stroke-dasharray="8,6"/>
+
+          <!-- Pedestrian Crossings (White Zebras) -->
+          <!-- PED 1 (East Crosswalk across Main Road) -->
+          <g stroke="#ffffff" stroke-width="3" opacity="0.65">
+            <line x1="410" y1="75" x2="410" y2="265"/>
+            <line x1="425" y1="75" x2="425" y2="265" stroke-dasharray="8,6"/>
+          </g>
+          <!-- PED 2 (Side Crosswalk across Stem Road) -->
+          <g stroke="#ffffff" stroke-width="3" opacity="0.65">
+            <line x1="225" y1="280" x2="375" y2="280"/>
+            <line x1="225" y1="295" x2="375" y2="295" stroke-dasharray="8,6"/>
+          </g>
+
+          <!-- Solid Stop Lines for each approach -->
+          <!-- Main EB Stop Line (South Lane, X=220) -->
+          <line x1="220" y1="170" x2="220" y2="270" stroke="#ffffff" stroke-width="5"/>
+          <!-- Main WB Stop Line (North Lane, X=380) -->
+          <line x1="380" y1="70" x2="380" y2="170" stroke="#ffffff" stroke-width="5"/>
+          <!-- Side NB Stop Line (East Lane, Y=270) -->
+          <line x1="300" y1="270" x2="380" y2="270" stroke="#ffffff" stroke-width="5"/>
+
+          <!-- Directional Lane Flow Arrows -->
+          <!-- Main EB Arrow (West to East) -->
+          <path d="M 120 220 L 160 220 M 152 214 L 160 220 L 152 226" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+          <text x="35" y="224" fill="#64748b" font-size="9" font-family="monospace" font-weight="bold">MAIN EB</text>
+          <!-- Main WB Arrow (East to West) -->
+          <path d="M 480 120 L 440 120 M 448 114 L 440 120 L 448 126" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+          <text x="540" y="124" fill="#64748b" font-size="9" font-family="monospace" font-weight="bold">MAIN WB</text>
+          <!-- Side NB Arrow (South to North) -->
+          <path d="M 340 370 L 340 330 M 334 338 L 340 330 L 346 338" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+          <text x="340" y="435" fill="#64748b" font-size="9" font-family="monospace" font-weight="bold" text-anchor="middle">SIDE NB</text>
+
+          <!-- ------------------------------------------------------------- -->
+          <!-- 6 IR ROAD SENSORS (Active-Low: Amber when vehicle detected)   -->
+          <!-- ------------------------------------------------------------- -->
+          <!-- IR1: Main Front S1 (GPIO 33) & IR2: Main Rear S2 (GPIO 34) on Main EB Approach -->
+          <g transform="translate(70, 213)">
+            <g onclick="toggleSensor('ir2', 'MAIN')" class="cursor-pointer" title="Click to trigger/toggle IR2 (Main Rear S2 Queue, GPIO 34)">
+              <rect id="svgIr2" x="0" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR2</text>
+            </g>
+            <g onclick="toggleSensor('ir1', 'MAIN')" class="cursor-pointer" title="Click to trigger/toggle IR1 (Main Front S1 Stopbar, GPIO 33)">
+              <rect id="svgIr1" x="105" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="117" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR1</text>
+            </g>
+          </g>
+
+          <!-- IR5: Turn Front S1 (GPIO 39) & IR6: Turn Rear S2 (GPIO 15) on Main WB Approach -->
+          <g transform="translate(415, 113)">
+            <g onclick="toggleSensor('ir5', 'TURN')" class="cursor-pointer" title="Click to trigger/toggle IR5 (Turn Front S1 Stopbar, GPIO 39)">
+              <rect id="svgIr5" x="0" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR5</text>
+            </g>
+            <g onclick="toggleSensor('ir6', 'TURN')" class="cursor-pointer" title="Click to trigger/toggle IR6 (Turn Rear S2 Queue, GPIO 15)">
+              <rect id="svgIr6" x="110" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="122" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR6</text>
+            </g>
+          </g>
+
+          <!-- IR3: Side Front S1 (GPIO 35) & IR4: Side Rear S2 (GPIO 36) on Side NB Approach -->
+          <g transform="translate(328, 290)">
+            <g onclick="toggleSensor('ir3', 'SIDE')" class="cursor-pointer" title="Click to trigger/toggle IR3 (Side Front S1 Stopbar, GPIO 35)">
+              <rect id="svgIr3" x="0" y="0" width="24" height="16" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="12" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR3</text>
+            </g>
+            <g onclick="toggleSensor('ir4', 'SIDE')" class="cursor-pointer" title="Click to trigger/toggle IR4 (Side Rear S2 Queue, GPIO 36)">
+              <rect id="svgIr4" x="0" y="95" width="24" height="16" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="107" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR4</text>
+            </g>
+          </g>
+
+          <!-- ------------------------------------------------------------- -->
+          <!-- 5 PHYSICAL SIGNAL HEADS OVERLAY                               -->
+          <!-- ------------------------------------------------------------- -->
+          <!-- Head 1: Main Road Head (GPIO 27, 26, 25) - South curb at EB stopbar -->
+          <g transform="translate(165, 275)">
+            <rect width="36" height="50" rx="5" fill="#020617" stroke="#475569" stroke-width="1.5"/>
+            <circle id="svgHeadMain_R" cx="18" cy="11" r="5" fill="#334155"/>
+            <circle id="svgHeadMain_Y" cx="18" cy="25" r="5" fill="#334155"/>
+            <circle id="svgHeadMain_G" cx="18" cy="39" r="5" fill="#334155"/>
+            <text x="18" y="60" fill="#94a3b8" font-size="7.5" font-family="monospace" font-weight="bold" text-anchor="middle">MAIN(27/26/25)</text>
+          </g>
+
+          <!-- Head 2: Protected Turn Head (GPIO 23, 22, 21) - North curb at WB stopbar -->
+          <g transform="translate(385, 12)">
+            <rect width="36" height="50" rx="5" fill="#020617" stroke="#475569" stroke-width="1.5"/>
+            <circle id="svgHeadTurn_R" cx="18" cy="11" r="5" fill="#334155"/>
+            <circle id="svgHeadTurn_Y" cx="18" cy="25" r="5" fill="#334155"/>
+            <circle id="svgHeadTurn_G" cx="18" cy="39" r="5" fill="#334155"/>
+            <text x="18" y="-4" fill="#94a3b8" font-size="7.5" font-family="monospace" font-weight="bold" text-anchor="middle">TURN(23/22/21)</text>
+          </g>
+
+          <!-- Head 3: Side Road Head (GPIO 14, 12, 13) - East curb at Side NB stopbar -->
+          <g transform="translate(388, 275)">
+            <rect width="36" height="50" rx="5" fill="#020617" stroke="#475569" stroke-width="1.5"/>
+            <circle id="svgHeadSide_R" cx="18" cy="11" r="5" fill="#334155"/>
+            <circle id="svgHeadSide_Y" cx="18" cy="25" r="5" fill="#334155"/>
+            <circle id="svgHeadSide_G" cx="18" cy="39" r="5" fill="#334155"/>
+            <text x="18" y="60" fill="#94a3b8" font-size="7.5" font-family="monospace" font-weight="bold" text-anchor="middle">SIDE(14/12/13)</text>
+          </g>
+
+          <!-- Head 4: PED 1 East (GPIO 19 Walk / GPIO 18 Don't Walk) -->
+          <g transform="translate(440, 220)">
+            <rect width="18" height="28" rx="3" fill="#020617" stroke="#475569" stroke-width="1"/>
+            <circle id="svgPed1_DW" cx="9" cy="8" r="4" fill="#334155"/>
+            <circle id="svgPed1_W" cx="9" cy="20" r="4" fill="#334155"/>
+            <text x="9" y="38" fill="#94a3b8" font-size="7" font-family="monospace" text-anchor="middle">PED1(19/18)</text>
+          </g>
+
+          <!-- Head 5: PED 2 Side (GPIO 16 Walk / GPIO 17 Don't Walk) -->
+          <g transform="translate(198, 275)">
+            <rect width="18" height="28" rx="3" fill="#020617" stroke="#475569" stroke-width="1"/>
+            <circle id="svgPed2_DW" cx="9" cy="8" r="4" fill="#334155"/>
+            <circle id="svgPed2_W" cx="9" cy="20" r="4" fill="#334155"/>
+            <text x="9" y="38" fill="#94a3b8" font-size="7" font-family="monospace" text-anchor="middle">PED2(16/17)</text>
+          </g>
+
+          <!-- Priority Pulsing Beacons -->
+          <circle id="svgBeaconMain" cx="135" cy="220" r="14" fill="#f43f5e" class="hidden animate-ping"/>
+          <circle id="svgBeaconTurn" cx="460" cy="120" r="14" fill="#f43f5e" class="hidden animate-ping"/>
+          <circle id="svgBeaconSide" cx="340" cy="340" r="14" fill="#f43f5e" class="hidden animate-ping"/>
+        </svg>
+
+        <!-- Freshness Overlay -->
+        <div class="absolute bottom-2 left-2 bg-slate-900/90 border border-slate-700/80 px-2 py-1 rounded text-[11px] font-mono text-slate-400">
+          Telemetry: <span id="lblTelemetryFreshness" class="text-rose-400 font-bold">DISCONNECTED</span>
+        </div>
+      </div>
+
+      <!-- 3 SIGNAL APPROACH CARDS & REMAINING COUNTDOWNS -->
+      <div class="grid grid-cols-3 gap-3 mt-4">
+        
+        <!-- MAIN ROAD (EB/WB ARTERIAL) -->
+        <div id="cardMain" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-between transition-all">
+          <div class="w-full flex items-center justify-between">
+            <span class="text-[11px] font-bold text-slate-300">MAIN ROAD</span>
+            <span id="tagMain" class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">OFFLINE</span>
+          </div>
+          <span class="text-[10px] text-slate-500 self-start -mt-0.5 font-mono">GPIO 27 / 26 / 25</span>
+
+          <div class="w-12 bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 my-2 flex flex-col items-center gap-1.5 shadow-inner">
+            <div id="lampMain_R" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+            <div id="lampMain_Y" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+            <div id="lampMain_G" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+          </div>
+
+          <div class="text-center w-full">
+            <span id="cntMain" class="text-2xl font-mono font-extrabold text-slate-500">--</span>
+            <span class="text-[9px] text-slate-400 block -mt-1">Remaining</span>
+          </div>
+
+          <!-- Approach Sensors Live Trigger Indicators -->
+          <div class="w-full mt-2 pt-2 border-t border-slate-800/80 text-center">
+            <div class="flex items-center justify-center gap-1 font-mono text-[9px]">
+              <span id="badgeCardIR1" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 transition-all">IR1: Clear</span>
+              <span id="badgeCardIR2" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 transition-all">IR2: Clear</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PROTECTED TURN (RHT LEFT-TURN) -->
+        <div id="cardTurn" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-between transition-all">
+          <div class="w-full flex items-center justify-between">
+            <span class="text-[11px] font-bold text-slate-300">PROTECTED TURN</span>
+            <span id="tagTurn" class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">OFFLINE</span>
+          </div>
+          <span class="text-[10px] text-slate-500 self-start -mt-0.5 font-mono">GPIO 22 / 23 / 21</span>
+
+          <div class="w-12 bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 my-2 flex flex-col items-center gap-1.5 shadow-inner">
+            <div id="lampTurn_R" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+            <div id="lampTurn_Y" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+            <div id="lampTurn_G" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+          </div>
+
+          <div class="text-center w-full">
+            <span id="cntTurn" class="text-2xl font-mono font-extrabold text-slate-500">--</span>
+            <span class="text-[9px] text-slate-400 block -mt-1">Remaining</span>
+          </div>
+
+          <!-- Approach Sensors Live Trigger Indicators -->
+          <div class="w-full mt-2 pt-2 border-t border-slate-800/80 text-center">
+            <div class="flex items-center justify-center gap-1 font-mono text-[9px]">
+              <span id="badgeCardIR5" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 transition-all">IR5: Clear</span>
+              <span id="badgeCardIR6" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 transition-all">IR6: Clear</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- SIDE ROAD (NB STEM) -->
+        <div id="cardSide" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col items-center justify-between transition-all">
+          <div class="w-full flex items-center justify-between">
+            <span class="text-[11px] font-bold text-slate-300">SIDE ROAD (STEM)</span>
+            <span id="tagSide" class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-500">OFFLINE</span>
+          </div>
+          <span class="text-[10px] text-slate-500 self-start -mt-0.5 font-mono">GPIO 14 / 12 / 13</span>
+
+          <div class="w-12 bg-slate-900 border border-slate-700/80 rounded-xl p-1.5 my-2 flex flex-col items-center gap-1.5 shadow-inner">
+            <div id="lampSide_R" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+            <div id="lampSide_Y" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+            <div id="lampSide_G" class="w-7 h-7 rounded-full bg-slate-800 border border-slate-700/60 transition-all"></div>
+          </div>
+
+          <div class="text-center w-full">
+            <span id="cntSide" class="text-2xl font-mono font-extrabold text-slate-500">--</span>
+            <span class="text-[9px] text-slate-400 block -mt-1">Remaining</span>
+          </div>
+
+          <!-- Approach Sensors Live Trigger Indicators -->
+          <div class="w-full mt-2 pt-2 border-t border-slate-800/80 text-center">
+            <div class="flex items-center justify-center gap-1 font-mono text-[9px]">
+              <span id="badgeCardIR3" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 transition-all">IR3: Clear</span>
+              <span id="badgeCardIR4" class="px-1.5 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-500 transition-all">IR4: Clear</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Pedestrian Crosswalk Heads 4 & 5 (East & Side) -->
+      <div class="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-800 text-xs">
+        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
+          <div>
+            <span class="font-bold text-slate-200 block">PED 1 (EAST X-WALK)</span>
+            <span class="text-[10px] text-slate-500 font-mono">Walk: 19 &bull; DW: 18 &bull; Btn: 32</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span id="pillPed1" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-500">OFFLINE</span>
+            <button type="button" id="btnRequestPed1" onclick="triggerPedButton(1)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-brand-400 hover:text-brand-300 border border-slate-700 text-[10px] font-mono font-bold transition flex items-center gap-1" title="Trigger Push Button 32 Simulation">🚶 Request</button>
+          </div>
+        </div>
+
+        <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between">
+          <div>
+            <span class="font-bold text-slate-200 block">PED 2 (SIDE X-WALK)</span>
+            <span class="text-[10px] text-slate-500 font-mono">Walk: 16 &bull; DW: 17 &bull; Btn: 4</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span id="pillPed2" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-500">OFFLINE</span>
+            <button type="button" id="btnRequestPed2" onclick="triggerPedButton(2)" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-brand-400 hover:text-brand-300 border border-slate-700 text-[10px] font-mono font-bold transition flex items-center gap-1" title="Trigger Push Button 4 Simulation">🚶 Request</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- CENTER COLUMN: ADAPTIVE CONGESTION, TIMING PRESETS & SENSORS (4 cols)   -->
+    <!-- ======================================================================= -->
+    <section class="lg:col-span-4 space-y-5">
+      
+      <!-- ADAPTIVE MODE, CONGESTION ALLOCATION & HIGH-TRAFFIC PRIORITY -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <svg class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <h2 class="font-bold text-sm text-white uppercase tracking-wider">Adaptive Congestion &amp; Allocation</h2>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono">1=10s | 2=20s</span>
+        </div>
+
+        <!-- Mode Buttons: FIXED, ADAPTIVE, MANUAL, FLASH_ORANGE -->
+        <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between gap-1">
+          <span class="text-xs font-semibold text-slate-300 shrink-0">MODE:</span>
+          <div class="flex flex-wrap gap-1 text-xs font-mono">
+            <button id="btnModeAdaptive" onclick="sendCommand('MODE ADAPTIVE')" class="px-2 py-1 rounded text-slate-400 hover:text-white transition">ADAPTIVE</button>
+            <button id="btnModeFixed" onclick="sendCommand('MODE FIXED')" class="px-2 py-1 rounded text-slate-400 hover:text-white transition">FIXED</button>
+            <button id="btnModeManual" onclick="sendCommand('MODE MANUAL')" class="px-2 py-1 rounded text-slate-400 hover:text-white transition">MANUAL</button>
+            <button id="btnFlashOrange" onclick="toggleFlashOrange()" class="px-2 py-1 rounded text-amber-400 hover:bg-amber-500/20 transition border border-amber-500/30">FLASH</button>
+          </div>
+        </div>
+
+        <!-- 3 Approach Congestion Allocations -->
+        <div class="space-y-3 text-xs">
+          <!-- Main Road Approach -->
+          <div id="rowMain" class="bg-slate-950 border border-slate-800 rounded-xl p-3 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-bold text-slate-200 block">MAIN ROAD APPROACH</span>
+                <span class="text-[10px] text-slate-500 font-mono">IR1 (Front S1, GPIO 33) &bull; IR2 (Rear S2, GPIO 34)</span>
+              </div>
+              <span id="congMain" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400">0%</span>
+            </div>
+
+            <!-- 2-Segment Visual Density Bar -->
+            <div class="grid grid-cols-2 gap-1.5 my-2.5">
+              <div id="barMain1" class="h-2 rounded-full bg-slate-800 transition-all border border-slate-700/60" title="IR1 Front S1 (GPIO 33)"></div>
+              <div id="barMain2" class="h-2 rounded-full bg-slate-800 transition-all border border-slate-700/60" title="IR2 Rear S2 (GPIO 34)"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span>Active IR Triggers: <b id="snsMain" class="text-slate-200 font-mono">0 / 2</b></span>
+              <span>Allocated Green: <b id="greenMain" class="text-brand-400 font-mono">0 s (Idle)</b></span>
+            </div>
+
+            <!-- Interactive Sensor Toggle Controls -->
+            <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Simulate / Toggle:</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="btnToggleIR1" onclick="toggleSensor('ir1', 'MAIN')" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition" title="Toggle IR1 Front S1 (GPIO 33)">IR1 (33)</button>
+                <button type="button" id="btnToggleIR2" onclick="toggleSensor('ir2', 'MAIN')" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition" title="Toggle IR2 Rear S2 (GPIO 34)">IR2 (34)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Protected Turn Movement -->
+          <div id="rowTurn" class="bg-slate-950 border border-slate-800 rounded-xl p-3 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-bold text-slate-200 block">PROTECTED TURN MOVEMENT</span>
+                <span class="text-[10px] text-slate-500 font-mono">IR5 (Front S1, GPIO 39) &bull; IR6 (Rear S2, GPIO 15)</span>
+              </div>
+              <span id="congTurn" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400">0%</span>
+            </div>
+
+            <!-- 2-Segment Visual Density Bar -->
+            <div class="grid grid-cols-2 gap-1.5 my-2.5">
+              <div id="barTurn1" class="h-2 rounded-full bg-slate-800 transition-all border border-slate-700/60" title="IR5 Front S1 (GPIO 39)"></div>
+              <div id="barTurn2" class="h-2 rounded-full bg-slate-800 transition-all border border-slate-700/60" title="IR6 Rear S2 (GPIO 15)"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span>Active IR Triggers: <b id="snsTurn" class="text-slate-200 font-mono">0 / 2</b></span>
+              <span>Allocated Green: <b id="greenTurn" class="text-brand-400 font-mono">0 s (Idle)</b></span>
+            </div>
+
+            <!-- Interactive Sensor Toggle Controls -->
+            <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Simulate / Toggle:</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="btnToggleIR5" onclick="toggleSensor('ir5', 'TURN')" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition" title="Toggle IR5 Front S1 (GPIO 39)">IR5 (39)</button>
+                <button type="button" id="btnToggleIR6" onclick="toggleSensor('ir6', 'TURN')" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition" title="Toggle IR6 Rear S2 (GPIO 15)">IR6 (15)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Side Road Stem -->
+          <div id="rowSide" class="bg-slate-950 border border-slate-800 rounded-xl p-3 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <span class="font-bold text-slate-200 block">SIDE ROAD (STEM NB)</span>
+                <span class="text-[10px] text-slate-500 font-mono">IR3 (Front S1, GPIO 35) &bull; IR4 (Rear S2, GPIO 36)</span>
+              </div>
+              <span id="congSide" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400">0%</span>
+            </div>
+
+            <!-- 2-Segment Visual Density Bar -->
+            <div class="grid grid-cols-2 gap-1.5 my-2.5">
+              <div id="barSide1" class="h-2 rounded-full bg-slate-800 transition-all border border-slate-700/60" title="IR3 Front S1 (GPIO 35)"></div>
+              <div id="barSide2" class="h-2 rounded-full bg-slate-800 transition-all border border-slate-700/60" title="IR4 Rear S2 (GPIO 36)"></div>
+            </div>
+
+            <div class="flex items-center justify-between text-[11px] text-slate-400">
+              <span>Active IR Triggers: <b id="snsSide" class="text-slate-200 font-mono">0 / 2</b></span>
+              <span>Allocated Green: <b id="greenSide" class="text-brand-400 font-mono">0 s (Idle)</b></span>
+            </div>
+
+            <!-- Interactive Sensor Toggle Controls -->
+            <div class="mt-2.5 pt-2 border-t border-slate-800/80 flex items-center justify-between gap-2">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Simulate / Toggle:</span>
+              <div class="flex items-center gap-1.5">
+                <button type="button" id="btnToggleIR3" onclick="toggleSensor('ir3', 'SIDE')" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition" title="Toggle IR3 Front S1 (GPIO 35)">IR3 (35)</button>
+                <button type="button" id="btnToggleIR4" onclick="toggleSensor('ir4', 'SIDE')" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white border border-slate-700 transition" title="Toggle IR4 Rear S2 (GPIO 36)">IR4 (36)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sensor Presets & Bulk Controls -->
+          <div class="flex items-center justify-between gap-1.5 pt-1">
+            <button type="button" onclick="clearAllSensors()" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 text-[10px] font-mono font-semibold transition" title="Clear all simulated sensor triggers">
+              Clear (0%)
+            </button>
+            <button type="button" onclick="simulatePresetTraffic('rush')" class="px-2 py-1 rounded bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/30 text-[10px] font-mono font-semibold transition" title="Simulate 100% density across all approaches">
+              Rush Hour (100%)
+            </button>
+            <button type="button" onclick="simulatePresetTraffic('main_priority')" class="px-2 py-1 rounded bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 hover:text-amber-300 border border-amber-500/30 text-[10px] font-mono font-semibold transition" title="Set Main Road to 100% and Side/Turn to Idle">
+              Main Priority
+            </button>
+          </div>
+        </div>
+
+        <!-- Priority Lane Card -->
+        <div id="priorityCard" class="bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs transition-all">
+          <div>
+            <span class="text-slate-400 block text-[11px]">Inducted Next Priority:</span>
+            <span id="priorityDetail" class="text-slate-300 text-[10px] font-mono">Waiting for bridge telemetry...</span>
+          </div>
+          <span id="badgePriority" class="px-2.5 py-1 rounded text-xs font-bold font-mono bg-slate-800 text-slate-500">
+            NONE
+          </span>
+        </div>
+      </div>
+
+      <!-- PHASE TIMINGS & AUTHORITATIVE PRESETS -->
+      <div id="panelTimingControls" class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3 transition-all">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <svg class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+            </svg>
+            <h2 class="font-bold text-sm text-white uppercase tracking-wider">Phase Timing Controls</h2>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span id="tagTimingLock" class="text-[10px] font-mono px-2 py-0.5 rounded font-bold transition-all">🔒 LOCKED</span>
+            <button id="btnTimingPrototype" onclick="sendCommand('TIMING PROTOTYPE')" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-brand-400 border border-slate-700 transition" title="Authoritative Prototype Timings (25s/3s/2s/20s/3s/2s)">PROTOTYPE</button>
+            <button id="btnTimingBench" onclick="sendCommand('TIMING BENCH')" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 transition" title="Bench Test Rapid Timings (4s/2s/1s/2s/2s/1s)">BENCH</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">GREEN (Sec)</label>
+            <input type="number" id="inputGreenSec" min="5" max="90" value="20" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-brand-500 focus:outline-none"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">YELLOW/ORANGE</label>
+            <input type="number" id="inputOrangeSec" min="2" max="10" value="3" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-brand-500 focus:outline-none"/>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 mb-1">ALL-RED CLEAR</label>
+            <input type="number" id="inputRedSec" min="1" max="15" value="2" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono focus:border-brand-500 focus:outline-none"/>
+          </div>
+        </div>
+
+        <button id="btnPublishTimings" onclick="applyCustomTimings()" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-2 shadow mt-2">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+          </svg>
+          Publish Timings (TIMING SET) via MQTT
+        </button>
+
+        <!-- Manual Stepping & Commissioning Quick Actions -->
+        <div class="grid grid-cols-2 gap-2 pt-2">
+          <button id="btnManualStepNext" onclick="sendCommand('NEXT')" class="py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
+            <span>⏭️</span> Step NEXT (Manual)
+          </button>
+          <button onclick="sendCommand('FAULT')" class="py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            Trigger FAULT
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ======================================================================= -->
+    <!-- RIGHT COLUMN: VIOLATIONS, HARDWARE DIAGNOSTICS & EVENT LOG (3 cols)     -->
+    <!-- ======================================================================= -->
+    <section class="lg:col-span-3 space-y-5">
+      
+      <!-- LAW BREAKERS CAMERA & RED-LIGHT VIOLATIONS -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            <h2 class="font-bold text-sm text-white uppercase tracking-wider">Law Breakers CCTV</h2>
+          </div>
+          <span class="text-[10px] font-mono text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">LIVE ALERT</span>
+        </div>
+
+        <!-- Camera Viewport / Live Stream / Aerial HUD / Snapshot -->
+        <div id="cctvViewportContainer" class="relative w-full aspect-video bg-black rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center">
+          <!-- Live USB Camera Feed -->
+          <video id="videoCctvLive" class="w-full h-full object-cover hidden" autoplay playsinline muted></video>
+
+          <!-- Captured Violation Snapshot -->
+          <img id="imgViolationSnapshot" class="w-full h-full object-cover hidden" alt="Violation snapshot" />
+
+          <!-- Idle Placeholder -->
+          <div id="cctvPlaceholder" class="text-center p-4">
+            <svg class="w-7 h-7 text-slate-700 mx-auto mb-1 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            <span class="text-[10px] font-mono text-slate-500 block">NO CAMERA CONNECTED (IDLE)</span>
+          </div>
+
+          <!-- Red Strobe Flash on Violation Detection -->
+          <div id="cctvStrobeFlash" class="absolute inset-0 bg-rose-600/30 border-4 border-rose-500 pointer-events-none opacity-0 transition-opacity duration-300 z-30"></div>
+
+          <!-- Exit Full View Floating Button (visible only in Full View) -->
+          <button id="btnExitFullViewCamera" onclick="toggleCameraFullView()" class="hidden absolute top-3 right-3 z-40 px-3 py-1.5 rounded-lg bg-black/80 hover:bg-slate-800 text-white border border-slate-600 text-xs font-mono font-bold shadow-lg transition flex items-center gap-1.5" title="Exit Full View (Esc)">
+            <span>✕</span> Exit Full View
+          </button>
+
+          <!-- =============================================================== -->
+          <!-- AERIAL T-JUNCTION MARKS & LIVE TRAFFIC LIGHT LINKAGE OVERLAY     -->
+          <!-- =============================================================== -->
+          <div id="aerialHudOverlay" class="absolute inset-0 pointer-events-none flex flex-col justify-between p-2 z-20">
+            <!-- Top HUD Bar: Camera Position Spec & Live Signal Heads Linkage -->
+            <div class="flex items-start justify-between w-full relative z-30">
+              <div class="flex flex-col gap-0.5">
+                <div class="text-[8px] font-mono text-emerald-400 bg-black/85 px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1 shadow">
+                  <span>CAM-01:</span> <span id="lblCamApproach" class="font-bold">RHT AERIAL OVERHEAD</span>
+                </div>
+                <div class="text-[7px] font-mono text-cyan-300 bg-black/80 px-1 rounded border border-cyan-500/20 shadow">
+                  📐 SETUP: 5.5m HEIGHT &bull; 50° PITCH &bull; FOV 110°
+                </div>
+              </div>
+
+              <!-- Live Traffic Signal Linkage Badges -->
+              <div class="flex flex-col items-end gap-1">
+                <div class="flex items-center gap-1 bg-black/85 p-1 rounded border border-slate-700 font-mono text-[8px] shadow">
+                  <span id="hudLightMain" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold transition-all">M: RED</span>
+                  <span id="hudLightTurn" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold transition-all">T: RED</span>
+                  <span id="hudLightSide" class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold transition-all">S: RED</span>
+                </div>
+                <span id="badgeLiveCam" class="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hidden flex items-center gap-1 shadow">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>LIVE 30FPS
+                </span>
+              </div>
+            </div>
+
+            <!-- T-JUNCTION OVERHEAD SCHEMATIC & DYNAMIC RED/GREEN LANE MARKS -->
+            <svg id="hudSvgTJunction" viewBox="0 0 640 360" class="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+              <defs>
+                <filter id="hudGlowRed" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#ef4444" flood-opacity="0.9"/>
+                </filter>
+                <filter id="hudGlowGreen" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#10b981" flood-opacity="0.9"/>
+                </filter>
+              </defs>
+
+              <!-- 1. T-JUNCTION OVERHEAD ROAD BLUEPRINT LINES -->
+              <g id="hudRoadGeometry" opacity="0.85">
+                <!-- Main Road Horizontal Curbs (Y: 95 and Y: 225) -->
+                <line x1="0" y1="95" x2="640" y2="95" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="6,4" />
+                <line x1="0" y1="225" x2="250" y2="225" stroke="#94a3b8" stroke-width="2.5" />
+                <line x1="390" y1="225" x2="640" y2="225" stroke="#94a3b8" stroke-width="2.5" />
+
+                <!-- Side Road Vertical Stem Curbs (X: 250 and X: 390) -->
+                <line x1="250" y1="225" x2="250" y2="360" stroke="#94a3b8" stroke-width="2.5" />
+                <line x1="390" y1="225" x2="390" y2="360" stroke="#94a3b8" stroke-width="2.5" />
+
+                <!-- Main Road Center Dividing Line (Dashed) -->
+                <line x1="0" y1="160" x2="640" y2="160" stroke="#f1f5f9" stroke-width="1.8" stroke-dasharray="14,10" opacity="0.6" />
+                <!-- Side Road Center Dividing Line (Dashed) -->
+                <line x1="320" y1="225" x2="320" y2="360" stroke="#f1f5f9" stroke-width="1.8" stroke-dasharray="12,10" opacity="0.6" />
+
+                <!-- Pedestrian Crossing 1 (East Main Road) -->
+                <g opacity="0.5">
+                  <rect x="520" y="100" width="22" height="120" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,6" />
+                  <text x="531" y="92" fill="#94a3b8" font-size="7" font-family="monospace" text-anchor="middle">PED 1 (EAST)</text>
+                </g>
+                <!-- Pedestrian Crossing 2 (Side Road Stem) -->
+                <g opacity="0.5">
+                  <rect x="255" y="240" width="130" height="18" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,6" />
+                  <text x="250" y="253" fill="#94a3b8" font-size="7" font-family="monospace" text-anchor="end">PED 2 (SIDE)</text>
+                </g>
+              </g>
+
+              <!-- 2. APPROACH A: MAIN ROAD (ARTERIAL) LANE -->
+              <g id="hudGroupMain">
+                <!-- Lane Bounding Zone -->
+                <polygon id="hudLanePolyMain" points="15,160 250,160 250,222 15,222" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-width="2.5" />
+                <!-- Directional Flow Arrow -->
+                <path id="hudArrowMain" d="M 90,191 L 160,191 M 150,184 L 160,191 L 150,198" stroke="#ef4444" stroke-width="3" stroke-linecap="round" fill="none" />
+                <!-- Stopbar Line -->
+                <line id="hudStopLineMain" x1="250" y1="160" x2="250" y2="222" stroke="#ef4444" stroke-width="6" stroke-linecap="square" />
+                <!-- Lane Status Badge Card -->
+                <g id="hudBadgeMain" transform="translate(18, 166)">
+                  <rect id="hudBadgeBgMain" width="175" height="22" rx="4" fill="#991b1b" stroke="#f87171" stroke-width="1.5" filter="url(#hudGlowRed)"/>
+                  <text id="hudBadgeTextMain" x="8" y="15" fill="#ffffff" font-size="9" font-family="monospace" font-weight="bold">🔴 MAIN ROAD: RED [STOP]</text>
+                </g>
+                <!-- Trap Status Label -->
+                <text id="hudTrapTextMain" x="245" y="217" fill="#fca5a5" font-size="7" font-family="monospace" font-weight="bold" text-anchor="end">S1 (IR1) &bull; S2 (IR2) &bull; OPTICAL ACTIVE</text>
+              </g>
+
+              <!-- 3. APPROACH B: PROTECTED LEFT-TURN POCKET (MAIN WB APPROACH) -->
+              <g id="hudGroupTurn">
+                <!-- Turn Bay Bounding Zone -->
+                <polygon id="hudLanePolyTurn" points="390,98 625,98 625,160 390,160" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-width="2" />
+                <!-- Left-Turn Curved Arrow -->
+                <path id="hudArrowTurn" d="M 550,130 L 450,130 C 420,130 405,145 405,175 M 398,165 L 405,175 L 412,165" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round" fill="none" />
+                <!-- Stopbar Line -->
+                <line id="hudStopLineTurn" x1="390" y1="98" x2="390" y2="160" stroke="#ef4444" stroke-width="6" stroke-linecap="square" />
+                <!-- Turn Lane Badge Card -->
+                <g id="hudBadgeTurn" transform="translate(405, 102)">
+                  <rect id="hudBadgeBgTurn" width="175" height="22" rx="4" fill="#991b1b" stroke="#f87171" stroke-width="1.5" filter="url(#hudGlowRed)"/>
+                  <text id="hudBadgeTextTurn" x="8" y="15" fill="#ffffff" font-size="9" font-family="monospace" font-weight="bold">🔴 TURN BAY: RED [STOP]</text>
+                </g>
+                <!-- Trap Status Label -->
+                <text id="hudTrapTextTurn" x="620" y="155" fill="#fca5a5" font-size="7" font-family="monospace" font-weight="bold" text-anchor="end">S1 (IR5) &bull; S2 (IR6) &bull; OPTICAL ACTIVE</text>
+              </g>
+
+              <!-- 4. APPROACH C: SIDE ROAD STEM (SOUTH APPROACH) -->
+              <g id="hudGroupSide">
+                <!-- Side Stem Approaching Lane Bounding Zone (Right half of stem: X:320 to 390) -->
+                <polygon id="hudLanePolySide" points="320,265 390,265 390,355 320,355" fill="rgba(239, 68, 68, 0.22)" stroke="#ef4444" stroke-width="2.5" />
+                <!-- Directional Arrow (Northbound) -->
+                <path id="hudArrowSide" d="M 355,340 L 355,285 M 348,295 L 355,285 L 362,295" stroke="#ef4444" stroke-width="3" stroke-linecap="round" fill="none" />
+                <!-- Stopbar Line -->
+                <line id="hudStopLineSide" x1="320" y1="265" x2="390" y2="265" stroke="#ef4444" stroke-width="6" stroke-linecap="square" />
+                <!-- Side Road Badge Card -->
+                <g id="hudBadgeSide" transform="translate(322, 272)">
+                  <rect id="hudBadgeBgSide" width="170" height="22" rx="4" fill="#991b1b" stroke="#f87171" stroke-width="1.5" filter="url(#hudGlowRed)"/>
+                  <text id="hudBadgeTextSide" x="8" y="15" fill="#ffffff" font-size="9" font-family="monospace" font-weight="bold">🔴 SIDE ROAD: RED [STOP]</text>
+                </g>
+                <!-- Trap Status Label -->
+                <text id="hudTrapTextSide" x="385" y="350" fill="#fca5a5" font-size="7" font-family="monospace" font-weight="bold" text-anchor="end">S1 (IR3) &bull; S2 (IR4) &bull; OPTICAL ACTIVE</text>
+              </g>
+
+              <!-- Center Overhead Alignment Reticle -->
+              <g transform="translate(320, 160)" opacity="0.65">
+                <circle r="16" fill="none" stroke="#06b6d4" stroke-width="1" stroke-dasharray="3,3" />
+                <circle r="3" fill="#06b6d4" />
+                <line x1="-24" y1="0" x2="24" y2="0" stroke="#06b6d4" stroke-width="0.8" />
+                <line x1="0" y1="-24" x2="0" y2="24" stroke="#06b6d4" stroke-width="0.8" />
+                <text x="0" y="-19" fill="#06b6d4" font-size="6" font-family="monospace" text-anchor="middle">OVERHEAD CENTER</text>
+              </g>
+            </svg>
+
+            <!-- Bottom HUD Bar: Evidentiary Status & Speed Radar -->
+            <div class="flex items-center justify-between w-full relative z-30">
+              <div class="flex items-center gap-1.5">
+                <span id="lblSpeed" class="text-[8px] font-mono text-rose-400 bg-black/85 px-1.5 py-0.5 rounded font-bold border border-rose-500/30 shadow">
+                  RADAR: CALIBRATED (60 KM/H LIMIT)
+                </span>
+                <span id="lblOpticalTrapBadge" class="text-[8px] font-mono text-amber-300 bg-black/85 px-1.5 py-0.5 rounded border border-amber-500/30 flex items-center gap-1 shadow">
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span>OPTICAL MOTION TRAP: ARMED</span>
+                </span>
+              </div>
+              <div class="text-[7px] font-mono font-bold text-amber-300 bg-black/85 px-1.5 py-0.5 rounded border border-amber-500/40 flex items-center gap-1 shadow">
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="hudEnforcementMode">PHOTO ENFORCEMENT ARMED</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- USB Camera Connect & Calibration Control Bar (Clean 2-Row Layout, No Overlap) -->
+        <div class="mt-3 pt-2.5 border-t border-slate-800 space-y-2">
+          <!-- Full-width Camera Select Dropdown -->
+          <div class="w-full">
+            <select id="selectCameraDevice" class="w-full bg-slate-950 border border-slate-700 text-[11px] text-slate-300 rounded-lg px-2.5 py-1.5 font-mono focus:outline-none focus:border-cyan-500 transition shadow-inner truncate">
+              <option value="">Detecting USB Cameras...</option>
+            </select>
+          </div>
+
+          <!-- Action Buttons Grid: 4 Equal-Width Columns -->
+          <div class="grid grid-cols-4 gap-1.5 w-full">
+            <button id="btnToggleAerialHud" onclick="toggleAerialHud()" class="w-full text-[11px] font-bold py-1.5 px-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-cyan-500/30 transition flex items-center justify-center gap-1 shadow truncate" title="Toggle T-Junction Road Marks &amp; Virtual Stopbars">
+              📐 Marks
+            </button>
+            <button id="btnToggleCamera" onclick="toggleCameraStream()" class="w-full text-[11px] font-bold py-1.5 px-1 rounded-lg bg-brand-600 hover:bg-brand-500 text-white transition flex items-center justify-center gap-1 shadow truncate">
+              <span>📹</span> Connect
+            </button>
+            <button id="btnSnapViolation" onclick="captureManualViolation()" class="w-full text-[11px] font-bold py-1.5 px-1 rounded-lg bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-800 transition flex items-center justify-center gap-1 shadow truncate" title="Capture current frame with evidentiary overlay">
+              📸 Snap
+            </button>
+            <button id="btnFullViewCamera" onclick="toggleCameraFullView()" class="w-full text-[11px] font-bold py-1.5 px-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/30 transition flex items-center justify-center gap-1 shadow truncate" title="Expand camera view to full screen">
+              ⛶ Full
+            </button>
+          </div>
+
+          <!-- 360° Rotation, Pan (X/Y) & Zoom Alignment Controls -->
+          <div id="cameraTransformPanel" class="mt-2 pt-2 border-t border-slate-800/80 bg-slate-950/70 rounded-xl p-2.5 space-y-2 border border-slate-800">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-cyan-400 font-mono">🧭 360° View &amp; Stopbar Alignment</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <select id="selectCamTransformTarget" onchange="updateCameraTransformTarget(this.value)" class="bg-slate-900 border border-slate-700 text-[9px] text-slate-300 rounded px-1.5 py-0.5 font-mono focus:outline-none focus:border-cyan-500" title="Choose what to rotate/pan/zoom">
+                  <option value="both">Video + HUD</option>
+                  <option value="video">Video Only</option>
+                  <option value="hud">HUD Marks Only</option>
+                </select>
+                <button id="btnResetCameraTransform" onclick="resetCameraViewTransform()" class="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 transition" title="Reset rotation (0°), pan (0,0), and zoom (1.0x)">
+                  ↺ Reset View
+                </button>
+              </div>
+            </div>
+
+            <!-- 360° Rotation Row -->
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-[10px] font-mono">
+                <span class="text-slate-400">ROTATION (-180°..+180°)</span>
+                <span id="lblCamRotate" class="text-cyan-300 font-bold">0°</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button type="button" onclick="stepCameraRotation(-90)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-slate-300 border border-slate-700">-90°</button>
+                <button type="button" onclick="stepCameraRotation(-15)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-slate-300 border border-slate-700">-15°</button>
+                <input id="inputCamRotate" type="range" min="-180" max="180" step="1" value="0" oninput="onCameraTransformInput()" class="w-full accent-cyan-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg" />
+                <button type="button" onclick="stepCameraRotation(15)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-slate-300 border border-slate-700">+15°</button>
+                <button type="button" onclick="stepCameraRotation(90)" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[9px] font-mono text-slate-300 border border-slate-700">+90°</button>
+              </div>
+            </div>
+
+            <!-- Pan X, Pan Y & Zoom Grid -->
+            <div class="grid grid-cols-3 gap-2 pt-0.5">
+              <!-- Pan X -->
+              <div class="space-y-0.5">
+                <div class="flex items-center justify-between text-[9px] font-mono">
+                  <span class="text-slate-400">PAN X</span>
+                  <span id="lblCamPanX" class="text-emerald-300 font-bold">0px</span>
+                </div>
+                <input id="inputCamPanX" type="range" min="-200" max="200" step="2" value="0" oninput="onCameraTransformInput()" class="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg" />
+              </div>
+
+              <!-- Pan Y -->
+              <div class="space-y-0.5">
+                <div class="flex items-center justify-between text-[9px] font-mono">
+                  <span class="text-slate-400">PAN Y</span>
+                  <span id="lblCamPanY" class="text-emerald-300 font-bold">0px</span>
+                </div>
+                <input id="inputCamPanY" type="range" min="-200" max="200" step="2" value="0" oninput="onCameraTransformInput()" class="w-full accent-emerald-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg" />
+              </div>
+
+              <!-- Zoom -->
+              <div class="space-y-0.5">
+                <div class="flex items-center justify-between text-[9px] font-mono">
+                  <span class="text-slate-400">ZOOM</span>
+                  <span id="lblCamZoom" class="text-amber-300 font-bold">1.00x</span>
+                </div>
+                <input id="inputCamZoom" type="range" min="0.5" max="3.0" step="0.05" value="1.0" oninput="onCameraTransformInput()" class="w-full accent-amber-400 cursor-pointer h-1.5 bg-slate-800 rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <canvas id="canvasSnap" class="hidden"></canvas>
+
+        <!-- Stored Evidence Gallery on Computer -->
+        <div class="mt-3 pt-3 border-t border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5">
+              <span class="text-xs text-slate-300 font-bold uppercase tracking-wider">📁 Stored Evidence Gallery</span>
+              <span id="badgeStoredCount" class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-brand-950 text-brand-300 border border-brand-800">
+                0 Saved
+              </span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="refreshStoredGallery()" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition" title="Refresh local files from computer">
+                🔄 Refresh
+              </button>
+              <button onclick="openCapturesFolder()" class="text-[10px] font-bold px-2 py-0.5 rounded bg-brand-700 hover:bg-brand-600 text-white transition flex items-center gap-1 shadow" title="Open the captures directory in your computer's file manager">
+                <span>📂</span> Open Folder
+              </button>
+            </div>
+          </div>
+
+          <div id="storedGalleryGrid" class="space-y-2 max-h-56 overflow-y-auto pr-1">
+            <div class="text-center py-6 text-xs text-slate-600 font-mono">
+              No saved snapshots on computer yet. Intrusion photos will automatically appear here.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INOPERATIVE HARDWARE, SENSOR FAULTS & EVENT LOG -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center space-x-2">
+            <span id="dotHealthStatus" class="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+            <h2 class="font-bold text-sm text-white uppercase tracking-wider">Hardware Diagnostics</h2>
+          </div>
+          <span id="tagOverallHealth" class="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">
+            UNKNOWN
+          </span>
+        </div>
+
+        <!-- 6 IR Sensor Hardware Matrix -->
+        <div class="space-y-1.5 text-xs">
+          <div class="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">6 IR Channels (0=Det, 1=Idle):</div>
+          <div class="grid grid-cols-3 gap-1 text-[10px] font-mono">
+            <div id="diagIr1" onclick="toggleSensor('ir1', 'MAIN')" class="p-1 rounded bg-slate-950 border border-slate-800 text-center text-slate-400 cursor-pointer hover:border-amber-500 transition" title="Click to toggle IR1 (GPIO 33)">IR1: Idle (1)</div>
+            <div id="diagIr2" onclick="toggleSensor('ir2', 'MAIN')" class="p-1 rounded bg-slate-950 border border-slate-800 text-center text-slate-400 cursor-pointer hover:border-amber-500 transition" title="Click to toggle IR2 (GPIO 34)">IR2: Idle (1)</div>
+            <div id="diagIr3" onclick="toggleSensor('ir3', 'SIDE')" class="p-1 rounded bg-slate-950 border border-slate-800 text-center text-slate-400 cursor-pointer hover:border-amber-500 transition" title="Click to toggle IR3 (GPIO 35)">IR3: Idle (1)</div>
+            <div id="diagIr4" onclick="toggleSensor('ir4', 'SIDE')" class="p-1 rounded bg-slate-950 border border-slate-800 text-center text-slate-400 cursor-pointer hover:border-amber-500 transition" title="Click to toggle IR4 (GPIO 36)">IR4: Idle (1)</div>
+            <div id="diagIr5" onclick="toggleSensor('ir5', 'TURN')" class="p-1 rounded bg-slate-950 border border-slate-800 text-center text-slate-400 cursor-pointer hover:border-amber-500 transition" title="Click to toggle IR5 (GPIO 39)">IR5: Idle (1)</div>
+            <div id="diagIr6" onclick="toggleSensor('ir6', 'TURN')" class="p-1 rounded bg-slate-950 border border-slate-800 text-center text-slate-400 cursor-pointer hover:border-amber-500 transition" title="Click to toggle IR6 (GPIO 15)">IR6: Idle (1)</div>
+          </div>
+
+          <!-- Active Fault Codes or Stuck Sensors -->
+          <div id="hardwareFaultList" class="pt-1.5 space-y-1">
+            <div class="p-1.5 rounded bg-slate-950/60 border border-slate-800 text-[10px] text-emerald-400 font-mono flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              All 13 Lamp Outputs &amp; 6 IR Sensors Verified
+            </div>
+          </div>
+        </div>
+
+        <!-- Collapsible Bridge Event & Serial Log Terminal -->
+        <div class="pt-2 border-t border-slate-800">
+          <div class="flex items-center justify-between text-xs mb-1.5">
+            <span class="font-semibold text-slate-400">Bridge Event Log:</span>
+            <div class="flex gap-1">
+              <button onclick="copyEventLog()" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Copy</button>
+              <button onclick="clearEventLog()" class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300">Clear</button>
+            </div>
+          </div>
+
+          <div id="logTerminal" class="h-32 bg-slate-950 p-2 font-mono text-[10px] overflow-y-auto space-y-1 text-slate-300 rounded-lg border border-slate-800 select-text">
+            <div class="text-slate-600">// Subscribed to traffic/junction1/logs...</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- FOOTER & RAW BRIDGE LOGS TICKER                                          -->
+  <!-- ========================================================================= -->
+  <footer class="bg-slate-900/90 border-t border-slate-800 px-5 py-2 text-xs text-slate-400 flex items-center justify-between shrink-0">
+    <div class="flex items-center space-x-3 font-mono text-[11px]">
+      <span class="text-slate-500">Bridge Stream:</span>
+      <span id="lblBridgeLogTicker" class="text-slate-300 truncate max-w-xl">Waiting for demo_dashboard.html on ws://localhost:9001...</span>
+    </div>
+    <div class="text-[11px] text-slate-500 font-mono">
+      ESP32-WROOM-32 &bull; 13-CH GPIO
+    </div>
+  </footer>
+
+  <!-- ========================================================================= -->
+  <!-- HIGH-RESOLUTION EVIDENCE VIEWER MODAL (LIGHTBOX)                         -->
+  <!-- ========================================================================= -->
+  <div id="modalEvidenceViewer" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+      <!-- Modal Header -->
+      <div class="p-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+        <div class="flex items-center space-x-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse"></span>
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider">Red-Light Violation Evidentiary Record</h3>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button id="btnModalOpenFile" onclick="openCurrentEvidenceFile()" class="text-xs font-bold px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5 shadow">
+            <span>📁</span> Open in Files
+          </button>
+          <button onclick="closeEvidenceModal()" class="text-xs font-bold px-2.5 py-1 rounded bg-slate-800 hover:bg-rose-900 text-slate-400 hover:text-white transition">
+            ✖️ Close
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-4 overflow-y-auto flex-1 flex flex-col md:flex-row gap-4 items-start">
+        <!-- Photo with evidentiary overlay -->
+        <div class="flex-1 w-full bg-black rounded-xl border border-slate-800 overflow-hidden relative shadow-inner">
+          <img id="imgModalEvidence" src="" alt="Violation Evidence" class="w-full h-auto object-contain block" />
+        </div>
+
+        <!-- Metadata Side Panel -->
+        <div class="w-full md:w-72 bg-slate-950 border border-slate-800 rounded-xl p-3.5 space-y-2.5 shrink-0 text-xs font-mono">
+          <div class="text-[11px] font-bold text-slate-300 pb-1.5 border-b border-slate-800 uppercase flex items-center justify-between">
+            <span>Citation Details</span>
+            <span class="text-rose-400 bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-900">VERIFIED</span>
+          </div>
+
+          <div>
+            <span class="text-slate-500 block text-[10px]">VEHICLE TARGET / PLATE:</span>
+            <span id="modalMetaPlate" class="text-white font-bold text-sm">--</span>
+          </div>
+
+          <div>
+            <span class="text-slate-500 block text-[10px]">APPROACH / ROAD LANE:</span>
+            <span id="modalMetaApproach" class="text-cyan-300 font-bold">--</span>
+          </div>
+
+          <div>
+            <span class="text-slate-500 block text-[10px]">RADAR SPEED ESTIMATION:</span>
+            <span id="modalMetaSpeed" class="text-rose-400 font-bold text-sm">--</span>
+          </div>
+
+          <div>
+            <span class="text-slate-500 block text-[10px]">HARDWARE SENSOR TRAP:</span>
+            <span id="modalMetaSensor" class="text-slate-300">--</span>
+          </div>
+
+          <div>
+            <span class="text-slate-500 block text-[10px]">TIMESTAMP:</span>
+            <span id="modalMetaTime" class="text-slate-300">--</span>
+          </div>
+
+          <div class="pt-2 border-t border-slate-800">
+            <span class="text-slate-500 block text-[10px]">LOCAL COMPUTER FILE:</span>
+            <span id="modalMetaPath" class="text-[9px] text-slate-400 break-all select-all block mt-0.5">--</span>
+          </div>
+
+          <div class="pt-2 flex gap-2">
+            <button onclick="deleteCurrentEvidenceFile()" class="w-full text-xs font-bold py-1.5 rounded bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 transition text-center">
+              🗑️ Delete Image
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../mqtt-bridge-protocol.js"></script>
+  <script src="renderer.js"></script>
+</body>
+</html>
