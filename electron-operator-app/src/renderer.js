@@ -554,11 +554,12 @@ function getTargetGreenSecForPhase(fsmState, ctrlMode, payload) {
     targetSec = isAdaptive ? getApproachDensity(turnActive).sec : 15;
   }
 
-  if (payload && payload.allocGreenMs && payload.allocGreenMs > 0) {
-    const srvSec = Math.round(payload.allocGreenMs / 1000);
-    if (!isAdaptive || (customAdjustedGreenSec === null && srvSec <= 20)) {
-      targetSec = srvSec;
-    }
+  const webTargetMs = (payload && payload.targetDurationMs > 0)
+    ? payload.targetDurationMs
+    : ((payload && payload.allocGreenMs > 0) ? payload.allocGreenMs : 0);
+
+  if (webTargetMs > 0 && customAdjustedGreenSec === null) {
+    targetSec = Math.round(webTargetMs / 1000);
   }
 
   // Latch target duration on green phase: allow upward expansion if queue grows,

@@ -356,8 +356,227 @@ ipcMain.handle("snapshots:delete", async (event, filename) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// EMBEDDED ZERO-CONFIG MQTT-OVER-WEBSOCKET BROKER FALLBACK (PORT 9001)
+// Automatically activates if no external Mosquitto broker is running on 9001
+// so anyone who clones the repo works out-of-the-box without installing Mosquitto.
+// ---------------------------------------------------------------------------
+const http = require("http");
+const crypto = require("crypto");
+
+let embeddedWsBroker = null;
+
+function encodeWsBinaryFrame(payloadBuf) {
+  const len = payloadBuf.length;
+  let header;
+  if (len < 126) {
+    header = Buffer.from([0x82, len]);
+  } else if (len < 65536) {
+    header = Buffer.alloc(4);
+    header[0] = 0x82;
+    header[1] = 126;
+    header.writeUInt16BE(len, 2);
+  } else {
+    header = Buffer.alloc(10);
+    header[0] = 0x82;
+    header[1] = 127;
+    header.writeBigUInt64BE(BigInt(len), 2);
+  }
+  return Buffer.concat([header, payloadBuf]);
+}
+
+function startEmbeddedWsMqttBrokerFallback(port = 9001) {
+  const wsClients = new Set();
+  const server = http.createServer((_req, res) => {
+    res.writeHead(200);
+    res.end("Smart Traffic Lights Embedded MQTT-over-WebSocket Broker");
+  });
+
+  server.on("upgrade", (req, socket) => {
+    const key = req.headers["sec-websocket-key"];
+    if (!key) {
+      socket.destroy();
+      return;
+    }
+    const accept = crypto
+      .createHash("sha1")
+      .update(key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
+      .digest("base64");
+    const proto = req.headers["sec-websocket-protocol"];
+    const selectedProto = proto ? proto.split(",")[0].trim() : "mqtt";
+
+    socket.write(
+      "HTTP/1.1 101 Switching Protocols\r\n" +
+      "Upgrade: websocket\r\n" +
+      "Connection: Upgrade\r\n" +
+      `Sec-WebSocket-Accept: ${accept}\r\n` +
+      (proto ? `Sec-WebSocket-Protocol: ${selectedProto}\r\n` : "") +
+      "\r\n"
+    );
+
+    wsClients.add(socket);
+    let rxBuf = Buffer.alloc(0);
+
+    socket.on("data", (chunk) => {
+      rxBuf = Buffer.concat([rxBuf, chunk]);
+      while (rxBuf.length >= 2) {
+        const opcode = rxBuf[0] & 0x0f;
+        const masked = (rxBuf[1] & 0x80) !== 0;
+        let payloadLen = rxBuf[1] & 0x7f;
+        let offset = 2;
+
+        if (payloadLen === 126) {
+          if (rxBuf.length < 4) return;
+          payloadLen = rxBuf.readUInt16BE(2);
+          offset = 4;
+        } else if (payloadLen === 127) {
+          if (rxBuf.length < 10) return;
+          payloadLen = Number(rxBuf.readBigUInt64BE(2));
+          offset = 10;
+        }
+
+        const maskLen = masked ? 4 : 0;
+        if (rxBuf.length < offset + maskLen + payloadLen) return;
+
+        const maskKey = masked ? rxBuf.subarray(offset, offset + 4) : null;
+        offset += maskLen;
+        const payload = Buffer.from(rxBuf.subarray(offset, offset + payloadLen));
+        rxBuf = rxBuf.subarray(offset + payloadLen);
+
+        if (masked && maskKey) {
+          for (let i = 0; i < payload.length; i++) {
+            payload[i] ^= maskKey[i & 3];
+          }
+        }
+
+        if (opcode === 0x08) {
+          wsClients.delete(socket);
+          socket.end();
+          return;
+        } else if (opcode === 0x09) {
+          // Ping -> Pong
+          socket.write(Buffer.concat([Buffer.from([0x8a, payload.length]), payload]));
+        } else if ((opcode === 0x01 || opcode === 0x02) && payload.length > 0) {
+          handleMqttPackets(socket, payload, wsClients);
+        }
+      }
+    });
+
+    socket.on("close", () => wsClients.delete(socket));
+    socket.on("error", () => wsClients.delete(socket));
+  });
+
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.log(`[MQTT-BROKER] External broker already active on port ${port}; using existing broker.`);
+    } else {
+      console.warn(`[MQTT-BROKER] Embedded broker warning:`, err.message);
+    }
+  });
+
+  server.listen(port, "127.0.0.1", () => {
+    embeddedWsBroker = server;
+    console.log(`[MQTT-BROKER] Embedded MQTT-over-WebSocket broker listening on ws://127.0.0.1:${port}`);
+  });
+}
+
+function handleMqttPackets(socket, buf, wsClients) {
+  let pos = 0;
+  while (pos < buf.length) {
+    const fixedHeader = buf[pos];
+    const packetType = fixedHeader >> 4;
+    let multiplier = 1;
+    let remLen = 0;
+    let idx = pos + 1;
+
+    while (idx < buf.length) {
+      const encodedByte = buf[idx++];
+      remLen += (encodedByte & 127) * multiplier;
+      multiplier *= 128;
+      if ((encodedByte & 128) === 0) break;
+    }
+
+    const packetEnd = idx + remLen;
+    if (packetEnd > buf.length) break;
+    const rawPacket = buf.subarray(pos, packetEnd);
+    const body = buf.subarray(idx, packetEnd);
+    pos = packetEnd;
+
+    if (packetType === 1) {
+      // CONNECT -> CONNACK (0x20, len=2, flags=0, rc=0)
+      socket.write(encodeWsBinaryFrame(Buffer.from([0x20, 0x02, 0x00, 0x00])));
+    } else if (packetType === 8 && body.length >= 2) {
+      // SUBSCRIBE -> SUBACK
+      const pktIdMsb = body[0];
+      const pktIdLsb = body[1];
+      // Count topic filters to return matching QoS 0 grants
+      let p = 2;
+      const grants = [];
+      while (p + 2 <= body.length) {
+        const tLen = body.readUInt16BE(p);
+        p += 2 + tLen + 1;
+        grants.push(0x00);
+      }
+      if (grants.length === 0) grants.push(0x00);
+      const suback = Buffer.from([0x90, 2 + grants.length, pktIdMsb, pktIdLsb, ...grants]);
+      socket.write(encodeWsBinaryFrame(suback));
+    } else if (packetType === 10 && body.length >= 2) {
+      // UNSUBSCRIBE -> UNSUBACK
+      socket.write(encodeWsBinaryFrame(Buffer.from([0xb0, 0x02, body[0], body[1]])));
+    } else if (packetType === 3) {
+      // PUBLISH -> Broadcast to all connected WS clients (and send PUBACK if QoS 1)
+      const qos = (fixedHeader >> 1) & 0x03;
+      if (qos === 1 && body.length >= 4) {
+        const tLen = body.readUInt16BE(0);
+        if (body.length >= 2 + tLen + 2) {
+          const pktIdMsb = body[2 + tLen];
+          const pktIdLsb = body[2 + tLen + 1];
+          socket.write(encodeWsBinaryFrame(Buffer.from([0x40, 0x02, pktIdMsb, pktIdLsb])));
+        }
+      }
+      // Forward as QoS 0 PUBLISH to all subscribers
+      let outPacket = rawPacket;
+      if (qos > 0 && body.length >= 4) {
+        const tLen = body.readUInt16BE(0);
+        if (body.length >= 2 + tLen + 2) {
+          const topicPart = body.subarray(0, 2 + tLen);
+          const payloadPart = body.subarray(2 + tLen + 2);
+          const newBody = Buffer.concat([topicPart, payloadPart]);
+          const remBytes = [];
+          let x = newBody.length;
+          do {
+            let b = x % 128;
+            x = Math.floor(x / 128);
+            if (x > 0) b |= 128;
+            remBytes.push(b);
+          } while (x > 0);
+          outPacket = Buffer.concat([Buffer.from([0x30, ...remBytes]), newBody]);
+        }
+      }
+      const frame = encodeWsBinaryFrame(outPacket);
+      for (const client of wsClients) {
+        if (!client.destroyed) {
+          try {
+            client.write(frame);
+          } catch (_) {}
+        }
+      }
+    } else if (packetType === 12) {
+      // PINGREQ -> PINGRESP
+      socket.write(encodeWsBinaryFrame(Buffer.from([0xd0, 0x00])));
+    } else if (packetType === 14) {
+      // DISCONNECT
+      wsClients.delete(socket);
+      socket.end();
+    }
+  }
+}
+
 // Lifecycle
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  startEmbeddedWsMqttBrokerFallback(9001);
+  setTimeout(createWindow, 120);
+});
 
 app.on("window-all-closed", () => {
   cleanupMqtt();

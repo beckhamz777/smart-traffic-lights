@@ -7373,6 +7373,14 @@
           virtualSimTimerId = setInterval(() => {
             this.tick(1000);
           }, 1000);
+          if (!countdownTimerId) {
+            countdownTimerId = setInterval(() => {
+              updateCountdownTick();
+            }, 100);
+          }
+          if (!mqttClient || !mqttClient.connected) {
+            connectMqttBridge();
+          }
           updateControlsEnablement();
         },
 
@@ -7382,6 +7390,10 @@
           if (virtualSimTimerId) {
             clearInterval(virtualSimTimerId);
             virtualSimTimerId = null;
+          }
+          if (countdownTimerId) {
+            clearInterval(countdownTimerId);
+            countdownTimerId = null;
           }
           if (el.btnVirtualSim) {
             el.btnVirtualSim.textContent = "▶ Run Virtual Simulator";
@@ -7640,6 +7652,21 @@
           const snapOutputs = `MAIN_G=${o.mainG} MAIN_Y=${o.mainY} MAIN_R=${o.mainR} SIDE_G=${o.sideG} SIDE_Y=${o.sideY} SIDE_R=${o.sideR} TURN_G=${o.turnG} TURN_Y=${o.turnY} TURN_R=${o.turnR} PED1_W=${o.pedWalk} PED1_DW=${o.pedDontWalk} PED2_W=${o.ped2Walk} PED2_DW=${o.ped2DontWalk}`;
           const driverLevels = `MAIN[G=${o.mainG} Y=${o.mainY} R=${o.mainR}] SIDE[G=${o.sideG} Y=${o.sideY} R=${o.sideR}] TURN[G=${o.turnG} Y=${o.turnY} R=${o.turnR}] PED1[W=${o.pedWalk} DW=${o.pedDontWalk}] PED2[W=${o.ped2Walk} DW=${o.ped2DontWalk}]`;
 
+          const mAct = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
+          const sAct = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
+          const tAct = (sensorState.ir5 ? 1 : 0) + (sensorState.ir6 ? 1 : 0);
+          let allocMs = 20000;
+          if (this.controlMode === "ADAPTIVE") {
+            if (this.fsmState === "MAIN_GREEN") allocMs = getApproachDensity(mAct).sec * 1000;
+            else if (this.fsmState === "SIDE_GREEN") allocMs = getApproachDensity(sAct).sec * 1000;
+            else if (this.fsmState === "TURN_GREEN") allocMs = getApproachDensity(tAct).sec * 1000;
+            else allocMs = getApproachDensity(mAct).sec * 1000;
+          } else {
+            if (this.fsmState === "MAIN_GREEN") allocMs = this.timings.mainGreen || 25000;
+            else if (this.fsmState === "SIDE_GREEN") allocMs = this.timings.sideGreen || 20000;
+            else if (this.fsmState === "TURN_GREEN") allocMs = this.timings.turnGreen || 15000;
+          }
+
           const lines = [
             "================ CONTROLLER STATUS ================",
             `  Timestamp         : ${this.nowMs} ms`,
@@ -7650,14 +7677,14 @@
             "  Side Gap Timer    : INACTIVE (0 ms)",
             `  Next Target Phase : ${this.nextTargetPhase}`,
             `  Protected Turn    : ${this.protectedTurnCommissioned ? "COMMISSIONED" : "UNCOMMISSIONED_DISABLED"} (RHT / KeepRight rule)`,
-            `  Vehicle Demands   : MAIN=${this.mainDemand ? "YES" : "NO"} | SIDE=${this.sideDemand ? "YES" : "NO"} | TURN=${this.turnDemand ? "YES" : "NO"}`,
-            `  Side Demand       : ${this.sideDemand ? "PENDING" : "NONE"} (SimVeh=${this.sideDemand ? "ON" : "OFF"}, HwLatched=NO)`,
+            `  Vehicle Demands   : MAIN=${(this.mainDemand || mAct > 0) ? "YES" : "NO"} | SIDE=${(this.sideDemand || sAct > 0) ? "YES" : "NO"} | TURN=${(this.turnDemand || tAct > 0) ? "YES" : "NO"}`,
+            `  Side Demand       : ${(this.sideDemand || sAct > 0) ? "PENDING" : "NONE"} (SimVeh=${this.sideDemand ? "ON" : "OFF"}, HwLatched=${sAct > 0 ? "YES" : "NO"})`,
             `  Pedestrian Demand : PED1=${this.ped1Demand ? "LATCHED" : "NONE"} | PED2=${this.ped2Demand ? "LATCHED" : "NONE"} | Clearance=${this.pedClearanceActive ? "ACTIVE" : "NO"}`,
             "  Physical IR Valid : YES (Mask=0x3F; Main=33/34, Side=35/36, Turn=39/15)",
             `  Logical Outputs   : ${snapOutputs}`,
             `  Driver Pin Levels : ${driverLevels}`,
             `  Active Fault Mask : 0x${this.activeFaultMask.toString(16).padStart(4, "0").toUpperCase()} | Last Fault: ${this.faultReason}`,
-            "  Adaptive Scores   : MAIN=70 SIDE=45 TURN=30 | AllocGreen=10000 ms",
+            `  Adaptive Scores   : MAIN=${mAct * 50} SIDE=${sAct * 50} TURN=${tAct * 50} | AllocGreen=${allocMs} ms`,
             "  Movement Waits    : MAIN=0 ms SIDE=8000 ms TURN=12000 ms | PED1=0 ms PED2=0 ms",
             "  Selection Reason  : DEMAND_ACTUATED_ROTATION",
             "  Ped Priority      : NORMAL",
@@ -7671,16 +7698,17 @@
         },
 
         emitSensors: function () {
+          const s = sensorState;
           const lines = [
             "================ SENSOR & BUTTON STATUS ================",
-            "  IR1 (GPIO 33) -> MAIN_ROAD S1 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=12 Rel=12 | Cycle=YES | Stuck=0 | Chatter=0",
-            "  IR2 (GPIO 34) -> MAIN_ROAD S2 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=10 Rel=10 | Cycle=YES | Stuck=0 | Chatter=0",
-            "  IR3 (GPIO 35) -> SIDE_ROAD S1 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=6 Rel=6 | Cycle=YES | Stuck=0 | Chatter=0",
-            "  IR4 (GPIO 36) -> SIDE_ROAD S2 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=5 Rel=5 | Cycle=YES | Stuck=0 | Chatter=0",
-            "  IR5 (GPIO 39) -> TURN_ROAD S1 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=3 Rel=3 | Cycle=YES | Stuck=0 | Chatter=0",
-            "  IR6 (GPIO 15) -> TURN_ROAD S2 | Validated=YES | RawHigh=1 | Stable=0 | Latched=0 | Det=2 Rel=2 | Cycle=YES | Stuck=0 | Chatter=0",
-            "  PED1_BTN (GPIO 14) [Walk=GPIO 21, DW=GPIO 19] | RawHigh=1 | Pressed=0 | Latched=0 | Press=2 Rel=2 | Cycle=YES | Stuck=0",
-            "  PED2_BTN (GPIO 13) [Walk=GPIO 18, DW=GPIO  5] | RawHigh=1 | Pressed=0 | Latched=0 | Press=1 Rel=1 | Cycle=YES | Stuck=0",
+            `  IR1 (GPIO 33) -> MAIN_ROAD S1 | Validated=YES | RawHigh=${s.ir1 ? 0 : 1} | Stable=${s.ir1 ? 1 : 0} | Latched=${s.ir1 ? 1 : 0} | Det=12 Rel=12 | Cycle=YES | Stuck=0 | Chatter=0`,
+            `  IR2 (GPIO 34) -> MAIN_ROAD S2 | Validated=YES | RawHigh=${s.ir2 ? 0 : 1} | Stable=${s.ir2 ? 1 : 0} | Latched=${s.ir2 ? 1 : 0} | Det=10 Rel=10 | Cycle=YES | Stuck=0 | Chatter=0`,
+            `  IR3 (GPIO 35) -> SIDE_ROAD S1 | Validated=YES | RawHigh=${s.ir3 ? 0 : 1} | Stable=${s.ir3 ? 1 : 0} | Latched=${s.ir3 ? 1 : 0} | Det=6 Rel=6 | Cycle=YES | Stuck=0 | Chatter=0`,
+            `  IR4 (GPIO 36) -> SIDE_ROAD S2 | Validated=YES | RawHigh=${s.ir4 ? 0 : 1} | Stable=${s.ir4 ? 1 : 0} | Latched=${s.ir4 ? 1 : 0} | Det=5 Rel=5 | Cycle=YES | Stuck=0 | Chatter=0`,
+            `  IR5 (GPIO 39) -> TURN_ROAD S1 | Validated=YES | RawHigh=${s.ir5 ? 0 : 1} | Stable=${s.ir5 ? 1 : 0} | Latched=${s.ir5 ? 1 : 0} | Det=3 Rel=3 | Cycle=YES | Stuck=0 | Chatter=0`,
+            `  IR6 (GPIO 15) -> TURN_ROAD S2 | Validated=YES | RawHigh=${s.ir6 ? 0 : 1} | Stable=${s.ir6 ? 1 : 0} | Latched=${s.ir6 ? 1 : 0} | Det=2 Rel=2 | Cycle=YES | Stuck=0 | Chatter=0`,
+            `  PED1_BTN (GPIO 14) [Walk=GPIO 21, DW=GPIO 19] | RawHigh=${s.ped1 ? 0 : 1} | Pressed=${s.ped1 ? 1 : 0} | Latched=${s.ped1 ? 1 : 0} | Press=2 Rel=2 | Cycle=YES | Stuck=0`,
+            `  PED2_BTN (GPIO 13) [Walk=GPIO 18, DW=GPIO  5] | RawHigh=${s.ped2 ? 0 : 1} | Pressed=${s.ped2 ? 1 : 0} | Latched=${s.ped2 ? 1 : 0} | Press=1 Rel=1 | Cycle=YES | Stuck=0`,
             "========================================================"
           ];
           for (const l of lines) processIncomingLine(l);
@@ -8606,7 +8634,7 @@
         else if (movement === "TURN") anyActive = sensorState.ir5 || sensorState.ir6;
 
         const cmd = `CAR ${movement} ${anyActive ? "ON" : "OFF"}`;
-        if (port && writer) {
+        if ((port && writer) || isVirtualSimActive) {
           sendUserCommand(cmd);
         } else {
           appendConsole("sys-info", "DENSITY", `Simulated ${sensorKey.toUpperCase()} = ${sensorState[sensorKey] ? "ACTIVE" : "IDLE"} (ESP32 disconnected)`);
@@ -8791,18 +8819,23 @@
 
       function publishMqttTelemetry(acc) {
         if (!mqttClient || !mqttClient.connected) return;
+        if (!acc && !isFlashOrangeActive) return;
         const flashBit = flashPhase ? 1 : 0;
         const clientElapsedMs = lastTelemetryReceivedAtMs > 0
           ? ((Date.now() - lastTelemetryReceivedAtMs) + (acc && acc.stateElapsedMs ? acc.stateElapsedMs : 0))
           : (acc ? acc.stateElapsedMs || 0 : 0);
+        const authoritativeTargetMs = (latchedCountdownTargetMs && latchedCountdownTargetMs > 0)
+          ? latchedCountdownTargetMs
+          : ((acc && acc.allocGreenMs) ? acc.allocGreenMs : 0);
         const payload = {
           timestamp: new Date().toISOString(),
           currentFsmState: isFlashOrangeActive ? "FLASH_ORANGE" : (acc ? acc.currentFsmState : "UNKNOWN"),
-          operatingMode: acc ? acc.operatingMode : "UNKNOWN",
-          controlMode: isFlashOrangeActive ? "FLASH_ORANGE" : (acc ? acc.controlMode : "UNKNOWN"),
+          operatingMode: acc ? acc.operatingMode : "HARDWARE_READY",
+          controlMode: isFlashOrangeActive ? "FLASH_ORANGE" : (acc ? acc.controlMode : "FIXED"),
           stateElapsedMs: clientElapsedMs,
-          allocGreenMs: (acc && acc.allocGreenMs) ? acc.allocGreenMs : 0,
-          nextTargetPhase: isFlashOrangeActive ? "NONE (CAUTION)" : (acc ? acc.nextTargetPhase : "UNKNOWN"),
+          allocGreenMs: authoritativeTargetMs,
+          targetDurationMs: authoritativeTargetMs,
+          nextTargetPhase: isFlashOrangeActive ? "NONE (CAUTION)" : (acc ? acc.nextTargetPhase : "MAIN_ROAD"),
           flashOrangeActive: isFlashOrangeActive,
           outputs: isFlashOrangeActive ? {
             mainR: 0, mainY: flashBit, mainG: 0,
@@ -8811,9 +8844,9 @@
             pedWalk: 0, pedDontWalk: 1,
             ped2Walk: 0, ped2DontWalk: 1
           } : (acc && acc.outputs ? acc.outputs : {
-            mainR: 0, mainY: 0, mainG: 0,
-            sideR: 0, sideY: 0, sideG: 0,
-            turnR: 0, turnY: 0, turnG: 0,
+            mainR: 1, mainY: 0, mainG: 0,
+            sideR: 1, sideY: 0, sideG: 0,
+            turnR: 1, turnY: 0, turnG: 0,
             pedWalk: 0, pedDontWalk: 1,
             ped2Walk: 0, ped2DontWalk: 1
           }),
@@ -8911,7 +8944,7 @@
           publishMqttTelemetry(lastValidTelemetry);
         }
 
-        if (port && writer) {
+        if ((port && writer) || isVirtualSimActive) {
           sendUserCommand(cmdStr);
         } else {
           appendConsole("sys-warn", "MQTT", `Received command "${cmdStr}", but ESP32 serial port is not connected.`);
