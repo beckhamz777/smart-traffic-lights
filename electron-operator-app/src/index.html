@@ -201,39 +201,39 @@
           <!-- ------------------------------------------------------------- -->
           <!-- 6 IR ROAD SENSORS (Active-Low: Amber when vehicle detected)   -->
           <!-- ------------------------------------------------------------- -->
-          <!-- IR1: Main Front S1 (GPIO 33) & IR2: Main Rear S2 (GPIO 34) on Main EB Approach -->
+          <!-- IR1: Main S1 (GPIO 33) & IR2: Main S2 Stopbar (GPIO 34) on Main EB Approach -->
           <g transform="translate(70, 213)">
-            <g onclick="toggleSensor('ir2', 'MAIN')" class="cursor-pointer" title="Click to trigger/toggle IR2 (Main Rear S2 Queue, GPIO 34)">
-              <rect id="svgIr2" x="0" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
-              <text x="12" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR2</text>
+            <g onclick="toggleSensor('ir1', 'MAIN')" class="cursor-pointer" title="Click to trigger/toggle IR1 (Main S1 Upstream, GPIO 33)">
+              <rect id="svgIr1" x="0" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR1</text>
             </g>
-            <g onclick="toggleSensor('ir1', 'MAIN')" class="cursor-pointer" title="Click to trigger/toggle IR1 (Main Front S1 Stopbar, GPIO 33)">
-              <rect id="svgIr1" x="105" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
-              <text x="117" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR1</text>
+            <g onclick="toggleSensor('ir2', 'MAIN')" class="cursor-pointer" title="Click to trigger/toggle IR2 (Main S2 Stopbar, GPIO 34)">
+              <rect id="svgIr2" x="105" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="117" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR2</text>
             </g>
           </g>
 
-          <!-- IR5: Turn Front S1 (GPIO 39) & IR6: Turn Rear S2 (GPIO 15) on Main WB Approach -->
+          <!-- IR5: Turn S1 (GPIO 39) & IR6: Turn S2 Stopbar (GPIO 15) on Main WB Approach -->
           <g transform="translate(415, 113)">
-            <g onclick="toggleSensor('ir5', 'TURN')" class="cursor-pointer" title="Click to trigger/toggle IR5 (Turn Front S1 Stopbar, GPIO 39)">
-              <rect id="svgIr5" x="0" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
-              <text x="12" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR5</text>
+            <g onclick="toggleSensor('ir6', 'TURN')" class="cursor-pointer" title="Click to trigger/toggle IR6 (Turn S2 Stopbar, GPIO 15)">
+              <rect id="svgIr6" x="0" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR6</text>
             </g>
-            <g onclick="toggleSensor('ir6', 'TURN')" class="cursor-pointer" title="Click to trigger/toggle IR6 (Turn Rear S2 Queue, GPIO 15)">
-              <rect id="svgIr6" x="110" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
-              <text x="122" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR6</text>
+            <g onclick="toggleSensor('ir5', 'TURN')" class="cursor-pointer" title="Click to trigger/toggle IR5 (Turn S1 Upstream, GPIO 39)">
+              <rect id="svgIr5" x="110" y="0" width="24" height="15" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="122" y="11" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR5</text>
             </g>
           </g>
 
-          <!-- IR3: Side Front S1 (GPIO 35) & IR4: Side Rear S2 (GPIO 36) on Side NB Approach -->
+          <!-- IR3: Side S1 (GPIO 35) & IR4: Side S2 Stopbar (GPIO 36) on Side NB Approach -->
           <g transform="translate(328, 290)">
-            <g onclick="toggleSensor('ir3', 'SIDE')" class="cursor-pointer" title="Click to trigger/toggle IR3 (Side Front S1 Stopbar, GPIO 35)">
-              <rect id="svgIr3" x="0" y="0" width="24" height="16" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
-              <text x="12" y="12" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR3</text>
+            <g onclick="toggleSensor('ir4', 'SIDE')" class="cursor-pointer" title="Click to trigger/toggle IR4 (Side S2 Stopbar, GPIO 36)">
+              <rect id="svgIr4" x="0" y="0" width="24" height="16" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="12" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR4</text>
             </g>
-            <g onclick="toggleSensor('ir4', 'SIDE')" class="cursor-pointer" title="Click to trigger/toggle IR4 (Side Rear S2 Queue, GPIO 36)">
-              <rect id="svgIr4" x="0" y="95" width="24" height="16" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
-              <text x="12" y="107" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR4</text>
+            <g onclick="toggleSensor('ir3', 'SIDE')" class="cursor-pointer" title="Click to trigger/toggle IR3 (Side S1 Upstream, GPIO 35)">
+              <rect id="svgIr3" x="0" y="95" width="24" height="16" rx="2" fill="#1e293b" stroke="#475569" stroke-width="1" class="transition-all hover:stroke-amber-400"/>
+              <text x="12" y="107" fill="#94a3b8" font-size="7.5" font-family="monospace" text-anchor="middle" pointer-events="none">IR3</text>
             </g>
           </g>
 
@@ -249,13 +249,13 @@
             <text x="18" y="60" fill="#94a3b8" font-size="7.5" font-family="monospace" font-weight="bold" text-anchor="middle">MAIN(27/26/25)</text>
           </g>
 
-          <!-- Head 2: Protected Turn Head (GPIO 23, 22, 21) - North curb at WB stopbar -->
+          <!-- Head 2: Protected Turn Head (GPIO 22, 23, 21) - North curb at WB stopbar -->
           <g transform="translate(385, 12)">
             <rect width="36" height="50" rx="5" fill="#020617" stroke="#475569" stroke-width="1.5"/>
             <circle id="svgHeadTurn_R" cx="18" cy="11" r="5" fill="#334155"/>
             <circle id="svgHeadTurn_Y" cx="18" cy="25" r="5" fill="#334155"/>
             <circle id="svgHeadTurn_G" cx="18" cy="39" r="5" fill="#334155"/>
-            <text x="18" y="-4" fill="#94a3b8" font-size="7.5" font-family="monospace" font-weight="bold" text-anchor="middle">TURN(23/22/21)</text>
+            <text x="18" y="-4" fill="#94a3b8" font-size="7.5" font-family="monospace" font-weight="bold" text-anchor="middle">TURN(22/23/21)</text>
           </g>
 
           <!-- Head 3: Side Road Head (GPIO 14, 12, 13) - East curb at Side NB stopbar -->
@@ -597,7 +597,7 @@
           Publish Timings (TIMING SET) via MQTT
         </button>
 
-        <!-- Manual Stepping & Commissioning Quick Actions -->
+        <!-- Manual Stepping, Direct Manual Light Control & Commissioning Quick Actions -->
         <div class="grid grid-cols-2 gap-2 pt-2">
           <button id="btnManualStepNext" onclick="sendCommand('NEXT')" class="py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5">
             <span>⏭️</span> Step NEXT (Manual)
@@ -605,6 +605,58 @@
           <button onclick="sendCommand('FAULT')" class="py-2 bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1">
             <span class="w-2 h-2 rounded-full bg-rose-500"></span>
             Trigger FAULT
+          </button>
+        </div>
+
+        <!-- Direct Manual Light & Movement Control Panel -->
+        <div id="panelManualLightControls" class="mt-3 pt-3 border-t border-slate-800 bg-slate-950/90 rounded-xl p-3 border border-purple-500/30 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-bold text-purple-300 uppercase tracking-wider font-mono">🎛️ Direct Manual Light Control</span>
+            <span id="badgeManualCtrlState" class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-950/60 text-purple-300 border border-purple-700">INTERLOCKED</span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 text-[10px] font-mono">
+            <!-- Main Road -->
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2 space-y-1.5">
+              <div class="text-slate-300 font-bold text-center">MAIN (25/26/27)</div>
+              <div class="grid grid-cols-3 gap-1">
+                <button type="button" onclick="sendManualLightCommand('MANUAL MAIN_G')" class="py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">G</button>
+                <button type="button" onclick="sendManualLightCommand('MANUAL MAIN_Y')" class="py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition">Y</button>
+                <button type="button" onclick="sendManualLightCommand('MANUAL MAIN_R')" class="py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold transition">R</button>
+              </div>
+            </div>
+
+            <!-- Side Road -->
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2 space-y-1.5">
+              <div class="text-slate-300 font-bold text-center">SIDE (13/12/14)</div>
+              <div class="grid grid-cols-3 gap-1">
+                <button type="button" onclick="sendManualLightCommand('MANUAL SIDE_G')" class="py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">G</button>
+                <button type="button" onclick="sendManualLightCommand('MANUAL SIDE_Y')" class="py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition">Y</button>
+                <button type="button" onclick="sendManualLightCommand('MANUAL SIDE_R')" class="py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold transition">R</button>
+              </div>
+            </div>
+
+            <!-- Protected Turn -->
+            <div class="bg-slate-900 border border-slate-800 rounded-lg p-2 space-y-1.5">
+              <div class="text-slate-300 font-bold text-center">TURN (21/23/22)</div>
+              <div class="grid grid-cols-3 gap-1">
+                <button type="button" onclick="sendManualLightCommand('MANUAL TURN_G')" class="py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition">G</button>
+                <button type="button" onclick="sendManualLightCommand('MANUAL TURN_Y')" class="py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition">Y</button>
+                <button type="button" onclick="sendManualLightCommand('MANUAL TURN_R')" class="py-1 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold transition">R</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pedestrian 1 & 2 and All-Red Hold -->
+          <div class="grid grid-cols-4 gap-1.5 text-[10px] font-mono">
+            <button type="button" onclick="sendManualLightCommand('MANUAL PED1_W')" class="py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-bold transition">PED1 WALK</button>
+            <button type="button" onclick="sendManualLightCommand('MANUAL PED2_W')" class="py-1.5 rounded bg-emerald-700 hover:bg-emerald-600 text-white font-bold transition">PED2 WALK</button>
+            <button type="button" onclick="sendManualLightCommand('MANUAL PED_WALK')" class="py-1.5 rounded bg-teal-600 hover:bg-teal-500 text-white font-bold transition">BOTH WALK</button>
+            <button type="button" onclick="sendManualLightCommand('MANUAL PED_DW')" class="py-1.5 rounded bg-rose-800 hover:bg-rose-700 text-rose-100 font-bold transition">PED STOP</button>
+          </div>
+
+          <button type="button" onclick="sendManualLightCommand('MANUAL ALL_RED')" class="w-full py-1.5 rounded-lg bg-rose-950 hover:bg-rose-900 text-rose-200 border border-rose-700 text-[11px] font-mono font-extrabold transition">
+            🛑 ALL-RED SAFE HOLD (All Vehicles RED • Peds DON'T WALK)
           </button>
         </div>
       </div>

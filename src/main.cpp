@@ -44,7 +44,8 @@ void applySignalOutputsFromFsm() {
     const SignalOutputs out         = controller.getOutputs();
     const char* violation           = nullptr;
 
-    if (!TrafficController::verifySafetyInvariants(currentState, out, &violation)) {
+    if (!controller.isFlashOrangeActive() &&
+        !TrafficController::verifySafetyInvariants(currentState, out, &violation)) {
         controller.getOutputDriver().forceAllSafeOff();
         controller.triggerFault(millis(),
                                 violation ? violation : "OUTPUT_SAFETY_CHECK_FAILED",
@@ -152,7 +153,7 @@ void printStatus(uint32_t nowMs) {
                   TrafficController::modeToString(snap.operatingMode),
                   TrafficController::controlModeToString(snap.controlMode));
     Serial.printf("  Current FSM State : %s (Elapsed: %lu ms)\r\n",
-                  TrafficController::stateToString(snap.currentFsmState),
+                  controller.isFlashOrangeActive() ? "FLASH_ORANGE" : TrafficController::stateToString(snap.currentFsmState),
                   static_cast<unsigned long>(snap.stateElapsedMs));
     if (controller.isAllGreenTestActive()) {
         const auto& ag = controller.getAllGreenDiagnosticSession();

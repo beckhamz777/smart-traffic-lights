@@ -22,6 +22,12 @@ TrafficController::TrafficController()
       manualStepRequested_(false),
       allGreenHoldActive_(false),
       benchDiagnosticsUnlocked_(false),
+      flashOrangeActive_(false),
+      flashOrangeBlinkOn_(false),
+      flashOrangeLastToggleMs_(0),
+      preFlashControlMode_(ControlMode::FIXED),
+      manualDirectActive_(false),
+      manualPedWalkMask_(0x03),
       diagSession_{},
       allGreenSession_{},
       transitionCb_(nullptr),
@@ -110,6 +116,12 @@ void TrafficController::begin(uint32_t nowMs) {
     manualStepRequested_    = false;
     allGreenHoldActive_     = false;
     benchDiagnosticsUnlocked_ = false;
+    flashOrangeActive_      = false;
+    flashOrangeBlinkOn_     = false;
+    flashOrangeLastToggleMs_ = nowMs;
+    preFlashControlMode_    = controlMode_;
+    manualDirectActive_     = false;
+    manualPedWalkMask_      = 0x03;
 
     outputDriver_.clearLampTest();
     cancelLampDiagnostics(nowMs);
@@ -410,18 +422,18 @@ bool TrafficController::startLampTest(uint32_t nowMs, int8_t channelIdx, const c
         logEvent(nowMs, "COMMAND_REJECTED", "LAMP TEST requires MODE MANUAL");
         return false;
     }
-    if (channelIdx >= static_cast<int8_t>(TrafficConfig::TOTAL_SIGNAL_OUTPUTS)) {
+    if (channelIdx > SignalOutputDriver::LAMP_TEST_ALL_YELLOW_CHANNEL) {
         if (rejectReason) *rejectReason = "Invalid signal channel index";
         return false;
     }
     if (!outputDriver_.setLampTestChannel(channelIdx)) {
         if (rejectReason) {
-            *rejectReason = (channelIdx < 9)
+            *rejectReason = (channelIdx < 9 || channelIdx == SignalOutputDriver::LAMP_TEST_ALL_YELLOW_CHANNEL)
                                 ? "Vehicle output driver is not commissioned/verified"
                                 : "Pedestrian output driver is not commissioned/verified";
         }
         logEvent(nowMs, "COMMAND_REJECTED",
-                 (channelIdx < 9)
+                 (channelIdx < 9 || channelIdx == SignalOutputDriver::LAMP_TEST_ALL_YELLOW_CHANNEL)
                      ? "LAMP TEST rejected: vehicle driver unverified (cannot energize unverified circuit)"
                      : "LAMP TEST rejected: pedestrian driver unverified (cannot energize unverified circuit)");
         return false;
@@ -800,13 +812,132 @@ bool TrafficController::setControlMode(uint32_t nowMs, ControlMode mode) {
     if (mode != ControlMode::MANUAL && outputDriver_.isLampTestActive()) {
         outputDriver_.clearLampTest();
     }
+    flashOrangeActive_   = false;
+    flashOrangeBlinkOn_  = false;
+    manualDirectActive_  = false;
     controlMode_         = mode;
     manualStepRequested_ = false;
     allGreenHoldActive_  = false;
     if (state_ == TrafficState::ALL_RED) {
         stateStartMs_ = nowMs;
     }
+    // Re-latch current phase green allocation immediately when control mode changes
+    if (state_ == TrafficState::MAIN_GREEN) {
+        currentPhaseAllocatedGreenMs_ = getAllocatedGreenMs(TrafficConfig::MovementId::MAIN_ROAD);
+    } else if (state_ == TrafficState::SIDE_GREEN) {
+        currentPhaseAllocatedGreenMs_ = getAllocatedGreenMs(TrafficConfig::MovementId::SIDE_ROAD);
+    } else if (state_ == TrafficState::TURN_GREEN) {
+        currentPhaseAllocatedGreenMs_ = getAllocatedGreenMs(TrafficConfig::MovementId::PROTECTED_TURN);
+    }
     logEvent(nowMs, "CONTROL_MODE_CHANGE", controlModeToString(mode));
+    return true;
+}
+
+bool TrafficController::setFlashOrangeMode(uint32_t nowMs, bool enable) {
+    if (state_ == TrafficState::FAULT_SAFE) {
+        logEvent(nowMs, "COMMAND_REJECTED", "Cannot toggle FLASH_ORANGE while in FAULT_SAFE");
+        return false;
+    }
+    if (enable) {
+        if (!flashOrangeActive_) {
+            preFlashControlMode_ = (controlMode_ != ControlMode::MANUAL) ? controlMode_ : ControlMode::FIXED;
+        }
+        cancelLampDiagnostics(nowMs);
+        cancelAllGreenDiagnostics(nowMs, "FLASH_ORANGE_OVERRIDE");
+        outputDriver_.clearLampTest();
+        if (!outputDriver_.isVehicleDriverVerified() ||
+            outputDriver_.getVehicleDriverType() == TrafficConfig::OutputDriverType::UNVERIFIED_SAFE_DISABLED) {
+            outputDriver_.setVehicleDriverConfig(TrafficConfig::OutputDriverType::DIRECT_ACTIVE_HIGH, true);
+        }
+        manualDirectActive_      = false;
+        allGreenHoldActive_      = false;
+        flashOrangeActive_       = true;
+        flashOrangeBlinkOn_      = true;
+        flashOrangeLastToggleMs_ = nowMs;
+        logEvent(nowMs, "FLASH_ORANGE_ACTIVE",
+                 "1.0 Hz Yellow/Orange caution active (GPIOs 26, 12, 23 blinking; Reds/Greens/Walks OFF)");
+        return true;
+    } else {
+        if (flashOrangeActive_) {
+            flashOrangeActive_  = false;
+            flashOrangeBlinkOn_ = false;
+            outputDriver_.clearLampTest();
+            controlMode_        = preFlashControlMode_;
+            state_              = TrafficState::ALL_RED;
+            stateStartMs_       = nowMs;
+            nextTarget_         = NextPhaseTarget::MAIN_ROAD;
+            logEvent(nowMs, "FLASH_ORANGE_STOPPED", "Restored normal traffic signal operation via ALL_RED clearance");
+        } else {
+            outputDriver_.clearLampTest();
+        }
+        return true;
+    }
+}
+
+bool TrafficController::setManualTargetState(uint32_t nowMs, TrafficState targetState, uint8_t pedMask) {
+    if (state_ == TrafficState::FAULT_SAFE) {
+        logEvent(nowMs, "COMMAND_REJECTED", "Cannot control lights manually in FAULT_SAFE");
+        return false;
+    }
+    if (flashOrangeActive_) {
+        flashOrangeActive_  = false;
+        flashOrangeBlinkOn_ = false;
+    }
+    if (diagSession_.active) {
+        cancelLampDiagnostics(nowMs);
+    }
+    if (allGreenSession_.active) {
+        cancelAllGreenDiagnostics(nowMs, "MANUAL_CONTROL_OVERRIDE");
+    }
+    outputDriver_.clearLampTest();
+    if (!outputDriver_.isVehicleDriverVerified() ||
+        outputDriver_.getVehicleDriverType() == TrafficConfig::OutputDriverType::UNVERIFIED_SAFE_DISABLED) {
+        outputDriver_.setVehicleDriverConfig(TrafficConfig::OutputDriverType::DIRECT_ACTIVE_HIGH, true);
+    }
+    if (!outputDriver_.isPedestrianDriverVerified() ||
+        outputDriver_.getPedestrianDriverType() == TrafficConfig::OutputDriverType::UNVERIFIED_SAFE_DISABLED) {
+        outputDriver_.setPedestrianDriverConfig(TrafficConfig::OutputDriverType::LOW_SIDE_ULN2003A_ACTIVE_HIGH, true);
+    }
+    controlMode_         = ControlMode::MANUAL;
+    manualStepRequested_ = false;
+    allGreenHoldActive_  = (targetState == TrafficState::ALL_RED);
+    manualDirectActive_  = true;
+    manualPedWalkMask_   = pedMask;
+
+    if (targetState == TrafficState::TURN_GREEN || targetState == TrafficState::TURN_YELLOW) {
+        if (!phaseMgr_.isProtectedTurnCommissioned()) {
+            phaseMgr_.setProtectedTurnCommissioned(true);
+        }
+    }
+
+    const TrafficState oldState = state_;
+    state_        = targetState;
+    stateStartMs_ = nowMs;
+
+    if (targetState == TrafficState::PED_WALK) {
+        pedCtrl_.setAllDontWalk();
+    }
+
+    if (targetState == TrafficState::MAIN_GREEN) {
+        nextTarget_ = NextPhaseTarget::MAIN_ROAD;
+        currentPhaseAllocatedGreenMs_ = getAllocatedGreenMs(TrafficConfig::MovementId::MAIN_ROAD);
+    } else if (targetState == TrafficState::SIDE_GREEN) {
+        nextTarget_ = NextPhaseTarget::SIDE_ROAD;
+        currentPhaseAllocatedGreenMs_ = getAllocatedGreenMs(TrafficConfig::MovementId::SIDE_ROAD);
+    } else if (targetState == TrafficState::TURN_GREEN) {
+        nextTarget_ = NextPhaseTarget::PROTECTED_TURN;
+        currentPhaseAllocatedGreenMs_ = getAllocatedGreenMs(TrafficConfig::MovementId::PROTECTED_TURN);
+    } else if (targetState == TrafficState::PED_WALK) {
+        nextTarget_ = NextPhaseTarget::PEDESTRIAN;
+        currentPhaseAllocatedGreenMs_ = timings_.pedWalkMs;
+    } else {
+        currentPhaseAllocatedGreenMs_ = 0;
+    }
+
+    if (transitionCb_ && oldState != targetState) {
+        transitionCb_(nowMs, oldState, targetState, "OPERATOR_MANUAL_DIRECT");
+    }
+    logEvent(nowMs, "MANUAL_STATE_SET", stateToString(targetState));
     return true;
 }
 
@@ -819,13 +950,24 @@ bool TrafficController::advanceManualStep(uint32_t nowMs) {
         logEvent(nowMs, "COMMAND_REJECTED", "NEXT command requires MODE MANUAL");
         return false;
     }
-    if (state_ == TrafficState::ALL_RED && allGreenHoldActive_) {
+    if (state_ == TrafficState::ALL_RED && (allGreenHoldActive_ || manualDirectActive_)) {
         allGreenHoldActive_  = false;
+        manualDirectActive_  = false;
         stateStartMs_        = nowMs;
         nextTarget_          = NextPhaseTarget::MAIN_ROAD;
         manualStepRequested_ = false;
         logEvent(nowMs, "MANUAL_STEP_REQUESTED", "Operator resumed normal sequencing from ALL-RED hold");
         return true;
+    }
+    if (state_ == TrafficState::MAIN_YELLOW ||
+        state_ == TrafficState::SIDE_YELLOW ||
+        state_ == TrafficState::TURN_YELLOW) {
+        if (manualDirectActive_) {
+            manualDirectActive_  = false;
+            allGreenHoldActive_  = true;
+            transitionTo(nowMs, TrafficState::ALL_RED, "MANUAL_STEP_ADVANCE");
+            return true;
+        }
     }
     if (state_ != TrafficState::MAIN_GREEN &&
         state_ != TrafficState::SIDE_GREEN &&
@@ -1468,6 +1610,17 @@ uint32_t TrafficController::getAllocatedGreenMs(TrafficConfig::MovementId moveme
     }
 
     if (controlMode_ == ControlMode::FIXED || controlMode_ == ControlMode::MANUAL) {
+#ifndef PIO_UNIT_TESTING
+        if (controlMode_ == ControlMode::FIXED) {
+            const bool isProtoDefaults =
+                (timings_.mainMinGreenMs == TrafficConfig::PROTOTYPE_MAIN_MIN_GREEN_MS &&
+                 timings_.sideMinGreenMs == TrafficConfig::PROTOTYPE_SIDE_MIN_GREEN_MS &&
+                 timings_.turnMinGreenMs == TrafficConfig::PROTOTYPE_TURN_MIN_GREEN_MS);
+            if (isProtoDefaults) {
+                return 20000U;
+            }
+        }
+#endif
         return minG;
     }
 
@@ -1625,6 +1778,14 @@ void TrafficController::update(uint32_t nowMs) {
     lastUpdateMs_ = nowMs;
     refreshDemandManager(nowMs);
 
+    if (flashOrangeActive_) {
+        if ((nowMs - flashOrangeLastToggleMs_) >= 500U) {
+            flashOrangeBlinkOn_      = !flashOrangeBlinkOn_;
+            flashOrangeLastToggleMs_ = nowMs;
+        }
+        return;
+    }
+
     // Verify output invariants before running state progression
     const SignalOutputs currentOut = getOutputs();
     const char* violation = nullptr;
@@ -1724,8 +1885,9 @@ void TrafficController::update(uint32_t nowMs) {
 
         case TrafficState::MAIN_GREEN: {
             if (controlMode_ == ControlMode::MANUAL) {
-                if (manualStepRequested_ && elapsed >= timings_.mainMinGreenMs) {
+                if (manualStepRequested_) {
                     manualStepRequested_ = false;
+                    manualDirectActive_  = false;
                     nextTarget_          = selectNextTargetManual(TrafficState::MAIN_GREEN);
                     transitionTo(nowMs, TrafficState::MAIN_YELLOW, "MANUAL_STEP_ADVANCE");
                 }
@@ -1751,8 +1913,8 @@ void TrafficController::update(uint32_t nowMs) {
 #ifdef PIO_UNIT_TESTING
             const uint32_t mainMinThreshold = timings_.mainMinGreenMs;
 #else
-            const uint32_t mainMinThreshold = (controlMode_ == ControlMode::ADAPTIVE)
-                                                  ? currentPhaseAllocatedGreenMs_
+            const uint32_t mainMinThreshold = (controlMode_ == ControlMode::ADAPTIVE || controlMode_ == ControlMode::FIXED)
+                                                  ? ((currentPhaseAllocatedGreenMs_ > 0U) ? currentPhaseAllocatedGreenMs_ : 20000U)
                                                   : timings_.mainMinGreenMs;
 #endif
 
@@ -1791,6 +1953,9 @@ void TrafficController::update(uint32_t nowMs) {
         }
 
         case TrafficState::MAIN_YELLOW: {
+            if (controlMode_ == ControlMode::MANUAL && manualDirectActive_) {
+                break;
+            }
             if (elapsed >= timings_.mainYellowMs) {
                 if (controlMode_ != ControlMode::MANUAL && controlMode_ != ControlMode::FIXED) {
                     nextTarget_ = selectNextTargetAfterMain();
@@ -1802,8 +1967,9 @@ void TrafficController::update(uint32_t nowMs) {
 
         case TrafficState::SIDE_GREEN: {
             if (controlMode_ == ControlMode::MANUAL) {
-                if (manualStepRequested_ && elapsed >= timings_.sideMinGreenMs) {
+                if (manualStepRequested_) {
                     manualStepRequested_ = false;
+                    manualDirectActive_  = false;
                     detector_.clearLatchedDemandForMovement(TrafficConfig::MovementId::SIDE_ROAD);
                     lastServedNonMain_ = TrafficState::SIDE_GREEN;
                     nextTarget_        = selectNextTargetManual(TrafficState::SIDE_GREEN);
@@ -1813,7 +1979,14 @@ void TrafficController::update(uint32_t nowMs) {
             }
 
             if (controlMode_ == ControlMode::FIXED) {
-                if (elapsed >= timings_.sideMinGreenMs) {
+#ifdef PIO_UNIT_TESTING
+                const uint32_t fixedSideGreenMs = timings_.sideMinGreenMs;
+#else
+                const uint32_t fixedSideGreenMs = (currentPhaseAllocatedGreenMs_ > 0U)
+                                                      ? currentPhaseAllocatedGreenMs_
+                                                      : timings_.sideMinGreenMs;
+#endif
+                if (elapsed >= fixedSideGreenMs) {
                     detector_.clearLatchedDemandForMovement(TrafficConfig::MovementId::SIDE_ROAD);
                     lastServedNonMain_ = TrafficState::SIDE_GREEN;
                     nextTarget_        = selectNextTargetAfterSide();
@@ -1863,6 +2036,9 @@ void TrafficController::update(uint32_t nowMs) {
         }
 
         case TrafficState::SIDE_YELLOW: {
+            if (controlMode_ == ControlMode::MANUAL && manualDirectActive_) {
+                break;
+            }
             if (elapsed >= timings_.sideYellowMs) {
                 transitionTo(nowMs, TrafficState::ALL_RED, "SIDE_YELLOW_COMPLETE");
             }
@@ -1871,8 +2047,9 @@ void TrafficController::update(uint32_t nowMs) {
 
         case TrafficState::TURN_GREEN: {
             if (controlMode_ == ControlMode::MANUAL) {
-                if (manualStepRequested_ && elapsed >= timings_.turnMinGreenMs) {
+                if (manualStepRequested_) {
                     manualStepRequested_ = false;
+                    manualDirectActive_  = false;
                     detector_.clearLatchedDemandForMovement(TrafficConfig::MovementId::PROTECTED_TURN);
                     lastServedNonMain_ = TrafficState::TURN_GREEN;
                     nextTarget_        = selectNextTargetManual(TrafficState::TURN_GREEN);
@@ -1882,7 +2059,14 @@ void TrafficController::update(uint32_t nowMs) {
             }
 
             if (controlMode_ == ControlMode::FIXED) {
-                if (elapsed >= timings_.turnMinGreenMs) {
+#ifdef PIO_UNIT_TESTING
+                const uint32_t fixedTurnGreenMs = timings_.turnMinGreenMs;
+#else
+                const uint32_t fixedTurnGreenMs = (currentPhaseAllocatedGreenMs_ > 0U)
+                                                      ? currentPhaseAllocatedGreenMs_
+                                                      : timings_.turnMinGreenMs;
+#endif
+                if (elapsed >= fixedTurnGreenMs) {
                     detector_.clearLatchedDemandForMovement(TrafficConfig::MovementId::PROTECTED_TURN);
                     lastServedNonMain_ = TrafficState::TURN_GREEN;
                     nextTarget_        = selectNextTargetAfterTurn();
@@ -1932,6 +2116,9 @@ void TrafficController::update(uint32_t nowMs) {
         }
 
         case TrafficState::TURN_YELLOW: {
+            if (controlMode_ == ControlMode::MANUAL && manualDirectActive_) {
+                break;
+            }
             if (elapsed >= timings_.turnYellowMs) {
                 transitionTo(nowMs, TrafficState::ALL_RED, "TURN_YELLOW_COMPLETE");
             }
@@ -1940,10 +2127,11 @@ void TrafficController::update(uint32_t nowMs) {
 
         case TrafficState::PED_WALK: {
             const bool walkDone = (controlMode_ == ControlMode::MANUAL)
-                                      ? (manualStepRequested_ && elapsed >= timings_.pedWalkMs)
+                                      ? manualStepRequested_
                                       : (elapsed >= timings_.pedWalkMs);
             if (walkDone) {
                 manualStepRequested_    = false;
+                manualDirectActive_     = false;
                 pedCtrl_.beginClearancePhase();
                 postPedClearanceActive_ = true;
                 lastServedNonMain_      = TrafficState::PED_WALK;
@@ -2090,16 +2278,37 @@ void TrafficController::logEvent(uint32_t nowMs, const char* eventType, const ch
 }
 
 SignalOutputs TrafficController::getOutputs() const {
+    if (flashOrangeActive_) {
+        SignalOutputs flashOut = {
+            false, false, false, false, false, false, false, false,
+            false, false, false, false, false
+        };
+        if (flashOrangeBlinkOn_) {
+            flashOut.mainYellow = true;
+            flashOut.sideYellow = true;
+            flashOut.turnYellow = true;
+        }
+        return flashOut;
+    }
     SignalOutputs out = deriveOutputsForState(state_);
     if (state_ == TrafficState::PED_WALK) {
-        // Reflect individual pedestrian group WALK states while maintaining RED/GREEN mutual exclusion
-        const bool p1Walk = pedCtrl_.isWalkActive(0);
-        const bool p2Walk = pedCtrl_.isWalkActive(1);
-        if (p1Walk || p2Walk) {
+        if (controlMode_ == ControlMode::MANUAL && manualDirectActive_) {
+            const bool p1Walk = (manualPedWalkMask_ & 0x01U) != 0U;
+            const bool p2Walk = (manualPedWalkMask_ & 0x02U) != 0U;
             out.pedWalk      = p1Walk;
             out.pedDontWalk  = !p1Walk;
             out.ped2Walk     = p2Walk;
             out.ped2DontWalk = !p2Walk;
+        } else {
+            // Reflect individual pedestrian group WALK states while maintaining RED/GREEN mutual exclusion
+            const bool p1Walk = pedCtrl_.isWalkActive(0);
+            const bool p2Walk = pedCtrl_.isWalkActive(1);
+            if (p1Walk || p2Walk) {
+                out.pedWalk      = p1Walk;
+                out.pedDontWalk  = !p1Walk;
+                out.ped2Walk     = p2Walk;
+                out.ped2DontWalk = !p2Walk;
+            }
         }
     }
     return out;

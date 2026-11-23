@@ -473,8 +473,26 @@ public:
                        : SerialCommandResult::REJECTED_BY_STATE;
         }
 
-        // Single-lamp commissioning test commands
+        // Single-lamp commissioning test & FLASH_ORANGE commands
+        if (strcmp(normalized, "FLASH_ORANGE") == 0 ||
+            strcmp(normalized, "MODE FLASH_ORANGE") == 0 ||
+            strcmp(normalized, "FLASH_ORANGE ON") == 0 ||
+            strcmp(normalized, "LAMP TEST FLASH_ORANGE") == 0) {
+            return ctrl.setFlashOrangeMode(nowMs, true)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "FLASH_ORANGE OFF") == 0 ||
+            strcmp(normalized, "FLASH_ORANGE_OFF") == 0 ||
+            strcmp(normalized, "RESUME_AUTO") == 0) {
+            return ctrl.setFlashOrangeMode(nowMs, false)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
         if (strcmp(normalized, "LAMP OFF") == 0 || strcmp(normalized, "LAMP TEST OFF") == 0) {
+            if (ctrl.isFlashOrangeActive()) {
+                ctrl.setFlashOrangeMode(nowMs, false);
+            }
             ctrl.cancelLampDiagnostics(nowMs);
             ctrl.stopLampTest(nowMs);
             return SerialCommandResult::OK_EXECUTED;
@@ -488,6 +506,67 @@ public:
             }
             emitLine("COMMAND_REJECTED_UNKNOWN");
             return SerialCommandResult::UNKNOWN_INVALID_CMD;
+        }
+
+        // Direct Manual Signal Control Commands (Safe Interlocked Manual Phase / Lamp Selection)
+        if (strcmp(normalized, "MANUAL ALL_RED") == 0 ||
+            strcmp(normalized, "MANUAL MAIN_R") == 0 ||
+            strcmp(normalized, "MANUAL MAIN_RED") == 0 ||
+            strcmp(normalized, "MANUAL SIDE_R") == 0 ||
+            strcmp(normalized, "MANUAL SIDE_RED") == 0 ||
+            strcmp(normalized, "MANUAL TURN_R") == 0 ||
+            strcmp(normalized, "MANUAL TURN_RED") == 0 ||
+            strcmp(normalized, "MANUAL PED_DW") == 0 ||
+            strcmp(normalized, "MANUAL PED1_DW") == 0 ||
+            strcmp(normalized, "MANUAL PED2_DW") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::ALL_RED, 0x00)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL MAIN_G") == 0 || strcmp(normalized, "MANUAL MAIN_GREEN") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::MAIN_GREEN, 0x00)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL MAIN_Y") == 0 || strcmp(normalized, "MANUAL MAIN_YELLOW") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::MAIN_YELLOW, 0x00)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL SIDE_G") == 0 || strcmp(normalized, "MANUAL SIDE_GREEN") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::SIDE_GREEN, 0x00)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL SIDE_Y") == 0 || strcmp(normalized, "MANUAL SIDE_YELLOW") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::SIDE_YELLOW, 0x00)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL TURN_G") == 0 || strcmp(normalized, "MANUAL TURN_GREEN") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::TURN_GREEN, 0x00)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL TURN_Y") == 0 || strcmp(normalized, "MANUAL TURN_YELLOW") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::TURN_YELLOW, 0x00)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL PED_WALK") == 0 || strcmp(normalized, "MANUAL PED_W") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::PED_WALK, 0x03)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL PED1_W") == 0 || strcmp(normalized, "MANUAL PED1_WALK") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::PED_WALK, 0x01)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
+        }
+        if (strcmp(normalized, "MANUAL PED2_W") == 0 || strcmp(normalized, "MANUAL PED2_WALK") == 0) {
+            return ctrl.setManualTargetState(nowMs, TrafficState::PED_WALK, 0x02)
+                       ? SerialCommandResult::OK_EXECUTED
+                       : SerialCommandResult::REJECTED_BY_STATE;
         }
 
         // Automated individual lamp diagnostics

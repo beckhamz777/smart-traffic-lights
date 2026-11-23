@@ -547,11 +547,11 @@ function getTargetGreenSecForPhase(fsmState, ctrlMode, payload) {
 
   let targetSec = 0;
   if (fsmState.startsWith("MAIN_GREEN")) {
-    targetSec = isAdaptive ? getApproachDensity(mainActive).sec : 25;
+    targetSec = isAdaptive ? getApproachDensity(mainActive).sec : 20;
   } else if (fsmState.startsWith("SIDE_GREEN")) {
     targetSec = isAdaptive ? getApproachDensity(sideActive).sec : 20;
   } else if (fsmState.startsWith("TURN_GREEN")) {
-    targetSec = isAdaptive ? getApproachDensity(turnActive).sec : 15;
+    targetSec = isAdaptive ? getApproachDensity(turnActive).sec : 20;
   }
 
   const webTargetMs = (payload && payload.targetDurationMs > 0)
@@ -709,29 +709,41 @@ function renderAuthoritativeTelemetry(payload) {
   // -------------------------------------------------------------------------
   // Pedestrian Crossings (Ped 1 East & Ped 2 Side)
   // -------------------------------------------------------------------------
-  const p1Walk = Boolean(out.pedWalk);
-  const p2Walk = Boolean(out.ped2Walk);
+  const p1Walk = !isFlashOrangeActive && Boolean(out.pedWalk);
+  const p1Dw = !isFlashOrangeActive && (out.pedDontWalk !== undefined ? Boolean(out.pedDontWalk) : !p1Walk);
+  const p2Walk = !isFlashOrangeActive && Boolean(out.ped2Walk);
+  const p2Dw = !isFlashOrangeActive && (out.ped2DontWalk !== undefined ? Boolean(out.ped2DontWalk) : !p2Walk);
 
   if (dom.pillPed1) {
-    dom.pillPed1.textContent = p1Walk ? "WALK (SAFE)" : "DON'T WALK";
-    dom.pillPed1.className = p1Walk
-      ? "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-      : "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+    if (isFlashOrangeActive) {
+      dom.pillPed1.textContent = "OFF (FLASH)";
+      dom.pillPed1.className = "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700";
+    } else {
+      dom.pillPed1.textContent = p1Walk ? "WALK (SAFE)" : "DON'T WALK";
+      dom.pillPed1.className = p1Walk
+        ? "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+        : "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+    }
   }
   if (dom.svg.ped1) {
     dom.svg.ped1.w.setAttribute("fill", p1Walk ? "#10b981" : "#334155");
-    dom.svg.ped1.dw.setAttribute("fill", p1Walk ? "#334155" : "#ef4444");
+    dom.svg.ped1.dw.setAttribute("fill", p1Dw ? "#ef4444" : "#334155");
   }
 
   if (dom.pillPed2) {
-    dom.pillPed2.textContent = p2Walk ? "WALK (SAFE)" : "DON'T WALK";
-    dom.pillPed2.className = p2Walk
-      ? "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-      : "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+    if (isFlashOrangeActive) {
+      dom.pillPed2.textContent = "OFF (FLASH)";
+      dom.pillPed2.className = "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-800 text-slate-400 border border-slate-700";
+    } else {
+      dom.pillPed2.textContent = p2Walk ? "WALK (SAFE)" : "DON'T WALK";
+      dom.pillPed2.className = p2Walk
+        ? "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+        : "px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+    }
   }
   if (dom.svg.ped2) {
     dom.svg.ped2.w.setAttribute("fill", p2Walk ? "#10b981" : "#334155");
-    dom.svg.ped2.dw.setAttribute("fill", p2Walk ? "#334155" : "#ef4444");
+    dom.svg.ped2.dw.setAttribute("fill", p2Dw ? "#ef4444" : "#334155");
   }
 
   // -------------------------------------------------------------------------
@@ -1470,6 +1482,12 @@ function toggleFlashOrange() {
   }
 }
 window.toggleFlashOrange = toggleFlashOrange;
+
+function sendManualLightCommand(cmdStr) {
+  if (!cmdStr) return;
+  sendCommand(cmdStr);
+}
+window.sendManualLightCommand = sendManualLightCommand;
 
 async function applyCustomTimings() {
   if (!isConnected) {

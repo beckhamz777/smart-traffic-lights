@@ -2916,49 +2916,49 @@
 
                 <!-- 6 IR Sensor Positions in SVG (Interactive Dots on Right-Hand Road Edge Relative to Travel Direction) -->
                 <!-- MAIN APPROACH (Eastbound travel: Right-hand edge is South curb at Y=250, Stopbar at X=290) -->
-                <!-- IR2 (GPIO 34 - Main Road Eastbound Upstream Rear S2 Queue) -->
-                <circle id="svgIr2Dot" class="svg-ir-dot" cx="110" cy="250" r="8">
-                  <title>IR2 REAR (GPIO 34) - Main Road Eastbound Upstream Queue (S2)</title>
+                <!-- IR1 (GPIO 33 - Main Road Eastbound Upstream S1) -->
+                <circle id="svgIr1Dot" class="svg-ir-dot" cx="110" cy="250" r="8" style="cursor:pointer;" onclick="window.toggleDashboardSensor && window.toggleDashboardSensor('ir1', 'MAIN')">
+                  <title>IR1 (GPIO 33) - Main Road Eastbound Sensor 1 (S1)</title>
                 </circle>
                 <text x="110" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR2 REAR (34)</text>
+                  font-family="Consolas, monospace" font-weight="700">IR1 S1 (33)</text>
 
-                <!-- IR1 (GPIO 33 - Main Road Eastbound Downstream Front S1 Stopbar) -->
-                <circle id="svgIr1Dot" class="svg-ir-dot" cx="240" cy="250" r="8">
-                  <title>IR1 FRONT (GPIO 33) - Main Road Eastbound Stopbar (S1)</title>
+                <!-- IR2 (GPIO 34 - Main Road Eastbound Stopbar S2) -->
+                <circle id="svgIr2Dot" class="svg-ir-dot" cx="240" cy="250" r="8" style="cursor:pointer;" onclick="window.toggleDashboardSensor && window.toggleDashboardSensor('ir2', 'MAIN')">
+                  <title>IR2 (GPIO 34) - Main Road Eastbound Sensor 2 Stopbar (S2)</title>
                 </circle>
                 <text x="240" y="238" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR1 FRONT (33)</text>
+                  font-family="Consolas, monospace" font-weight="700">IR2 S2 (34)</text>
 
                 <!-- SIDE APPROACH (Northbound travel: Right-hand edge is East curb at X=440, Stopbar at Y=285) -->
-                <!-- IR4 (GPIO 36 - Side Road Northbound Upstream Rear S2 Queue) -->
-                <circle id="svgIr4Dot" class="svg-ir-dot" cx="440" cy="405" r="8">
-                  <title>IR4 REAR (GPIO 36) - Side Road Northbound Upstream Queue (S2)</title>
+                <!-- IR3 (GPIO 35 - Side Road Northbound Upstream S1) -->
+                <circle id="svgIr3Dot" class="svg-ir-dot" cx="440" cy="405" r="8" style="cursor:pointer;" onclick="window.toggleDashboardSensor && window.toggleDashboardSensor('ir3', 'SIDE')">
+                  <title>IR3 (GPIO 35) - Side Road Northbound Sensor 1 (S1)</title>
                 </circle>
                 <text x="454" y="409" text-anchor="start" fill="#1E293B" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR4 REAR (36)</text>
+                  font-family="Consolas, monospace" font-weight="700">IR3 S1 (35)</text>
 
-                <!-- IR3 (GPIO 35 - Side Road Northbound Downstream Front S1 Stopbar) -->
-                <circle id="svgIr3Dot" class="svg-ir-dot" cx="440" cy="315" r="8">
-                  <title>IR3 FRONT (GPIO 35) - Side Road Northbound Stopbar (S1)</title>
+                <!-- IR4 (GPIO 36 - Side Road Northbound Stopbar S2) -->
+                <circle id="svgIr4Dot" class="svg-ir-dot" cx="440" cy="315" r="8" style="cursor:pointer;" onclick="window.toggleDashboardSensor && window.toggleDashboardSensor('ir4', 'SIDE')">
+                  <title>IR4 (GPIO 36) - Side Road Northbound Sensor 2 Stopbar (S2)</title>
                 </circle>
                 <text x="454" y="319" text-anchor="start" fill="#1E293B" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR3 FRONT (35)</text>
+                  font-family="Consolas, monospace" font-weight="700">IR4 S2 (36)</text>
 
                 <!-- TURN APPROACH (Westbound travel: Right-hand edge is North curb at Y=140, Stopbar at X=510) -->
-                <!-- IR6 (GPIO 15 - Turn Approach Westbound Upstream Rear S2 Queue) -->
-                <circle id="svgIr6Dot" class="svg-ir-dot" cx="670" cy="140" r="8">
-                  <title>IR6 REAR (GPIO 15) - Turn Approach Westbound Upstream Queue (S2)</title>
+                <!-- IR5 (GPIO 39 - Protected Turn Westbound Upstream S1) -->
+                <circle id="svgIr5Dot" class="svg-ir-dot" cx="670" cy="140" r="8" style="cursor:pointer;" onclick="window.toggleDashboardSensor && window.toggleDashboardSensor('ir5', 'TURN')">
+                  <title>IR5 (GPIO 39) - Protected Turn Westbound Sensor 1 (S1)</title>
                 </circle>
                 <text x="670" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR6 REAR (15)</text>
+                  font-family="Consolas, monospace" font-weight="700">IR5 S1 (39)</text>
 
-                <!-- IR5 (GPIO 39 - Turn Approach Westbound Downstream Front S1 Stopbar) -->
-                <circle id="svgIr5Dot" class="svg-ir-dot" cx="545" cy="140" r="8">
-                  <title>IR5 FRONT (GPIO 39) - Turn Approach Westbound Stopbar (S1)</title>
+                <!-- IR6 (GPIO 15 - Protected Turn Westbound Stopbar S2) -->
+                <circle id="svgIr6Dot" class="svg-ir-dot" cx="545" cy="140" r="8" style="cursor:pointer;" onclick="window.toggleDashboardSensor && window.toggleDashboardSensor('ir6', 'TURN')">
+                  <title>IR6 (GPIO 15) - Protected Turn Westbound Sensor 2 Stopbar (S2)</title>
                 </circle>
                 <text x="545" y="154" text-anchor="middle" fill="#CBD5E1" font-size="7.5"
-                  font-family="Consolas, monospace" font-weight="700">IR5 FRONT (39)</text>
+                  font-family="Consolas, monospace" font-weight="700">IR6 S2 (15)</text>
 
                 <!-- Decorative Vehicles -->
                 <g id="svgCarMainEast" style="display:none;">
@@ -3026,12 +3026,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 3B: PROTECTED TURN (RHT Cross-Traffic Left Turn, GPIO 23/22/21) -->
+                <!-- SIGNAL HEAD 3B: PROTECTED TURN (RHT Cross-Traffic Left Turn, GPIO 22/23/21) -->
                 <!-- ============================================================ -->
                 <g transform="translate(390, 62)">
                   <rect x="0" y="0" width="102" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
                   <text x="51" y="14" text-anchor="middle" fill="#17212B" font-size="8" font-weight="800"
-                    font-family="Segoe UI, sans-serif">TURN (23/22/21)</text>
+                    font-family="Segoe UI, sans-serif">TURN (22/23/21)</text>
                   <circle id="svgTurnRed" class="svg-lamp" cx="22" cy="34" r="9.5" />
                   <circle id="svgTurnYellow" class="svg-lamp" cx="51" cy="34" r="9.5" />
                   <circle id="svgTurnGreen" class="svg-lamp" cx="80" cy="34" r="9.5" />
@@ -3441,11 +3441,64 @@
                 </button>
               </div>
 
-              <!-- Manual Step Button (active only in MANUAL mode) -->
-              <div id="manualStepBox" style="display:none; margin-top:0.35rem;">
-                <button id="btnManualNext" type="button" class="btn btn-primary" style="width:100%;" disabled>
-                  Advance Phase Step (NEXT)
+              <!-- Manual Step & Direct Light Control Box (active in MANUAL mode) -->
+              <div id="manualStepBox" style="display:none; margin-top:0.5rem; padding:0.7rem; border-radius:8px; background:var(--bg-neutral); border:1px solid var(--teal-border);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.45rem;">
+                  <span style="font-size:0.78rem; font-weight:800; color:var(--teal-primary);">🎛️ Full Manual Light &amp; Phase Control (Safety Interlocked)</span>
+                  <span style="font-size:0.68rem; font-family:var(--font-mono); color:var(--text-secondary);">No Conflicting Greens</span>
+                </div>
+                <button id="btnManualNext" type="button" class="btn btn-primary" style="width:100%; margin-bottom:0.55rem;" disabled>
+                  ⏭️ Advance Phase Step (NEXT)
                 </button>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap:0.45rem;">
+                  <!-- Main Road Manual Controls -->
+                  <div style="background:var(--bg-card); padding:0.45rem; border-radius:6px; border:1px solid var(--border-sep);">
+                    <div style="font-size:0.7rem; font-weight:700; margin-bottom:0.3rem; color:var(--text-primary);">Main Road (25/26/27)</div>
+                    <div style="display:flex; gap:0.25rem;">
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#10b981; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL MAIN_G')">GRN</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#f59e0b; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL MAIN_Y')">YEL</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#ef4444; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL MAIN_R')">RED</button>
+                    </div>
+                  </div>
+
+                  <!-- Side Road Manual Controls -->
+                  <div style="background:var(--bg-card); padding:0.45rem; border-radius:6px; border:1px solid var(--border-sep);">
+                    <div style="font-size:0.7rem; font-weight:700; margin-bottom:0.3rem; color:var(--text-primary);">Side Road (13/12/14)</div>
+                    <div style="display:flex; gap:0.25rem;">
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#10b981; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL SIDE_G')">GRN</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#f59e0b; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL SIDE_Y')">YEL</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#ef4444; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL SIDE_R')">RED</button>
+                    </div>
+                  </div>
+
+                  <!-- Protected Turn Manual Controls -->
+                  <div style="background:var(--bg-card); padding:0.45rem; border-radius:6px; border:1px solid var(--border-sep);">
+                    <div style="font-size:0.7rem; font-weight:700; margin-bottom:0.3rem; color:var(--text-primary);">Protected Turn (21/23/22)</div>
+                    <div style="display:flex; gap:0.25rem;">
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#10b981; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL TURN_G')">GRN</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#f59e0b; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL TURN_Y')">YEL</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#ef4444; color:#fff; font-weight:700; padding:0.25rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL TURN_R')">RED</button>
+                    </div>
+                  </div>
+
+                  <!-- Pedestrian 1 & 2 Manual Controls -->
+                  <div style="background:var(--bg-card); padding:0.45rem; border-radius:6px; border:1px solid var(--border-sep);">
+                    <div style="font-size:0.7rem; font-weight:700; margin-bottom:0.3rem; color:var(--text-primary);">Pedestrian 1 &amp; 2 (Walk/DW)</div>
+                    <div style="display:flex; gap:0.25rem; flex-wrap:wrap;">
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#10b981; color:#fff; font-weight:700; padding:0.2rem 0.3rem; font-size:0.66rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL PED1_W')">P1 WALK</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#10b981; color:#fff; font-weight:700; padding:0.2rem 0.3rem; font-size:0.66rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL PED2_W')">P2 WALK</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#0d9488; color:#fff; font-weight:700; padding:0.2rem 0.3rem; font-size:0.66rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL PED_WALK')">BOTH W</button>
+                      <button type="button" class="btn btn-sm" style="flex:1; background:#ef4444; color:#fff; font-weight:700; padding:0.2rem 0.3rem; font-size:0.66rem;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL PED_DW')">DON'T W</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="margin-top:0.45rem;">
+                  <button type="button" class="btn btn-danger-outline btn-sm" style="width:100%; font-weight:800;" onclick="window.sendManualLightCommand && window.sendManualLightCommand('MANUAL ALL_RED')">
+                    🛑 ALL-RED SAFE HOLD (All Vehicles RED &amp; Peds DON'T WALK)
+                  </button>
+                </div>
               </div>
 
               <div id="adaptiveLockWarning" class="mode-lock-warning" style="display:none;">
@@ -3494,23 +3547,23 @@
                   <tbody>
                     <tr>
                       <td><strong>Main Road</strong></td>
-                      <td id="timingMainMin">25,000 ms</td>
-                      <td id="timingMainMax">30,000 ms</td>
+                      <td id="timingMainMin">20,000 ms</td>
+                      <td id="timingMainMax">20,000 ms</td>
                       <td id="timingMainYel">3,000 ms</td>
                       <td id="timingMainRed">2,000 ms</td>
                     </tr>
                     <tr>
                       <td><strong>Side Road</strong></td>
                       <td id="timingSideMin">20,000 ms</td>
-                      <td id="timingSideMax">25,000 ms</td>
+                      <td id="timingSideMax">20,000 ms</td>
                       <td id="timingSideYel">3,000 ms</td>
                       <td id="timingSideRed">2,000 ms</td>
                     </tr>
                     <tr>
                       <td><strong>Protected Turn</strong></td>
-                      <td id="timingTurnMin">2,000 ms</td>
-                      <td id="timingTurnMax">6,000 ms</td>
-                      <td id="timingTurnYel">2,000 ms</td>
+                      <td id="timingTurnMin">20,000 ms</td>
+                      <td id="timingTurnMax">20,000 ms</td>
+                      <td id="timingTurnYel">3,000 ms</td>
                       <td>--</td>
                     </tr>
                     <tr>
@@ -3527,7 +3580,7 @@
               <!-- Preset Timing Controls -->
               <div class="control-grid-2" style="margin-top:0.25rem;">
                 <button id="btnTimingPrototype" type="button" class="btn btn-secondary btn-sm" disabled>
-                  Preset: Prototype (25s/20s)
+                  Preset: Fixed Equal (20s/20s/20s)
                 </button>
                 <button id="btnTimingBench" type="button" class="btn btn-secondary btn-sm" disabled>
                   Preset: Bench (4s/2s)
@@ -4482,18 +4535,18 @@
       let activeTimingConfig = {
         startupSafeMs: 1000,
         allRedMs: 2000,
-        mainMinGreenMs: 25000,
-        mainMaxGreenMs: 30000,
+        mainMinGreenMs: 20000,
+        mainMaxGreenMs: 20000,
         mainClearGapMs: 2000,
         mainYellowMs: 3000,
         sideMinGreenMs: 20000,
-        sideMaxGreenMs: 25000,
+        sideMaxGreenMs: 20000,
         sideClearGapMs: 2000,
         sideYellowMs: 3000,
-        turnMinGreenMs: 2000,
-        turnMaxGreenMs: 6000,
+        turnMinGreenMs: 20000,
+        turnMaxGreenMs: 20000,
         turnClearGapMs: 2000,
-        turnYellowMs: 2000,
+        turnYellowMs: 3000,
         pedWalkMs: 5000,
         pedClearanceMs: 2000
       };
@@ -5866,6 +5919,7 @@
         }
 
         const isAdaptive = (t.controlMode === "ADAPTIVE");
+        const isFixed = (t.controlMode === "FIXED");
         const mainActive = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
         const sideActive = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
         const turnActive = (sensorState.ir5 ? 1 : 0) + (sensorState.ir6 ? 1 : 0);
@@ -5875,8 +5929,10 @@
           if (isAdaptive) {
             const dens = getApproachDensity(mainActive);
             targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : (dens.sec * 1000);
+          } else if (isFixed) {
+            targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : 20000;
           } else {
-            targetDurationMs = activeTimingConfig.mainMinGreenMs || 25000;
+            targetDurationMs = activeTimingConfig.mainMinGreenMs || 20000;
           }
         } else if (t.currentFsmState === "MAIN_YELLOW") {
           targetDurationMs = activeTimingConfig.mainYellowMs || 3000;
@@ -5889,6 +5945,8 @@
           if (isAdaptive) {
             const dens = getApproachDensity(sideActive);
             targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : (dens.sec * 1000);
+          } else if (isFixed) {
+            targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : 20000;
           } else {
             targetDurationMs = activeTimingConfig.sideMinGreenMs || 20000;
           }
@@ -5900,8 +5958,10 @@
           if (isAdaptive) {
             const dens = getApproachDensity(turnActive);
             targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : (dens.sec * 1000);
+          } else if (isFixed) {
+            targetDurationMs = (t.allocGreenMs && t.allocGreenMs > 0) ? t.allocGreenMs : 20000;
           } else {
-            targetDurationMs = activeTimingConfig.turnMinGreenMs || 10000;
+            targetDurationMs = activeTimingConfig.turnMinGreenMs || 20000;
           }
         }
 
@@ -7196,6 +7256,7 @@
             latchedCountdownTargetMs = 0;
 
             const isAdap = (lastValidTelemetry.controlMode === "ADAPTIVE");
+            const isFix = (lastValidTelemetry.controlMode === "FIXED");
             if (isAdap) {
               const mAct = (sensorState.ir1 ? 1 : 0) + (sensorState.ir2 ? 1 : 0);
               const sAct = (sensorState.ir3 ? 1 : 0) + (sensorState.ir4 ? 1 : 0);
@@ -7203,6 +7264,10 @@
               if (toState === "MAIN_GREEN") lastValidTelemetry.allocGreenMs = getApproachDensity(mAct).sec * 1000;
               else if (toState === "SIDE_GREEN") lastValidTelemetry.allocGreenMs = getApproachDensity(sAct).sec * 1000;
               else if (toState === "TURN_GREEN") lastValidTelemetry.allocGreenMs = getApproachDensity(tAct).sec * 1000;
+            } else if (isFix) {
+              if (toState === "MAIN_GREEN" || toState === "SIDE_GREEN" || toState === "TURN_GREEN") {
+                lastValidTelemetry.allocGreenMs = 20000;
+              }
             }
             if (lastValidTelemetry.outputs) {
               const o = lastValidTelemetry.outputs;
@@ -7326,10 +7391,10 @@
         protectedTurnCommissioned: true,
 
         timings: {
-          mainGreen: 10000, mainYellow: 3000,
-          sideGreen: 8000, sideYellow: 3000,
-          turnGreen: 6000, turnYellow: 3000,
-          pedWalk: 7000, pedClear: 4000, allRed: 2000
+          mainGreen: 20000, mainYellow: 3000,
+          sideGreen: 20000, sideYellow: 3000,
+          turnGreen: 20000, turnYellow: 3000,
+          pedWalk: 5000, pedClear: 2000, allRed: 2000
         },
 
         start: function () {
@@ -7593,6 +7658,8 @@
 
           if (this.lampTestActive) {
             const l = this.lampTestActive;
+            out.mainR = 0; out.sideR = 0; out.turnR = 0;
+            out.pedDontWalk = 0; out.ped2DontWalk = 0;
             if (l === "MAIN_R") out.mainR = 1;
             else if (l === "MAIN_Y") out.mainY = 1;
             else if (l === "MAIN_G") out.mainG = 1;
@@ -7606,6 +7673,11 @@
             else if (l === "PED1_DW") { out.pedWalk = 0; out.pedDontWalk = 1; }
             else if (l === "PED2_W") { out.ped2Walk = 1; out.ped2DontWalk = 0; }
             else if (l === "PED2_DW") { out.ped2Walk = 0; out.ped2DontWalk = 1; }
+            else if (l === "FLASH_ORANGE" || l === "ALL_YELLOW") {
+              out.mainY = flashPhase ? 1 : 0;
+              out.sideY = flashPhase ? 1 : 0;
+              out.turnY = flashPhase ? 1 : 0;
+            }
             return out;
           }
 
@@ -7662,9 +7734,9 @@
             else if (this.fsmState === "TURN_GREEN") allocMs = getApproachDensity(tAct).sec * 1000;
             else allocMs = getApproachDensity(mAct).sec * 1000;
           } else {
-            if (this.fsmState === "MAIN_GREEN") allocMs = this.timings.mainGreen || 25000;
+            if (this.fsmState === "MAIN_GREEN") allocMs = this.timings.mainGreen || 20000;
             else if (this.fsmState === "SIDE_GREEN") allocMs = this.timings.sideGreen || 20000;
-            else if (this.fsmState === "TURN_GREEN") allocMs = this.timings.turnGreen || 15000;
+            else if (this.fsmState === "TURN_GREEN") allocMs = this.timings.turnGreen || 20000;
           }
 
           const lines = [
@@ -7789,6 +7861,48 @@
             processIncomingLine("NEXT_OK");
             processIncomingLine(`[${espMs} ms] ${prev} -> ${this.fsmState} | Reason: OPERATOR_MANUAL_STEP`);
             this.emitStatus(true);
+            return;
+          }
+
+          if (cmd === "FLASH_ORANGE" || cmd === "MODE FLASH_ORANGE" || cmd === "LAMP TEST FLASH_ORANGE") {
+            this.lampTestActive = "FLASH_ORANGE";
+            processIncomingLine(`[${espMs} ms] EVENT: FLASH_ORANGE_ACTIVE | 1.0 Hz Yellow/Orange caution active (GPIOs 26, 12, 23 blinking; Reds/Greens/Walks OFF)`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Flash Orange active");
+            return;
+          }
+
+          if (cmd === "FLASH_ORANGE OFF" || cmd === "FLASH_ORANGE_OFF" || cmd === "RESUME_AUTO") {
+            this.lampTestActive = null;
+            processIncomingLine(`[${espMs} ms] EVENT: FLASH_ORANGE_STOPPED | Restored normal traffic signal operation`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, "Flash Orange stopped");
+            return;
+          }
+
+          if (cmd.startsWith("MANUAL ")) {
+            const target = cmd.substring(7).trim();
+            this.controlMode = "MANUAL";
+            this.lampTestActive = null;
+            if (target === "MAIN_G" || target === "MAIN_GREEN") this.fsmState = "MAIN_GREEN";
+            else if (target === "MAIN_Y" || target === "MAIN_YELLOW") this.fsmState = "MAIN_YELLOW";
+            else if (target === "SIDE_G" || target === "SIDE_GREEN") this.fsmState = "SIDE_GREEN";
+            else if (target === "SIDE_Y" || target === "SIDE_YELLOW") this.fsmState = "SIDE_YELLOW";
+            else if (target === "TURN_G" || target === "TURN_GREEN") this.fsmState = "TURN_GREEN";
+            else if (target === "TURN_Y" || target === "TURN_YELLOW") this.fsmState = "TURN_YELLOW";
+            else if (target === "PED_WALK" || target === "PED_W" || target === "PED1_W" || target === "PED1_WALK" || target === "PED2_W" || target === "PED2_WALK") {
+              this.fsmState = "PED_WALK";
+              this.ped1Demand = (target !== "PED2_W" && target !== "PED2_WALK");
+              this.ped2Demand = (target !== "PED1_W" && target !== "PED1_WALK");
+            } else {
+              this.fsmState = "ALL_RED";
+              this.ped1Demand = false;
+              this.ped2Demand = false;
+            }
+            this.fsmElapsedMs = 0;
+            processIncomingLine(`[${espMs} ms] EVENT: MANUAL_STATE_SET | ${this.fsmState}`);
+            this.emitStatus(true);
+            if (pendingUserCommand) resolvePendingUserCommand(true, `Manual state set: ${this.fsmState}`);
             return;
           }
 
@@ -8685,6 +8799,20 @@
 
       function handleSensorToggle(sensorKey, btnEl, movement) {
         sensorState[sensorKey] = !sensorState[sensorKey];
+        const chNum = parseInt(sensorKey.replace("ir", ""), 10);
+        if (chNum >= 1 && chNum <= 6 && sensorChannels[chNum - 1]) {
+          const ch = sensorChannels[chNum - 1];
+          ch.rawPinHigh = sensorState[sensorKey] ? 0 : 1;
+          ch.stableDetected = sensorState[sensorKey] ? 1 : 0;
+          if (sensorState[sensorKey]) {
+            ch.detectionCount++;
+            ch.lastDetectionTime = formatWallTime(new Date());
+          } else {
+            ch.releaseCount++;
+            ch.cycleObserved = true;
+          }
+        }
+        renderSensors();
         updateTrafficDensityUI();
 
         let anyActive = false;
@@ -8700,6 +8828,13 @@
         }
         publishMqttTelemetry(lastValidTelemetry);
       }
+      window.toggleDashboardSensor = function(sensorKey, movement) {
+        handleSensorToggle(sensorKey, null, movement);
+      };
+      window.sendManualLightCommand = function(cmdStr) {
+        if (isFlashOrangeActive) stopFlashOrangeMode(true);
+        sendUserCommand(cmdStr);
+      };
 
       function applyFlashOrangeVisualState(isAmberOn) {
         // Turn all Red & Green vehicle lamps OFF
@@ -8716,11 +8851,11 @@
         updateSingleLamp([el.svgSideYellow], el.dotSideYellow, el.pillSideYellow, isAmberOn, "active-yellow", yellowLabel, el.gpioSideYellow, isAmberOn);
         updateSingleLamp([el.svgTurnYellow], el.dotTurnYellow, el.pillTurnYellow, isAmberOn, "active-yellow", yellowLabel, el.gpioTurnYellow, isAmberOn);
 
-        // Keep Pedestrian 1 & 2 safely locked on DON'T WALK
+        // Force Pedestrian 1 & 2 signals completely OFF (no conflicting or illuminated lights during FLASH_ORANGE)
         updateSingleLamp([el.svgPed1Walk, el.svgPedWalk], el.dotPed1Walk, el.pillPed1Walk, false, "active-green", "OFF", el.gpioPed1Walk, false);
-        updateSingleLamp([el.svgPed1DontWalk, el.svgPedDontWalk], el.dotPed1DontWalk, el.pillPed1DontWalk, true, "active-red", "CMD: ON", el.gpioPed1DontWalk, true);
+        updateSingleLamp([el.svgPed1DontWalk, el.svgPedDontWalk], el.dotPed1DontWalk, el.pillPed1DontWalk, false, "active-red", "OFF", el.gpioPed1DontWalk, false);
         updateSingleLamp([el.svgPed2Walk], el.dotPed2Walk, el.pillPed2Walk, false, "active-green", "OFF", el.gpioPed2Walk, false);
-        updateSingleLamp([el.svgPed2DontWalk], el.dotPed2DontWalk, el.pillPed2DontWalk, true, "active-red", "CMD: ON", el.gpioPed2DontWalk, true);
+        updateSingleLamp([el.svgPed2DontWalk], el.dotPed2DontWalk, el.pillPed2DontWalk, false, "active-red", "OFF", el.gpioPed2DontWalk, false);
 
         if (el.btnTestMainYellow) el.btnTestMainYellow.classList.toggle("active-test", isAmberOn);
         if (el.btnTestSideYellow) el.btnTestSideYellow.classList.toggle("active-test", isAmberOn);
@@ -8736,8 +8871,8 @@
           mainR: 0, mainY: flashBit, mainG: 0,
           sideR: 0, sideY: flashBit, sideG: 0,
           turnR: 0, turnY: flashBit, turnG: 0,
-          pedWalk: 0, pedDontWalk: 1,
-          ped2Walk: 0, ped2DontWalk: 1
+          pedWalk: 0, pedDontWalk: 0,
+          ped2Walk: 0, ped2DontWalk: 0
         };
         update13OutputTable(flashObj, flashObj);
 
@@ -8771,30 +8906,15 @@
         updateControlsEnablement();
 
         if (port && writer) {
-          writeSerialLine("MODE MANUAL").catch(() => { });
           writeSerialLine("COMMISSION VEH ON").catch(() => { });
-          setTimeout(() => {
-            if (isFlashOrangeActive && port && writer && !isDisconnecting) {
-              writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
-            }
-          }, 150);
+          writeSerialLine("FLASH_ORANGE").catch(() => { });
+        } else if (isVirtualSimActive) {
+          virtualController.handleCommand("FLASH_ORANGE");
         }
 
         flashOrangeTimer = setInterval(() => {
           flashPhase = !flashPhase;
           applyFlashOrangeVisualState(flashPhase);
-          if (port && writer && !isDisconnecting && isFlashOrangeActive) {
-            const curMode = (lastValidTelemetry && lastValidTelemetry.controlMode)
-              ? String(lastValidTelemetry.controlMode).toUpperCase()
-              : "";
-            if (curMode && curMode !== "MANUAL") {
-              writeSerialLine("MODE MANUAL").catch(() => { });
-            } else if (flashPhase) {
-              writeSerialLine("LAMP TEST MAIN_Y").catch(() => { });
-            } else {
-              writeSerialLine("LAMP OFF").catch(() => { });
-            }
-          }
           publishMqttTelemetry(lastValidTelemetry);
         }, 500);
 
@@ -8822,7 +8942,7 @@
         appendConsole("sys-info", "MODE", "Resuming normal automatic traffic control...");
 
         if (port && writer) {
-          writeSerialLine("LAMP OFF").catch(() => { });
+          writeSerialLine("FLASH_ORANGE OFF").catch(() => { });
           if (!skipModeRestore) {
             setTimeout(() => {
               if (port && writer && !isDisconnecting) {
@@ -8830,6 +8950,8 @@
               }
             }, 100);
           }
+        } else if (isVirtualSimActive) {
+          virtualController.handleCommand("FLASH_ORANGE OFF");
         }
         if (lastValidTelemetry) {
           renderTelemetry(lastValidTelemetry);
@@ -8900,8 +9022,8 @@
             mainR: 0, mainY: flashBit, mainG: 0,
             sideR: 0, sideY: flashBit, sideG: 0,
             turnR: 0, turnY: flashBit, turnG: 0,
-            pedWalk: 0, pedDontWalk: 1,
-            ped2Walk: 0, ped2DontWalk: 1
+            pedWalk: 0, pedDontWalk: 0,
+            ped2Walk: 0, ped2DontWalk: 0
           } : (acc && acc.outputs ? acc.outputs : {
             mainR: 1, mainY: 0, mainG: 0,
             sideR: 1, sideY: 0, sideG: 0,
@@ -8951,8 +9073,23 @@
           return;
         }
 
-        // 1. Individual IR Channel Commands (e.g. IR1 ON / IR1 OFF or COMMISSION IR 1 ON)
-        const irMatch = upper.match(/^(?:COMMISSION\s+)?IR\s*([1-6])\s+(ON|OFF)$/);
+        // 1. Individual IR Channel Commands (e.g. IR1 ON / IR1 OFF)
+        const pureIrMatch = upper.match(/^IR\s*([1-6])\s+(ON|OFF)$/);
+        if (pureIrMatch) {
+          const idxNum = parseInt(pureIrMatch[1], 10);
+          const chKey = `ir${idxNum}`;
+          const val = (pureIrMatch[2] === "ON");
+          sensorState[chKey] = val;
+          if (sensorChannels[idxNum - 1]) {
+            sensorChannels[idxNum - 1].rawPinHigh = val ? 0 : 1;
+            sensorChannels[idxNum - 1].stableDetected = val ? 1 : 0;
+          }
+          renderSensors();
+          updateTrafficDensityUI();
+          publishMqttTelemetry(lastValidTelemetry);
+          return;
+        }
+        const irMatch = upper.match(/^COMMISSION\s+IR\s*([1-6])\s+(ON|OFF)$/);
         if (irMatch) {
           const ch = `ir${irMatch[1]}`;
           const val = (irMatch[2] === "ON");

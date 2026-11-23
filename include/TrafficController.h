@@ -174,9 +174,13 @@ public:
     bool setSimulationMode(uint32_t nowMs, bool enable);
     OperatingMode getMode() const { return mode_; }
 
-    // Manual mode progression (NEXT command) — always enforces YELLOW and ALL_RED clearance
+    // Manual mode progression (NEXT command) & direct manual state / light control
     bool advanceManualStep(uint32_t nowMs);
     bool isManualAdvancePending() const { return manualStepRequested_; }
+    bool setFlashOrangeMode(uint32_t nowMs, bool enable);
+    bool isFlashOrangeActive() const { return flashOrangeActive_; }
+    bool isFlashOrangeBlinkOn() const { return flashOrangeBlinkOn_; }
+    bool setManualTargetState(uint32_t nowMs, TrafficState targetState, uint8_t pedMask = 0x03);
 
     // ========================================================================
     // HARDWARE & SIMULATED INPUT PROCESSING
@@ -316,6 +320,12 @@ private:
     bool     manualStepRequested_;
     bool     allGreenHoldActive_;
     bool     benchDiagnosticsUnlocked_;
+    bool     flashOrangeActive_;
+    bool     flashOrangeBlinkOn_;
+    uint32_t flashOrangeLastToggleMs_;
+    ControlMode preFlashControlMode_;
+    bool     manualDirectActive_;
+    uint8_t  manualPedWalkMask_;
 
     FaultManager         faultMgr_;
     VehicleDetector      detector_;

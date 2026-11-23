@@ -121,9 +121,19 @@ public:
         }
     }
 
+    static constexpr int8_t LAMP_TEST_ALL_YELLOW_CHANNEL = 13;
+
     bool setLampTestChannel(int8_t channelIdx) {
         if (channelIdx < 0) {
             lampTestChannel_ = -1;
+            return true;
+        }
+        if (channelIdx == LAMP_TEST_ALL_YELLOW_CHANNEL) {
+            if (!vehicleDriverVerified_ ||
+                vehicleDriverType_ == TrafficConfig::OutputDriverType::UNVERIFIED_SAFE_DISABLED) {
+                return false;
+            }
+            lampTestChannel_ = channelIdx;
             return true;
         }
         if (channelIdx >= static_cast<int8_t>(TrafficConfig::TOTAL_SIGNAL_OUTPUTS)) {
@@ -167,6 +177,11 @@ public:
             case 10: out.pedDontWalk  = true; break;
             case 11: out.ped2Walk     = true; break;
             case 12: out.ped2DontWalk = true; break;
+            case 13:
+                out.mainYellow = true;
+                out.sideYellow = true;
+                out.turnYellow = true;
+                break;
             default: break;
         }
         return out;
@@ -187,6 +202,7 @@ public:
             case 10: return "PED1_DW";
             case 11: return "PED2_W";
             case 12: return "PED2_DW";
+            case 13: return "ALL_YELLOW";
             default: return "OFF";
         }
     }
@@ -207,6 +223,7 @@ public:
         if (strcmp(name, "PED1_DW") == 0 || strcmp(name, "PED1_DONT_WALK") == 0) return 10;
         if (strcmp(name, "PED2_W") == 0 || strcmp(name, "PED2_WALK") == 0) return 11;
         if (strcmp(name, "PED2_DW") == 0 || strcmp(name, "PED2_DONT_WALK") == 0) return 12;
+        if (strcmp(name, "FLASH_ORANGE") == 0 || strcmp(name, "ALL_YELLOW") == 0 || strcmp(name, "ALL_Y") == 0) return 13;
 
         // Numeric channel index (0..12) or physical GPIO pin number lookup
         char* endp = nullptr;
@@ -327,7 +344,7 @@ public:
     void applyLogicalOutputs(const LogicalSignalOutputs& logical) {
         getPinList(pins_);
         const LogicalSignalOutputs effectiveLogical =
-            (lampTestChannel_ >= 0 && lampTestChannel_ < static_cast<int8_t>(TrafficConfig::TOTAL_SIGNAL_OUTPUTS))
+            (lampTestChannel_ >= 0 && lampTestChannel_ <= LAMP_TEST_ALL_YELLOW_CHANNEL)
                 ? buildSingleLampLogicalOutputs(lampTestChannel_)
                 : logical;
         ElectricalPinStates target;
