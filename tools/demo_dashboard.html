@@ -8105,17 +8105,68 @@
         }
       }
 
+      async function probeLocalSerialBridge(timeoutMs = 350) {
+        if (isBridgeEnabled()) return true;
+        try {
+          const params = new URLSearchParams(window.location.search);
+          if (params.get("bridge") === "false") return false;
+        } catch (_) {}
+        return new Promise((resolve) => {
+          let settled = false;
+          let probeWs = null;
+          const timer = setTimeout(() => {
+            if (!settled) {
+              settled = true;
+              try { if (probeWs) probeWs.close(); } catch (_) {}
+              resolve(false);
+            }
+          }, timeoutMs);
+          try {
+            probeWs = new WebSocket("ws://127.0.0.1:8081");
+            probeWs.onopen = () => {
+              if (!settled) {
+                settled = true;
+                clearTimeout(timer);
+                try { probeWs.close(); } catch (_) {}
+                window.__USE_SERIAL_BRIDGE__ = true;
+                resolve(true);
+              }
+            };
+            probeWs.onerror = () => {
+              if (!settled) {
+                settled = true;
+                clearTimeout(timer);
+                resolve(false);
+              }
+            };
+          } catch (_) {
+            if (!settled) {
+              settled = true;
+              clearTimeout(timer);
+              resolve(false);
+            }
+          }
+        });
+      }
+
       function createSerialBridgePort() {
         let ws = null;
         let streamController = null;
         return {
-          getInfo: () => ({ usbVendorId: 0x10C4, usbProductId: 0xEA60 }),
+          isBridgePort: true,
+          getInfo: () => ({ usbVendorId: 0x10C4, usbProductId: 0xEA60, bridge: true }),
           open: async ({ baudRate }) => {
             return new Promise((resolve, reject) => {
               ws = new WebSocket("ws://127.0.0.1:8081");
               ws.binaryType = "arraybuffer";
               ws.onopen = () => resolve();
-              ws.onerror = (e) => reject(new Error("Serial bridge error: Unable to connect to COM5 bridge"));
+              ws.onerror = () => reject(new Error("Serial bridge error: Unable to connect to ws://127.0.0.1:8081"));
+              ws.onclose = () => {
+                if (streamController) {
+                  try { streamController.close(); } catch (_) {}
+                  streamController = null;
+                }
+              };
               ws.onmessage = (evt) => {
                 if (streamController) {
                   const bytes = (evt.data instanceof ArrayBuffer)
@@ -8160,16 +8211,22 @@
         // Use a 16KB RX buffer (default 255B overflows during ESP32 3.5KB startup banner)
         // and return immediately so runSerialReadLoop drains incoming bytes right away.
         await targetPort.open({ baudRate: SERIAL_BAUD, bufferSize: 16384 });
+        if (!targetPort.isBridgePort && typeof targetPort.setSignals === "function") {
+          try {
+            await targetPort.setSignals({ dataTerminalReady: false, requestToSend: false });
+          } catch (_) {}
+        }
       }
 
       async function attemptAutoReconnect() {
         if (isManualDisconnect) return;
-        if (!("serial" in navigator) && !isBridgeEnabled()) return;
+        const bridgeAvailable = await probeLocalSerialBridge();
+        if (!("serial" in navigator) && !bridgeAvailable) return;
 
         try {
           await cleanupSerialResources();
 
-          if (isBridgeEnabled()) {
+          if (bridgeAvailable) {
             port = createSerialBridgePort();
           } else {
             const ports = await navigator.serial.getPorts();
@@ -8242,7 +8299,8 @@
       }
 
       async function connectSerial() {
-        if (!("serial" in navigator)) {
+        const bridgeAvailable = await probeLocalSerialBridge();
+        if (!("serial" in navigator) && !bridgeAvailable) {
           alert("Web Serial API is not supported in this browser. Use Chrome or Edge.");
           return;
         }
@@ -8257,8 +8315,9 @@
           setCommandFeedback("pending", "Requesting Serial Port", "Select the ESP32 USB COM port in the browser dialog...");
           appendConsole("sys-info", "PORT REQ", `Opening Web Serial chooser at ${SERIAL_BAUD} baud...`);
 
-          if (isBridgeEnabled()) {
+          if (bridgeAvailable || isBridgeEnabled()) {
             port = createSerialBridgePort();
+            appendConsole("sys-info", "BRIDGE", "Detected local ESP32 Serial Bridge on ws://127.0.0.1:8081 (bypassing Linux Web Serial drop bug).");
           } else {
             const existingPorts = await navigator.serial.getPorts();
             if (existingPorts && existingPorts.length > 0) {

@@ -1,12 +1,13 @@
 const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
 const mqtt = require("mqtt");
 const PROTOCOL = require("./mqtt-bridge-protocol");
 
 let mainWindow = null;
 let mqttClient = null;
+let serialBridgeProc = null;
 let currentConnectionState = "DISCONNECTED"; // DISCONNECTED | CONNECTING | CONNECTED | ERROR
 
 // Dedicated persistent directory for red-light violation photographs
@@ -572,14 +573,36 @@ function handleMqttPackets(socket, buf, wsClients) {
   }
 }
 
+function startLocalSerialWsBridgeIfAvailable() {
+  const bridgeScript = path.resolve(__dirname, "..", "tools", "serial_ws_bridge.py");
+  if (!fs.existsSync(bridgeScript)) return;
+  try {
+    serialBridgeProc = spawn("python3", [bridgeScript], {
+      stdio: "ignore",
+      detached: false
+    });
+    serialBridgeProc.on("error", () => {
+      serialBridgeProc = null;
+    });
+    serialBridgeProc.on("exit", () => {
+      serialBridgeProc = null;
+    });
+  } catch (_) {}
+}
+
 // Lifecycle
 app.whenReady().then(() => {
   startEmbeddedWsMqttBrokerFallback(9001);
+  startLocalSerialWsBridgeIfAvailable();
   setTimeout(createWindow, 120);
 });
 
 app.on("window-all-closed", () => {
   cleanupMqtt();
+  if (serialBridgeProc) {
+    try { serialBridgeProc.kill(); } catch (_) {}
+    serialBridgeProc = null;
+  }
   if (process.platform !== "darwin") {
     app.quit();
   }

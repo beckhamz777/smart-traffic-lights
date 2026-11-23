@@ -17,13 +17,25 @@ import serial
 WS_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 
-def find_serial_port(preferred: str | None) -> str:
-    if preferred:
-        return preferred
-    candidates = sorted(glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*"))
-    if not candidates:
-        raise RuntimeError("No /dev/ttyUSB* or /dev/ttyACM* serial device found.")
-    return candidates[0]
+def open_available_serial(preferred: str | None, baud: int) -> serial.Serial | None:
+    candidates = [preferred] if preferred else sorted(glob.glob("/dev/ttyUSB*") + glob.glob("/dev/ttyACM*"))
+    for cand in candidates:
+        if not cand:
+            continue
+        try:
+            ser = serial.Serial()
+            ser.port = cand
+            ser.baudrate = baud
+            ser.timeout = 0
+            # Keep DTR/RTS low on open to avoid resetting ESP32 or causing CP210x brownout spikes
+            ser.dtr = False
+            ser.rts = False
+            ser.open()
+            print(f"[BRIDGE] Opened {cand} at {baud} baud")
+            return ser
+        except Exception as e:
+            print(f"[BRIDGE] Could not open {cand}: {e}", file=sys.stderr)
+    return None
 
 
 def encode_ws_frame(payload: bytes, opcode: int = 0x2) -> bytes:
@@ -57,7 +69,7 @@ async def read_ws_frame(reader: asyncio.StreamReader):
     return opcode, bytes(data)
 
 
-async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, ser: serial.Serial, clients: set):
+async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWriter, state: dict, clients: set):
     try:
         req = await reader.readuntil(b"\r\n\r\n")
         headers = {}
@@ -92,8 +104,18 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
                 writer.write(encode_ws_frame(payload, opcode=0xA))
                 await writer.drain()
             elif opcode in (0x1, 0x2):  # Text or Binary -> Serial
-                ser.write(payload)
-                ser.flush()
+                ser = state.get("ser")
+                if ser and ser.is_open:
+                    try:
+                        ser.write(payload)
+                        ser.flush()
+                    except Exception as e:
+                        print(f"[BRIDGE] Serial write error: {e}", file=sys.stderr)
+                        try:
+                            ser.close()
+                        except Exception:
+                            pass
+                        state["ser"] = None
     except (asyncio.IncompleteReadError, ConnectionResetError, BrokenPipeError):
         pass
     finally:
@@ -105,8 +127,15 @@ async def handle_client(reader: asyncio.StreamReader, writer: asyncio.StreamWrit
         print(f"[BRIDGE] Dashboard disconnected ({len(clients)} active)")
 
 
-async def serial_pump(ser: serial.Serial, clients: set):
+async def serial_pump(state: dict, preferred_port: str | None, baud: int, clients: set):
     while True:
+        ser = state.get("ser")
+        if ser is None or not ser.is_open:
+            ser = open_available_serial(preferred_port, baud)
+            state["ser"] = ser
+            if ser is None:
+                await asyncio.sleep(1.0)
+                continue
         try:
             waiting = ser.in_waiting
             data = ser.read(waiting if waiting > 0 else 1)
@@ -124,21 +153,25 @@ async def serial_pump(ser: serial.Serial, clients: set):
             else:
                 await asyncio.sleep(0.01)
         except Exception as e:
-            print(f"[BRIDGE] Serial read error: {e}", file=sys.stderr)
-            await asyncio.sleep(0.2)
+            print(f"[BRIDGE] Serial read error (re-scanning): {e}", file=sys.stderr)
+            try:
+                ser.close()
+            except Exception:
+                pass
+            state["ser"] = None
+            await asyncio.sleep(0.5)
 
 
-async def main_async(port_name: str, baud: int, host: str, ws_port: int):
-    ser = serial.Serial(port_name, baud, timeout=0)
-    print(f"[BRIDGE] Opened {port_name} at {baud} baud")
+async def main_async(preferred_port: str | None, baud: int, host: str, ws_port: int):
+    state = {"ser": open_available_serial(preferred_port, baud)}
     clients: set = set()
     server = await asyncio.start_server(
-        lambda r, w: handle_client(r, w, ser, clients), host, ws_port
+        lambda r, w: handle_client(r, w, state, clients), host, ws_port
     )
     print(f"[BRIDGE] WebSocket serial bridge listening on ws://{host}:{ws_port}")
-    print(f"[BRIDGE] Open: http://localhost:8080/tools/demo_dashboard.html?bridge=true")
+    print(f"[BRIDGE] Open: http://localhost:8080/tools/demo_dashboard.html")
     async with server:
-        await asyncio.gather(server.serve_forever(), serial_pump(ser, clients))
+        await asyncio.gather(server.serve_forever(), serial_pump(state, preferred_port, baud, clients))
 
 
 def main():
@@ -149,9 +182,8 @@ def main():
     parser.add_argument("--ws-port", type=int, default=8081, help="WebSocket port (default: 8081)")
     args = parser.parse_args()
 
-    port_name = find_serial_port(args.port)
     try:
-        asyncio.run(main_async(port_name, args.baud, args.host, args.ws_port))
+        asyncio.run(main_async(args.port, args.baud, args.host, args.ws_port))
     except KeyboardInterrupt:
         print("\n[BRIDGE] Stopped.")
 
