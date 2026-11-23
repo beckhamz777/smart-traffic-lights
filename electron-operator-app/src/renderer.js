@@ -1748,25 +1748,36 @@ let opticalConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
 
 // Configurable Red-Zone Crossing Detector Parameters (Tuned for High-Speed Fast-Running Red-Light Violators)
 const CCTV_DETECTOR_CONFIG = {
-  pixelDiffThreshold: 22,        // High-sensitivity per-pixel RGB brightness delta (0..255) for fast cars & motion blur
-  minChangedPixels: 10,          // Minimum changed sample points inside the stopbar zone
-  minChangedRatio: 0.035,        // Minimum fraction (3.5%) of stopbar zone pixels changed
-  requiredConsecutiveFrames: 1,  // Instant single-frame trigger so fast-running cars crossing in <50ms are never missed
+  pixelDiffThreshold: 26,        // Per-pixel RGB brightness delta (0..255) for real vehicles above sensor noise
+  minChangedPixels: 14,          // Minimum changed sample points inside stopbar line strip
+  minChangedRatio: 0.08,         // Minimum fraction (8.0%) of tight stopbar strip changed
+  maxGlobalMotionRatio: 0.032,   // Reject frame if background/non-road reference area changes >= 3.2% (camera shake)
+  minDominanceRatio: 1.85,       // Target red stopbar zone must have >= 1.85x higher motion ratio than any GREEN/other zone
+  requiredConsecutiveFrames: 1,  // Single-frame trigger for fast cars once shake & dominance checks pass
   scanIntervalMs: 30,            // 33 FPS high-frequency optical scan loop
-  warmupFrames: 3,               // Ignore initial frames on camera start while auto-exposure settles
+  warmupFrames: 5,               // Ignore initial frames on camera start while auto-exposure settles
   cooldownMs: 2500               // 2.5s per-lane anti-spam cooldown
 };
 window.CCTV_DETECTOR_CONFIG = CCTV_DETECTOR_CONFIG;
 
-// Normalized Red Stopbar / Red-Mark Crossing Zones matching HUD SVG (viewBox 640x360):
-// - MAIN ROAD: Left approach stopbar zone straddling X=250 (0.12..0.48, Y=0.42..0.64)
-// - TURN BAY : Right approach stopbar zone opposite Main lane straddling X=390 (0.52..0.88, Y=0.25..0.47)
-// - SIDE ROAD: South stem stopbar zone straddling Y=265 (0.47..0.64, Y=0.64..0.94)
+// Tight stopbar-line crossing strips (aligned strictly to the red stopbar lines on each approach,
+// preventing cars passing in an adjacent or opposite lane from bleeding into another approach's zone):
+// - MAIN ROAD stopbar at X=250/640 (0.391), Y=160..222/360 (0.444..0.617)
+// - TURN BAY  stopbar at X=390/640 (0.609), Y=98..160/360  (0.272..0.444)
+// - SIDE ROAD stopbar at X=320..390/640 (0.500..0.609), Y=265/360 (0.736)
 const OPTICAL_ZONES = {
-  MAIN: { name: "MAIN ROAD", code: "MAIN", xMin: 0.12, xMax: 0.48, yMin: 0.42, yMax: 0.64 },
-  TURN: { name: "TURN BAY",  code: "TURN", xMin: 0.52, xMax: 0.88, yMin: 0.25, yMax: 0.47 },
-  SIDE: { name: "SIDE ROAD", code: "SIDE", xMin: 0.47, xMax: 0.64, yMin: 0.64, yMax: 0.94 }
+  MAIN: { name: "MAIN ROAD", code: "MAIN", xMin: 0.24, xMax: 0.40, yMin: 0.46, yMax: 0.60 },
+  TURN: { name: "TURN BAY",  code: "TURN", xMin: 0.60, xMax: 0.76, yMin: 0.28, yMax: 0.43 },
+  SIDE: { name: "SIDE ROAD", code: "SIDE", xMin: 0.50, xMax: 0.60, yMin: 0.70, yMax: 0.85 }
 };
+
+// Non-road corner reference patches used to detect global camera shake / table vibration / exposure jump
+const SHAKE_REF_ZONES = [
+  { xMin: 0.02, xMax: 0.22, yMin: 0.02, yMax: 0.22 },
+  { xMin: 0.78, xMax: 0.98, yMin: 0.02, yMax: 0.22 },
+  { xMin: 0.02, xMax: 0.28, yMin: 0.72, yMax: 0.96 },
+  { xMin: 0.72, xMax: 0.98, yMin: 0.72, yMax: 0.96 }
+];
 
 function toggleAerialHud() {
   isAerialHudVisible = !isAerialHudVisible;
@@ -2357,11 +2368,34 @@ function startOpticalMotionLoop() {
         SIDE: Boolean(out.sideR) && !Boolean(out.sideG) && !Boolean(out.sideY)
       };
 
+      // 1. Measure non-road background reference zones to detect camera shake / table bump
+      let bgChanged = 0;
+      let bgSamples = 0;
+      for (const ref of SHAKE_REF_ZONES) {
+        const rx0 = Math.floor(ref.xMin * 320);
+        const rx1 = Math.floor(ref.xMax * 320);
+        const ry0 = Math.floor(ref.yMin * 180);
+        const ry1 = Math.floor(ref.yMax * 180);
+        for (let y = ry0; y < ry1; y += 3) {
+          for (let x = rx0; x < rx1; x += 3) {
+            bgSamples++;
+            const idx = (y * 320 + x) * 4;
+            const delta = (
+              Math.abs(curr[idx] - prevOpticalFrame[idx]) +
+              Math.abs(curr[idx + 1] - prevOpticalFrame[idx + 1]) +
+              Math.abs(curr[idx + 2] - prevOpticalFrame[idx + 2])
+            ) / 3;
+            if (delta > CCTV_DETECTOR_CONFIG.pixelDiffThreshold) bgChanged++;
+          }
+        }
+      }
+      const bgMotionRatio = bgSamples > 0 ? (bgChanged / bgSamples) : 0;
+
       const now = Date.now();
       const zoneStats = {};
-      let simultaneousSpikes = 0;
+      let activeZonesCount = 0;
 
-      // 1. Measure frame-difference inside each stopbar red-mark zone
+      // 2. Measure frame-difference inside each tight stopbar red-mark zone
       for (const [key, reg] of Object.entries(OPTICAL_ZONES)) {
         const xStart = Math.floor(reg.xMin * 320);
         const xEnd = Math.floor(reg.xMax * 320);
@@ -2389,19 +2423,20 @@ function startOpticalMotionLoop() {
         const changedRatio = totalSamples > 0 ? (changedPixels / totalSamples) : 0;
         const exceeded = (changedPixels >= CCTV_DETECTOR_CONFIG.minChangedPixels) &&
                          (changedRatio >= CCTV_DETECTOR_CONFIG.minChangedRatio);
-        if (exceeded) simultaneousSpikes++;
+        if (changedRatio >= 0.04) activeZonesCount++;
         zoneStats[key] = { changedPixels, totalSamples, changedRatio, exceeded };
       }
 
       prevOpticalFrame = curr;
 
-      // Reject global auto-exposure flash / camera bump if all 3 zones spike at once
-      if (simultaneousSpikes >= 3) {
+      // 3. Reject camera shake, table vibration, hand shadow, or auto-exposure jump:
+      // If the non-road background shakes OR 2+ zones spike together, ignore the frame completely.
+      if (bgMotionRatio >= CCTV_DETECTOR_CONFIG.maxGlobalMotionRatio || activeZonesCount >= 2) {
         opticalConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
         return;
       }
 
-      // 2. Evaluate RED-gated crossing with consecutive-frame debounce & per-lane cooldown
+      // 4. Evaluate RED-gated crossing with dominance check over GREEN/other lanes & per-lane cooldown
       for (const [key, isRed] of Object.entries(redStates)) {
         if (!isRed) {
           opticalConsecutiveHits[key] = 0; // Reset immediately when lane is GREEN or YELLOW
@@ -2413,23 +2448,36 @@ function startOpticalMotionLoop() {
         }
 
         const st = zoneStats[key];
-        if (st && st.exceeded) {
-          opticalConsecutiveHits[key] = (opticalConsecutiveHits[key] || 0) + 1;
-          if (opticalConsecutiveHits[key] >= CCTV_DETECTOR_CONFIG.requiredConsecutiveFrames) {
-            opticalConsecutiveHits[key] = 0;
-            lastViolationTimes[key] = now;
-            const reg = OPTICAL_ZONES[key];
-            const pctStr = Math.round(st.changedRatio * 100);
-            const speedEst = Math.min(135, Math.max(58, 54 + st.changedRatio * 160)).toFixed(1);
-            appendTerminalLog(
-              `🚨 [RED_ZONE_CROSSING] High-speed crossing detected inside RED ${reg.name} stopbar zone (${st.changedPixels}px / ${pctStr}% • ${speedEst} km/h)! Capturing snapshot...`,
-              "operator"
-            );
-            triggerAutoRedLightViolation(reg.name, reg.code, `RED_ZONE_CROSSING (${st.changedPixels}px / ${pctStr}%)`, speedEst);
-            break;
-          }
-        } else {
+        if (!st || !st.exceeded) {
           opticalConsecutiveHits[key] = 0;
+          continue;
+        }
+
+        // Ensure motion is localized to THIS red stopbar and not bleeding over from a car on a GREEN/adjacent side
+        let otherMaxRatio = bgMotionRatio;
+        for (const [otherKey, otherSt] of Object.entries(zoneStats)) {
+          if (otherKey !== key && otherSt.changedRatio > otherMaxRatio) {
+            otherMaxRatio = otherSt.changedRatio;
+          }
+        }
+        if (otherMaxRatio > 0.015 && (st.changedRatio / otherMaxRatio) < CCTV_DETECTOR_CONFIG.minDominanceRatio) {
+          opticalConsecutiveHits[key] = 0;
+          continue;
+        }
+
+        opticalConsecutiveHits[key] = (opticalConsecutiveHits[key] || 0) + 1;
+        if (opticalConsecutiveHits[key] >= CCTV_DETECTOR_CONFIG.requiredConsecutiveFrames) {
+          opticalConsecutiveHits[key] = 0;
+          lastViolationTimes[key] = now;
+          const reg = OPTICAL_ZONES[key];
+          const pctStr = Math.round(st.changedRatio * 100);
+          const speedEst = Math.min(135, Math.max(58, 54 + st.changedRatio * 160)).toFixed(1);
+          appendTerminalLog(
+            `🚨 [RED_ZONE_CROSSING] Vehicle crossed RED ${reg.name} stopbar line (${st.changedPixels}px / ${pctStr}% • ${speedEst} km/h)! Capturing snapshot...`,
+            "operator"
+          );
+          triggerAutoRedLightViolation(reg.name, reg.code, `RED_ZONE_CROSSING (${st.changedPixels}px / ${pctStr}%)`, speedEst);
+          break;
         }
       }
     } catch (e) {
