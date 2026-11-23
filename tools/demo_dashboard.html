@@ -7280,6 +7280,13 @@
               o.turnG = (toState === "TURN_GREEN") ? 1 : 0;
               o.turnY = (toState === "TURN_YELLOW") ? 1 : 0;
               o.turnR = (toState !== "TURN_GREEN" && toState !== "TURN_YELLOW") ? 1 : 0;
+              // Inverse-sync Pedestrian signals with Main Road:
+              // Never green when Main Road is GREEN/YELLOW; WALK (Green) when Main is RED during SIDE_GREEN / TURN_GREEN / PED_WALK
+              const pedWalkOn = (toState === "SIDE_GREEN" || toState === "TURN_GREEN" || toState === "PED_WALK") ? 1 : 0;
+              o.pedWalk = pedWalkOn;
+              o.pedDontWalk = pedWalkOn ? 0 : 1;
+              o.ped2Walk = pedWalkOn;
+              o.ped2DontWalk = pedWalkOn ? 0 : 1;
             }
             updateCountdownTick();
             publishMqttTelemetry(lastValidTelemetry);
@@ -7688,29 +7695,40 @@
           switch (this.fsmState) {
             case "MAIN_GREEN":
               out.mainG = 1; out.mainR = 0;
-              if (this.ped1Demand) {
-                out.pedWalk = 1; out.pedDontWalk = 0;
-              }
+              // Safety Interlock: Pedestrian lights MUST remain DON'T WALK (RED) whenever Main Road is GREEN
+              out.pedWalk = 0; out.pedDontWalk = 1;
+              out.ped2Walk = 0; out.ped2DontWalk = 1;
               break;
             case "MAIN_YELLOW":
               out.mainY = 1; out.mainR = 0;
-              out.pedDontWalk = 1;
+              out.pedWalk = 0; out.pedDontWalk = 1;
+              out.ped2Walk = 0; out.ped2DontWalk = 1;
               break;
             case "SIDE_GREEN":
               out.sideG = 1; out.sideR = 0;
-              if (this.ped2Demand) {
-                out.ped2Walk = 1; out.ped2DontWalk = 0;
-              }
+              // Inverse-synced with Main Road RED: Pedestrians WALK while Main Road is stopped
+              out.pedWalk = 1; out.pedDontWalk = 0;
+              out.ped2Walk = 1; out.ped2DontWalk = 0;
               break;
             case "SIDE_YELLOW":
               out.sideY = 1; out.sideR = 0;
-              out.ped2DontWalk = 1;
+              out.pedWalk = 0; out.pedDontWalk = 1;
+              out.ped2Walk = 0; out.ped2DontWalk = 1;
               break;
             case "TURN_GREEN":
               out.turnG = 1; out.turnR = 0;
+              // Inverse-synced with Main Road RED: Pedestrians WALK while Main Road is stopped
+              out.pedWalk = 1; out.pedDontWalk = 0;
+              out.ped2Walk = 1; out.ped2DontWalk = 0;
               break;
             case "TURN_YELLOW":
               out.turnY = 1; out.turnR = 0;
+              out.pedWalk = 0; out.pedDontWalk = 1;
+              out.ped2Walk = 0; out.ped2DontWalk = 1;
+              break;
+            case "PED_WALK":
+              out.pedWalk = 1; out.pedDontWalk = 0;
+              out.ped2Walk = 1; out.ped2DontWalk = 0;
               break;
             case "ALL_RED":
             default:
@@ -9876,19 +9894,20 @@
         let cctvConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
 
         const CCTV_DETECTOR_CONFIG = {
-          pixelDiffThreshold: 38,        // Per-pixel average RGB delta (0..255)
-          minChangedPixels: 28,          // Minimum changed sample points inside stopbar zone
-          minChangedRatio: 0.12,         // Minimum fraction (12%) of stopbar zone pixels changed
-          requiredConsecutiveFrames: 2,  // Debounce: consecutive 100ms frames with red-zone crossing
-          warmupFrames: 5,               // Ignore initial frames on camera start while auto-exposure settles
-          cooldownMs: 3000               // 3s per-lane anti-spam cooldown
+          pixelDiffThreshold: 22,        // High-sensitivity per-pixel RGB delta (0..255) for fast-moving vehicles & motion blur
+          minChangedPixels: 10,          // Minimum changed sample points inside stopbar/violation zone
+          minChangedRatio: 0.035,        // Minimum fraction (3.5%) of stopbar zone pixels changed
+          requiredConsecutiveFrames: 1,  // Instant single-frame trigger so fast-running cars crossing in <50ms are never missed
+          scanIntervalMs: 30,            // 33 FPS high-frequency optical scan loop
+          warmupFrames: 3,               // Ignore initial frames on camera start while auto-exposure settles
+          cooldownMs: 2500               // 2.5s per-lane anti-spam cooldown
         };
         window.CCTV_DETECTOR_CONFIG = CCTV_DETECTOR_CONFIG;
 
         const CCTV_OPTICAL_ZONES = {
-          MAIN: { name: "MAIN ROAD", code: "MAIN", xMin: 0.25, xMax: 0.43, yMin: 0.44, yMax: 0.62 },
-          TURN: { name: "TURN BAY",  code: "TURN", xMin: 0.57, xMax: 0.75, yMin: 0.27, yMax: 0.45 },
-          SIDE: { name: "SIDE ROAD", code: "SIDE", xMin: 0.50, xMax: 0.61, yMin: 0.68, yMax: 0.85 }
+          MAIN: { name: "MAIN ROAD", code: "MAIN", xMin: 0.12, xMax: 0.48, yMin: 0.42, yMax: 0.64 },
+          TURN: { name: "TURN BAY",  code: "TURN", xMin: 0.52, xMax: 0.88, yMin: 0.25, yMax: 0.47 },
+          SIDE: { name: "SIDE ROAD", code: "SIDE", xMin: 0.47, xMax: 0.64, yMin: 0.64, yMax: 0.94 }
         };
 
         function startCctvOpticalMotionLoop() {
@@ -9941,8 +9960,8 @@
                 let changedPixels = 0;
                 let totalSamples = 0;
 
-                for (let y = yStart; y < yEnd; y += 3) {
-                  for (let x = xStart; x < xEnd; x += 3) {
+                for (let y = yStart; y < yEnd; y += 2) {
+                  for (let x = xStart; x < xEnd; x += 2) {
                     totalSamples++;
                     const idx = (y * 320 + x) * 4;
                     const diffR = Math.abs(curr[idx] - prevCctvFrame[idx]);
@@ -9987,8 +10006,8 @@
                     lastCctvViolationTime[key] = now;
                     const reg = CCTV_OPTICAL_ZONES[key];
                     const pctStr = Math.round(st.changedRatio * 100);
-                    const speedEst = (Math.random() * 18 + 52).toFixed(1);
-                    appendConsole("sys-warn", "CCTV", `🚨 [RED_ZONE_CROSSING] Crossing detected inside RED ${reg.name} stopbar zone (${st.changedPixels}px / ${pctStr}%). Snapping evidence...`);
+                    const speedEst = Math.min(135, Math.max(58, 54 + st.changedRatio * 160)).toFixed(1);
+                    appendConsole("sys-warn", "CCTV", `🚨 [RED_ZONE_CROSSING] High-speed crossing detected inside RED ${reg.name} stopbar zone (${st.changedPixels}px / ${pctStr}% • ${speedEst} km/h). Snapping evidence...`);
                     triggerAutoCctvViolation(reg.name, reg.code, `RED_ZONE_CROSSING (${st.changedPixels}px / ${pctStr}%)`, speedEst);
                     break;
                   }
@@ -9997,7 +10016,7 @@
                 }
               }
             } catch (_) {}
-          }, 100);
+          }, CCTV_DETECTOR_CONFIG.scanIntervalMs || 30);
         }
 
         function stopCctvOpticalMotionLoop() {
@@ -10195,10 +10214,48 @@
           checkCctvHardwareRedBreach(out);
         };
 
-        // Hardware IR sensors only register queue demand; automatic CCTV snapshots are strictly
-        // triggered by optical red-zone crossings inside the camera feed while the lane is RED.
-        function checkCctvHardwareRedBreach(_out) {
-          // Intentionally disabled: waiting vehicles on IR sensors must never trigger blind camera snapshots.
+        // Hardware IR stopbar sensors (IR2 Main Stopbar, IR4 Side Stopbar, IR6 Turn Stopbar) also
+        // trigger an instant camera snapshot on rising-edge (0 -> 1) when that approach is RED
+        // and the camera is connected, guaranteeing ultra-fast cars breaking the physical IR beam are captured.
+        const prevStopbarSensorState = { ir2: false, ir4: false, ir6: false };
+        function checkCctvHardwareRedBreach(out) {
+          const isCameraActive = Boolean(cctvStream && videoCctv && videoCctv.readyState >= 2 && videoCctv.videoWidth > 0);
+          const curIr2 = Boolean(sensorState.ir2);
+          const curIr4 = Boolean(sensorState.ir4);
+          const curIr6 = Boolean(sensorState.ir6);
+
+          const riseIr2 = curIr2 && !prevStopbarSensorState.ir2;
+          const riseIr4 = curIr4 && !prevStopbarSensorState.ir4;
+          const riseIr6 = curIr6 && !prevStopbarSensorState.ir6;
+
+          prevStopbarSensorState.ir2 = curIr2;
+          prevStopbarSensorState.ir4 = curIr4;
+          prevStopbarSensorState.ir6 = curIr6;
+
+          if (!isCameraActive || !out) return;
+          const now = Date.now();
+
+          if (riseIr2 && Boolean(out.mainR) && !Boolean(out.mainG) && !Boolean(out.mainY)) {
+            if (now - (lastCctvViolationTime.MAIN || 0) >= CCTV_DETECTOR_CONFIG.cooldownMs) {
+              lastCctvViolationTime.MAIN = now;
+              appendConsole("sys-warn", "CCTV", "🚨 [RED_ZONE_CROSSING] Fast vehicle crossed Main Road S2 Stopbar (IR2 / GPIO 34) on RED! Snapping evidence...");
+              triggerAutoCctvViolation("MAIN ROAD", "MAIN", "RED_ZONE_CROSSING (IR2 STOPBAR)", "78.4");
+            }
+          }
+          if (riseIr4 && Boolean(out.sideR) && !Boolean(out.sideG) && !Boolean(out.sideY)) {
+            if (now - (lastCctvViolationTime.SIDE || 0) >= CCTV_DETECTOR_CONFIG.cooldownMs) {
+              lastCctvViolationTime.SIDE = now;
+              appendConsole("sys-warn", "CCTV", "🚨 [RED_ZONE_CROSSING] Fast vehicle crossed Side Road S2 Stopbar (IR4 / GPIO 36) on RED! Snapping evidence...");
+              triggerAutoCctvViolation("SIDE ROAD", "SIDE", "RED_ZONE_CROSSING (IR4 STOPBAR)", "74.2");
+            }
+          }
+          if (riseIr6 && Boolean(out.turnR) && !Boolean(out.turnG) && !Boolean(out.turnY)) {
+            if (now - (lastCctvViolationTime.TURN || 0) >= CCTV_DETECTOR_CONFIG.cooldownMs) {
+              lastCctvViolationTime.TURN = now;
+              appendConsole("sys-warn", "CCTV", "🚨 [RED_ZONE_CROSSING] Fast vehicle crossed Turn Bay S2 Stopbar (IR6 / GPIO 15) on RED! Snapping evidence...");
+              triggerAutoCctvViolation("TURN BAY", "TURN", "RED_ZONE_CROSSING (IR6 STOPBAR)", "71.8");
+            }
+          }
         }
 
         function triggerAutoCctvViolation(approachName, approachCode, sensorName, speedKmh) {

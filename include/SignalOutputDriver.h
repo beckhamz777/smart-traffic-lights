@@ -389,8 +389,10 @@ public:
         }
 
         const bool pedLogical[4] = {
-            logical.pedWalk,  logical.pedDontWalk,
-            logical.ped2Walk, logical.ped2DontWalk
+            (logical.mainGreen || logical.mainYellow) ? false : logical.pedWalk,
+            (logical.mainGreen || logical.mainYellow) ? true  : logical.pedDontWalk,
+            (logical.mainGreen || logical.mainYellow) ? false : logical.ped2Walk,
+            (logical.mainGreen || logical.mainYellow) ? true  : logical.ped2DontWalk
         };
         for (uint8_t j = 0; j < 4; ++j) {
             const uint8_t idx = 9 + j;

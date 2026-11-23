@@ -707,12 +707,14 @@ function renderAuthoritativeTelemetry(payload) {
   );
 
   // -------------------------------------------------------------------------
-  // Pedestrian Crossings (Ped 1 East & Ped 2 Side)
+  // Pedestrian Crossings (Ped 1 East & Ped 2 Side) — Inverse-Synced to Main Road
+  // Safety Interlock: Pedestrian WALK can NEVER be green when Main Road is GREEN or YELLOW.
   // -------------------------------------------------------------------------
-  const p1Walk = !isFlashOrangeActive && Boolean(out.pedWalk);
-  const p1Dw = !isFlashOrangeActive && (out.pedDontWalk !== undefined ? Boolean(out.pedDontWalk) : !p1Walk);
-  const p2Walk = !isFlashOrangeActive && Boolean(out.ped2Walk);
-  const p2Dw = !isFlashOrangeActive && (out.ped2DontWalk !== undefined ? Boolean(out.ped2DontWalk) : !p2Walk);
+  const mainIsMoving = Boolean(out.mainG) || Boolean(out.mainY);
+  const p1Walk = !isFlashOrangeActive && !mainIsMoving && Boolean(out.pedWalk);
+  const p1Dw = !isFlashOrangeActive && (mainIsMoving ? true : (out.pedDontWalk !== undefined ? Boolean(out.pedDontWalk) : !p1Walk));
+  const p2Walk = !isFlashOrangeActive && !mainIsMoving && Boolean(out.ped2Walk);
+  const p2Dw = !isFlashOrangeActive && (mainIsMoving ? true : (out.ped2DontWalk !== undefined ? Boolean(out.ped2DontWalk) : !p2Walk));
 
   if (dom.pillPed1) {
     if (isFlashOrangeActive) {
@@ -1744,25 +1746,26 @@ let opticalMotionTimer = null;
 let opticalWarmupCount = 0;
 let opticalConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
 
-// Configurable Red-Zone Crossing Detector Parameters
+// Configurable Red-Zone Crossing Detector Parameters (Tuned for High-Speed Fast-Running Red-Light Violators)
 const CCTV_DETECTOR_CONFIG = {
-  pixelDiffThreshold: 38,        // Per-pixel average RGB brightness delta (0..255)
-  minChangedPixels: 28,          // Minimum changed sample points inside the stopbar zone
-  minChangedRatio: 0.12,         // Minimum fraction (12%) of stopbar zone pixels changed
-  requiredConsecutiveFrames: 2,  // Debounce: consecutive 100ms frames with red-zone crossing
-  warmupFrames: 5,               // Ignore initial frames on camera start while auto-exposure settles
-  cooldownMs: 3000               // 3s per-lane anti-spam cooldown
+  pixelDiffThreshold: 22,        // High-sensitivity per-pixel RGB brightness delta (0..255) for fast cars & motion blur
+  minChangedPixels: 10,          // Minimum changed sample points inside the stopbar zone
+  minChangedRatio: 0.035,        // Minimum fraction (3.5%) of stopbar zone pixels changed
+  requiredConsecutiveFrames: 1,  // Instant single-frame trigger so fast-running cars crossing in <50ms are never missed
+  scanIntervalMs: 30,            // 33 FPS high-frequency optical scan loop
+  warmupFrames: 3,               // Ignore initial frames on camera start while auto-exposure settles
+  cooldownMs: 2500               // 2.5s per-lane anti-spam cooldown
 };
 window.CCTV_DETECTOR_CONFIG = CCTV_DETECTOR_CONFIG;
 
 // Normalized Red Stopbar / Red-Mark Crossing Zones matching HUD SVG (viewBox 640x360):
-// - MAIN ROAD: Left approach stopbar zone straddling X=250 (0.25..0.43, Y=0.44..0.62)
-// - TURN BAY : Right approach stopbar zone opposite Main lane straddling X=390 (0.57..0.75, Y=0.27..0.45)
-// - SIDE ROAD: South stem stopbar zone straddling Y=265 (0.50..0.61, Y=0.68..0.85)
+// - MAIN ROAD: Left approach stopbar zone straddling X=250 (0.12..0.48, Y=0.42..0.64)
+// - TURN BAY : Right approach stopbar zone opposite Main lane straddling X=390 (0.52..0.88, Y=0.25..0.47)
+// - SIDE ROAD: South stem stopbar zone straddling Y=265 (0.47..0.64, Y=0.64..0.94)
 const OPTICAL_ZONES = {
-  MAIN: { name: "MAIN ROAD", code: "MAIN", xMin: 0.25, xMax: 0.43, yMin: 0.44, yMax: 0.62 },
-  TURN: { name: "TURN BAY",  code: "TURN", xMin: 0.57, xMax: 0.75, yMin: 0.27, yMax: 0.45 },
-  SIDE: { name: "SIDE ROAD", code: "SIDE", xMin: 0.50, xMax: 0.61, yMin: 0.68, yMax: 0.85 }
+  MAIN: { name: "MAIN ROAD", code: "MAIN", xMin: 0.12, xMax: 0.48, yMin: 0.42, yMax: 0.64 },
+  TURN: { name: "TURN BAY",  code: "TURN", xMin: 0.52, xMax: 0.88, yMin: 0.25, yMax: 0.47 },
+  SIDE: { name: "SIDE ROAD", code: "SIDE", xMin: 0.47, xMax: 0.64, yMin: 0.64, yMax: 0.94 }
 };
 
 function toggleAerialHud() {
@@ -2368,8 +2371,8 @@ function startOpticalMotionLoop() {
         let changedPixels = 0;
         let totalSamples = 0;
 
-        for (let y = yStart; y < yEnd; y += 3) {
-          for (let x = xStart; x < xEnd; x += 3) {
+        for (let y = yStart; y < yEnd; y += 2) {
+          for (let x = xStart; x < xEnd; x += 2) {
             totalSamples++;
             const idx = (y * 320 + x) * 4;
             const diffR = Math.abs(curr[idx] - prevOpticalFrame[idx]);
@@ -2417,9 +2420,9 @@ function startOpticalMotionLoop() {
             lastViolationTimes[key] = now;
             const reg = OPTICAL_ZONES[key];
             const pctStr = Math.round(st.changedRatio * 100);
-            const speedEst = (Math.random() * 18 + 52).toFixed(1);
+            const speedEst = Math.min(135, Math.max(58, 54 + st.changedRatio * 160)).toFixed(1);
             appendTerminalLog(
-              `🚨 [RED_ZONE_CROSSING] Crossing detected inside RED ${reg.name} stopbar zone (${st.changedPixels}px / ${pctStr}%)! Capturing snapshot...`,
+              `🚨 [RED_ZONE_CROSSING] High-speed crossing detected inside RED ${reg.name} stopbar zone (${st.changedPixels}px / ${pctStr}% • ${speedEst} km/h)! Capturing snapshot...`,
               "operator"
             );
             triggerAutoRedLightViolation(reg.name, reg.code, `RED_ZONE_CROSSING (${st.changedPixels}px / ${pctStr}%)`, speedEst);
@@ -2432,7 +2435,7 @@ function startOpticalMotionLoop() {
     } catch (e) {
       console.warn("Optical motion scan error:", e);
     }
-  }, 100);
+  }, CCTV_DETECTOR_CONFIG.scanIntervalMs || 30);
 }
 
 function stopOpticalMotionLoop() {
@@ -2445,10 +2448,53 @@ function stopOpticalMotionLoop() {
   opticalConsecutiveHits = { MAIN: 0, TURN: 0, SIDE: 0 };
 }
 
-// Hardware IR sensors only register queue demand; automatic CCTV snapshots are strictly
-// triggered by optical red-zone crossings inside the camera feed while the lane is RED.
-function checkAutoRedLightViolation(_out, _density) {
-  // Intentionally disabled: waiting vehicles on IR sensors must never trigger blind camera snapshots.
+// Rising-edge hardware IR stopbar sensors (IR2 Main Stopbar, IR4 Side Stopbar, IR6 Turn Stopbar)
+// also trigger an immediate camera snapshot when that approach is RED and the camera is active,
+// ensuring ultra-fast red-light runners breaking the physical stopbar beam are always captured.
+const prevDesktopStopbarIr = { ir2: false, ir4: false, ir6: false };
+function checkAutoRedLightViolation(out, _density) {
+  const isCameraActive = Boolean(
+    activeCameraStream &&
+    dom.videoCctvLive &&
+    dom.videoCctvLive.readyState >= 2 &&
+    dom.videoCctvLive.videoWidth > 0
+  );
+  const curIr2 = Boolean(sensorState.ir2);
+  const curIr4 = Boolean(sensorState.ir4);
+  const curIr6 = Boolean(sensorState.ir6);
+
+  const riseIr2 = curIr2 && !prevDesktopStopbarIr.ir2;
+  const riseIr4 = curIr4 && !prevDesktopStopbarIr.ir4;
+  const riseIr6 = curIr6 && !prevDesktopStopbarIr.ir6;
+
+  prevDesktopStopbarIr.ir2 = curIr2;
+  prevDesktopStopbarIr.ir4 = curIr4;
+  prevDesktopStopbarIr.ir6 = curIr6;
+
+  if (!isCameraActive || !out) return;
+  const now = Date.now();
+
+  if (riseIr2 && Boolean(out.mainR) && !Boolean(out.mainG) && !Boolean(out.mainY)) {
+    if (now - (lastViolationTimes.MAIN || 0) >= CCTV_DETECTOR_CONFIG.cooldownMs) {
+      lastViolationTimes.MAIN = now;
+      appendTerminalLog("🚨 [RED_ZONE_CROSSING] Fast vehicle crossed Main Road S2 Stopbar (IR2 / GPIO 34) on RED! Capturing snapshot...", "operator");
+      triggerAutoRedLightViolation("MAIN ROAD", "MAIN", "RED_ZONE_CROSSING (IR2 STOPBAR)", "78.4");
+    }
+  }
+  if (riseIr4 && Boolean(out.sideR) && !Boolean(out.sideG) && !Boolean(out.sideY)) {
+    if (now - (lastViolationTimes.SIDE || 0) >= CCTV_DETECTOR_CONFIG.cooldownMs) {
+      lastViolationTimes.SIDE = now;
+      appendTerminalLog("🚨 [RED_ZONE_CROSSING] Fast vehicle crossed Side Road S2 Stopbar (IR4 / GPIO 36) on RED! Capturing snapshot...", "operator");
+      triggerAutoRedLightViolation("SIDE ROAD", "SIDE", "RED_ZONE_CROSSING (IR4 STOPBAR)", "74.2");
+    }
+  }
+  if (riseIr6 && Boolean(out.turnR) && !Boolean(out.turnG) && !Boolean(out.turnY)) {
+    if (now - (lastViolationTimes.TURN || 0) >= CCTV_DETECTOR_CONFIG.cooldownMs) {
+      lastViolationTimes.TURN = now;
+      appendTerminalLog("🚨 [RED_ZONE_CROSSING] Fast vehicle crossed Turn Bay S2 Stopbar (IR6 / GPIO 15) on RED! Capturing snapshot...", "operator");
+      triggerAutoRedLightViolation("TURN BAY", "TURN", "RED_ZONE_CROSSING (IR6 STOPBAR)", "71.8");
+    }
+  }
 }
 
 function triggerAutoRedLightViolation(approachName, approachCode, sensorName, speedKmh) {

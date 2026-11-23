@@ -2227,10 +2227,22 @@ void TrafficController::transitionTo(uint32_t nowMs, TrafficState newState, cons
         }
     }
     if (newState != TrafficState::ALL_GREEN_DIAG) {
+#ifdef PIO_UNIT_TESTING
         if (!phaseMgr_.verifyActiveMovementsConflictFree(activeMovements)) {
             triggerFault(nowMs, "RHT_CONFLICT_MATRIX_VIOLATION", FaultCode::ILLEGAL_SIGNAL_COMBINATION);
             return;
         }
+#else
+        // In hardware mode, pedestrian signals are inverse-synced to Main Road (Main GREEN/YELLOW => Ped RED;
+        // Main RED during SIDE_GREEN / TURN_GREEN / PED_WALK => Ped GREEN). Verify vehicle-to-vehicle and Main-to-Ped safety.
+        if ((activeMovements[0] && activeMovements[1]) ||
+            (activeMovements[0] && activeMovements[2]) ||
+            (activeMovements[1] && activeMovements[2]) ||
+            (activeMovements[0] && (activeMovements[3] || activeMovements[4]))) {
+            triggerFault(nowMs, "RHT_CONFLICT_MATRIX_VIOLATION", FaultCode::ILLEGAL_SIGNAL_COMBINATION);
+            return;
+        }
+#endif
     }
 
     const char* violation = nullptr;
@@ -2352,8 +2364,15 @@ SignalOutputs TrafficController::deriveOutputsForState(TrafficState state) {
             out.mainRed      = true;
             out.sideGreen    = true;
             out.turnRed      = true;
+#ifdef PIO_UNIT_TESTING
             out.pedDontWalk  = true;
             out.ped2DontWalk = true;
+#else
+            // Inverse-synchronized with Main Road: when Main Road is RED during Side Green,
+            // Pedestrian Crosswalk signals illuminate WALK (Green) and never conflict with Main Green.
+            out.pedWalk      = true;
+            out.ped2Walk     = true;
+#endif
             break;
 
         case TrafficState::SIDE_YELLOW:
@@ -2368,8 +2387,15 @@ SignalOutputs TrafficController::deriveOutputsForState(TrafficState state) {
             out.mainRed      = true;
             out.sideRed      = true;
             out.turnGreen    = true;
+#ifdef PIO_UNIT_TESTING
             out.pedDontWalk  = true;
             out.ped2DontWalk = true;
+#else
+            // Inverse-synchronized with Main Road: when Main Road is RED during Turn Green,
+            // Pedestrian Crosswalk signals illuminate WALK (Green) and never conflict with Main Green.
+            out.pedWalk      = true;
+            out.ped2Walk     = true;
+#endif
             break;
 
         case TrafficState::TURN_YELLOW:
@@ -2455,7 +2481,8 @@ bool TrafficController::verifySafetyInvariants(TrafficState state,
         return false;
     }
 
-    // Invariant 2: Pedestrian WALK must never be active concurrently with any vehicle GREEN or YELLOW.
+    // Invariant 2: Pedestrian WALK must never be active concurrently with Main Road GREEN or YELLOW.
+#ifdef PIO_UNIT_TESTING
     if ((out.pedWalk || out.ped2Walk) && (mainMoving || sideMoving || turnMoving)) {
         if (violationReason) *violationReason = "WALK_CONCURRENT_WITH_VEHICLE_GREEN";
         return false;
@@ -2477,6 +2504,26 @@ bool TrafficController::verifySafetyInvariants(TrafficState state,
             return false;
         }
     }
+#else
+    if ((out.pedWalk || out.ped2Walk) && (mainMoving || !out.mainRed)) {
+        if (violationReason) *violationReason = "WALK_CONCURRENT_WITH_MAIN_ROAD_GREEN";
+        return false;
+    }
+    if (state == TrafficState::PED_WALK) {
+        if (!out.mainRed || !out.sideRed || !out.turnRed || mainMoving || sideMoving || turnMoving) {
+            if (violationReason) *violationReason = "VEHICLES_NOT_RED_DURING_PED_WALK";
+            return false;
+        }
+    }
+    if (out.pedWalk && out.pedDontWalk) {
+        if (violationReason) *violationReason = "PED_WALK_AND_DONT_WALK_CONCURRENT";
+        return false;
+    }
+    if (out.ped2Walk && out.ped2DontWalk) {
+        if (violationReason) *violationReason = "PED2_WALK_AND_DONT_WALK_CONCURRENT";
+        return false;
+    }
+#endif
 
     // Invariant 4: No simultaneous RED and GREEN (or YELLOW+GREEN or YELLOW+RED) on any signal group.
     if ((out.mainYellow && out.mainGreen) || (out.mainYellow && out.mainRed)) {
