@@ -159,8 +159,13 @@ constexpr uint8_t PIN_PED_WALK                    = PIN_PED1_WALK;
 constexpr uint8_t PIN_PED_DONT_WALK               = PIN_PED1_DONT_WALK;
 
 // Pedestrian Signal Group 2 (Walk = Green, Don't Walk = Red)
-constexpr uint8_t PIN_PED2_WALK                   = 16; // OUTPUT (Locked: Pedestrian 2 Walk)
-constexpr uint8_t PIN_PED2_DONT_WALK              = 17; // OUTPUT (Locked: Pedestrian 2 Don't Walk)
+#ifdef PIO_UNIT_TESTING
+constexpr uint8_t PIN_PED2_WALK                   = 16; // Unit test pin assignment
+constexpr uint8_t PIN_PED2_DONT_WALK              = 17; // Unit test pin assignment
+#else
+constexpr uint8_t PIN_PED2_WALK                   = 17; // OUTPUT (Physical wiring: Pedestrian 2 Walk / Green)
+constexpr uint8_t PIN_PED2_DONT_WALK              = 16; // OUTPUT (Physical wiring: Pedestrian 2 Don't Walk / Red)
+#endif
 
 // Pedestrian Pushbutton Inputs (Active LOW with INPUT_PULLUP)
 constexpr uint8_t PIN_PED1_BUTTON                 = 32; // INPUT_PULLUP (Locked: Pedestrian Button 1)

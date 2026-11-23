@@ -3057,12 +3057,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 4B: PEDESTRIAN CROSSING 2 (PED2 - Main Road West, GPIO 16/17) -->
+                <!-- SIGNAL HEAD 4B: PEDESTRIAN CROSSING 2 (PED2 - Main Road West, GPIO 17/16) -->
                 <!-- ============================================================ -->
                 <g transform="translate(152, 268)">
                   <rect x="0" y="0" width="148" height="58" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5" />
                   <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="800"
-                    font-family="Segoe UI, sans-serif">PED 2 SIGNALS (MAIN W 16/17)</text>
+                    font-family="Segoe UI, sans-serif">PED 2 SIGNALS (MAIN W 17/16)</text>
                   <circle id="svgPed2DontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" />
                   <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T
                     WALK</text>
@@ -3332,21 +3332,21 @@
                     <span>Pedestrian Crossing 2 (PED2 - Main West)</span>
                     <span id="ped2PendingBadge" class="ped-pending-badge" data-pending="NO">IDLE</span>
                   </div>
-                  <span class="signal-pin">ULN2003A &bull; Walk 16, DW 17</span>
+                  <span class="signal-pin">ULN2003A &bull; Walk 17, DW 16</span>
                 </div>
                 <div class="signal-row">
                   <div class="signal-row-left">
                     <span id="dotPed2Walk" class="lamp-dot" aria-hidden="true"></span>
                     <div>
                       <div class="signal-name">PED2 WALK</div>
-                      <div class="signal-pin">GPIO 16 &bull; Green</div>
+                      <div class="signal-pin">GPIO 17 &bull; Green</div>
                     </div>
                   </div>
                   <div style="display:flex; align-items:center; gap:0.4rem;">
                     <span id="ped2WalkStatusLabel"
                       style="font-size:0.75rem; font-weight:700; color:var(--text-secondary);">DON'T WALK (STOP)</span>
                     <span id="pillPed2Walk" class="signal-state-pill" title="Commanded FSM state">OFF</span>
-                    <span id="gpioPed2Walk" class="signal-gpio-pill" title="ESP32 GPIO 16 level">0V</span>
+                    <span id="gpioPed2Walk" class="signal-gpio-pill" title="ESP32 GPIO 17 level">0V</span>
                   </div>
                 </div>
                 <div class="signal-row">
@@ -3359,7 +3359,7 @@
                   </div>
                   <div style="display:flex; align-items:center; gap:0.4rem;">
                     <span id="pillPed2DontWalk" class="signal-state-pill" title="Commanded FSM state">OFF</span>
-                    <span id="gpioPed2DontWalk" class="signal-gpio-pill" title="ESP32 GPIO 17 level">0V</span>
+                    <span id="gpioPed2DontWalk" class="signal-gpio-pill" title="ESP32 GPIO 16 level">0V</span>
                   </div>
                 </div>
                 <div class="signal-row" style="background:#FFF;">
@@ -4528,7 +4528,7 @@
       // Pedestrian channel state store
       const pedButtons = [
         { id: 1, btnGpio: 32, walkGpio: 19, dwGpio: 18, rawPinHigh: 1, pressed: 0, latched: 0, pressCount: 0, releaseCount: 0, cycleObserved: false, stuckFault: 0 },
-        { id: 2, btnGpio: 4, walkGpio: 16, dwGpio: 17, rawPinHigh: 1, pressed: 0, latched: 0, pressCount: 0, releaseCount: 0, cycleObserved: false, stuckFault: 0 }
+        { id: 2, btnGpio: 4, walkGpio: 17, dwGpio: 16, rawPinHigh: 1, pressed: 0, latched: 0, pressCount: 0, releaseCount: 0, cycleObserved: false, stuckFault: 0 }
       ];
 
       // Active timing store
@@ -4566,8 +4566,8 @@
         { id: 8, name: "TURN_R", label: "PROTECTED TURN RED", head: "Head 3: Protected Turn", gpio: 22, isGreen: false, cmdProp: "turnR", elecProp: "turnR", cmdElId: "diagCmdTurnR", gpioElId: "diagGpioTurnR", verifElId: "verifCat_TURN_R", chkElId: "chkVisual_TURN_R", btnElId: "btnTestTurnRed", rowBtnElId: "btnRowTest_TURN_R" },
         { id: 9, name: "PED1_W", label: "PED 1 WALK", head: "Head 4: Ped 1 (East)", gpio: 19, isGreen: true, cmdProp: "pedWalk", elecProp: "pedWalk", cmdElId: "diagCmdPed1W", gpioElId: "diagGpioPed1W", verifElId: "verifCat_PED1_W", chkElId: "chkVisual_PED1_W", btnElId: "btnTestPed1Walk", rowBtnElId: "btnRowTest_PED1_W" },
         { id: 10, name: "PED1_DW", label: "PED 1 DON'T WALK", head: "Head 4: Ped 1 (East)", gpio: 18, isGreen: false, cmdProp: "pedDontWalk", elecProp: "pedDontWalk", cmdElId: "diagCmdPed1Dw", gpioElId: "diagGpioPed1Dw", verifElId: "verifCat_PED1_DW", chkElId: "chkVisual_PED1_DW", btnElId: "btnTestPed1DontWalk", rowBtnElId: "btnRowTest_PED1_DW" },
-        { id: 11, name: "PED2_W", label: "PED 2 WALK", head: "Head 5: Ped 2 (Side)", gpio: 16, isGreen: true, cmdProp: "ped2Walk", elecProp: "ped2Walk", cmdElId: "diagCmdPed2W", gpioElId: "diagGpioPed2W", verifElId: "verifCat_PED2_W", chkElId: "chkVisual_PED2_W", btnElId: "btnTestPed2Walk", rowBtnElId: "btnRowTest_PED2_W" },
-        { id: 12, name: "PED2_DW", label: "PED 2 DON'T WALK", head: "Head 5: Ped 2 (Side)", gpio: 17, isGreen: false, cmdProp: "ped2DontWalk", elecProp: "ped2DontWalk", cmdElId: "diagCmdPed2Dw", gpioElId: "diagGpioPed2Dw", verifElId: "verifCat_PED2_DW", chkElId: "chkVisual_PED2_DW", btnElId: "btnTestPed2DontWalk", rowBtnElId: "btnRowTest_PED2_DW" }
+        { id: 11, name: "PED2_W", label: "PED 2 WALK", head: "Head 5: Ped 2 (Main W)", gpio: 17, isGreen: true, cmdProp: "ped2Walk", elecProp: "ped2Walk", cmdElId: "diagCmdPed2W", gpioElId: "diagGpioPed2W", verifElId: "verifCat_PED2_W", chkElId: "chkVisual_PED2_W", btnElId: "btnTestPed2Walk", rowBtnElId: "btnRowTest_PED2_W" },
+        { id: 12, name: "PED2_DW", label: "PED 2 DON'T WALK", head: "Head 5: Ped 2 (Main W)", gpio: 16, isGreen: false, cmdProp: "ped2DontWalk", elecProp: "ped2DontWalk", cmdElId: "diagCmdPed2Dw", gpioElId: "diagGpioPed2Dw", verifElId: "verifCat_PED2_DW", chkElId: "chkVisual_PED2_DW", btnElId: "btnTestPed2DontWalk", rowBtnElId: "btnRowTest_PED2_DW" }
       ];
 
       let activeSingleLampName = null;
