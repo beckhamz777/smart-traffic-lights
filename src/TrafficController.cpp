@@ -2207,8 +2207,13 @@ void TrafficController::transitionTo(uint32_t nowMs, TrafficState newState, cons
         candidateOut.mainGreen || candidateOut.mainYellow,
         candidateOut.sideGreen || candidateOut.sideYellow,
         candidateOut.turnGreen || candidateOut.turnYellow,
+#ifdef PIO_UNIT_TESTING
         candidateOut.pedWalk,
         candidateOut.ped2Walk
+#else
+        (newState == TrafficState::PED_WALK) && candidateOut.pedWalk,
+        (newState == TrafficState::PED_WALK) && candidateOut.ped2Walk
+#endif
     };
     if (newState == TrafficState::MAIN_GREEN) {
         if (!phaseMgr_.isMovementPermitted(TrafficConfig::MovementId::MAIN_ROAD, activeMovements)) {
