@@ -2552,10 +2552,10 @@
               <!-- Side Road Center Dividing Line (Dashed) -->
               <line x1="320" y1="225" x2="320" y2="360" stroke="#f1f5f9" stroke-width="1.8" stroke-dasharray="12,10" opacity="0.6" />
 
-              <!-- Pedestrian Crossing 1 (East) -->
+              <!-- Pedestrian Crossing 1 (East Main Road) -->
               <rect x="520" y="100" width="22" height="120" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.4" />
-              <!-- Pedestrian Crossing 2 (Side Stem) -->
-              <rect x="255" y="240" width="130" height="18" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.4" />
+              <!-- Pedestrian Crossing 2 (West Main Road) -->
+              <rect x="218" y="100" width="22" height="120" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="6,6" opacity="0.4" />
             </g>
 
             <!-- 2. APPROACH A: MAIN ROAD (ARTERIAL) LANE -->
@@ -2858,23 +2858,23 @@
 
                 <!-- Lane Dividers -->
                 <!-- Main Road West Centerline -->
-                <line x1="15" y1="195" x2="285" y2="195" stroke="#F8FAFC" stroke-width="2.5" stroke-dasharray="14 10" />
+                <line x1="15" y1="195" x2="255" y2="195" stroke="#F8FAFC" stroke-width="2.5" stroke-dasharray="14 10" />
                 <!-- Main Road East Centerline -->
                 <line x1="515" y1="195" x2="745" y2="195" stroke="#F8FAFC" stroke-width="2.5"
                   stroke-dasharray="14 10" />
                 <!-- Side Road South Centerline -->
-                <line x1="380" y1="295" x2="380" y2="430" stroke="#F8FAFC" stroke-width="2.5"
+                <line x1="380" y1="268" x2="380" y2="430" stroke="#F8FAFC" stroke-width="2.5"
                   stroke-dasharray="12 10" />
 
                 <!-- Stop Lines -->
                 <!-- Westbound Stop Line (East Side, before crosswalk 1) -->
                 <line x1="510" y1="132" x2="510" y2="194" stroke="#FFFFFF" stroke-width="5" />
-                <!-- Eastbound Stop Line (West Side) -->
-                <line x1="290" y1="196" x2="290" y2="258" stroke="#FFFFFF" stroke-width="5" />
-                <!-- Side Road Northbound Stop Line -->
-                <line x1="381" y1="285" x2="448" y2="285" stroke="#FFFFFF" stroke-width="5" />
+                <!-- Eastbound Stop Line (West Side, before crosswalk 2) -->
+                <line x1="258" y1="196" x2="258" y2="258" stroke="#FFFFFF" stroke-width="5" />
+                <!-- Side Road Northbound Stop Line (Clean Side Road Stem, no zebra crossing) -->
+                <line x1="381" y1="268" x2="448" y2="268" stroke="#FFFFFF" stroke-width="5" />
 
-                <!-- Pedestrian Crosswalk 1 (East side of junction across Main Road: X=466..498, Y=134..256) -->
+                <!-- Pedestrian Crosswalk 1 (East side of junction across Main Road: X=468..496, Y=136..256) -->
                 <g id="svgCrosswalk1" opacity="0.92">
                   <rect x="468" y="136" width="28" height="12" rx="2" fill="#E2E8F0" />
                   <rect x="468" y="156" width="28" height="12" rx="2" fill="#E2E8F0" />
@@ -2884,14 +2884,14 @@
                   <rect x="468" y="236" width="28" height="12" rx="2" fill="#E2E8F0" />
                 </g>
 
-                <!-- Pedestrian Crosswalk 2 (South stem across Side Road: X=320..440, Y=264..284) -->
+                <!-- Pedestrian Crosswalk 2 (West side of junction across Main Road: X=268..296, Y=136..256) -->
                 <g id="svgCrosswalk2" opacity="0.92">
-                  <rect x="325" y="266" width="14" height="20" rx="2" fill="#E2E8F0" />
-                  <rect x="347" y="266" width="14" height="20" rx="2" fill="#E2E8F0" />
-                  <rect x="369" y="266" width="14" height="20" rx="2" fill="#E2E8F0" />
-                  <rect x="391" y="266" width="14" height="20" rx="2" fill="#E2E8F0" />
-                  <rect x="413" y="266" width="14" height="20" rx="2" fill="#E2E8F0" />
-                  <rect x="435" y="266" width="14" height="20" rx="2" fill="#E2E8F0" />
+                  <rect x="268" y="136" width="28" height="12" rx="2" fill="#E2E8F0" />
+                  <rect x="268" y="156" width="28" height="12" rx="2" fill="#E2E8F0" />
+                  <rect x="268" y="176" width="28" height="12" rx="2" fill="#E2E8F0" />
+                  <rect x="268" y="196" width="28" height="12" rx="2" fill="#E2E8F0" />
+                  <rect x="268" y="216" width="28" height="12" rx="2" fill="#E2E8F0" />
+                  <rect x="268" y="236" width="28" height="12" rx="2" fill="#E2E8F0" />
                 </g>
 
                 <!-- Approach Direction Arrows & Labels -->
@@ -2983,7 +2983,7 @@
                 <!-- ============================================================ -->
                 <!-- SIGNAL HEAD 1: MAIN ROAD WEST (Eastbound Approach A, GPIO 27/26/25) -->
                 <!-- ============================================================ -->
-                <g transform="translate(195, 272)">
+                <g transform="translate(52, 272)">
                   <rect x="0" y="0" width="88" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
                   <text x="44" y="14" text-anchor="middle" fill="#17212B" font-size="8" font-weight="800"
                     font-family="Segoe UI, sans-serif">MAIN (27/26/25)</text>
@@ -3013,7 +3013,7 @@
                 <!-- ============================================================ -->
                 <!-- SIGNAL HEAD 3: SIDE ROAD (T-Stem Approach C, RHT Right Lane, GPIO 14/12/13) -->
                 <!-- ============================================================ -->
-                <g transform="translate(458, 285)">
+                <g transform="translate(458, 344)">
                   <rect x="0" y="0" width="86" height="54" rx="6" fill="#FFFFFF" stroke="#17212B" stroke-width="1.5" />
                   <text x="43" y="14" text-anchor="middle" fill="#17212B" font-size="8" font-weight="800"
                     font-family="Segoe UI, sans-serif">SIDE (14/12/13)</text>
@@ -3041,12 +3041,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 4A: PEDESTRIAN CROSSING 1 (PED1 - East Arterial, GPIO 19/18) -->
+                <!-- SIGNAL HEAD 4A: PEDESTRIAN CROSSING 1 (PED1 - Main Road East, GPIO 19/18) -->
                 <!-- ============================================================ -->
-                <g transform="translate(460, 218)">
+                <g transform="translate(460, 268)">
                   <rect x="0" y="0" width="148" height="58" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5" />
                   <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="800"
-                    font-family="Segoe UI, sans-serif">PED 1 SIGNALS (EAST 19/18)</text>
+                    font-family="Segoe UI, sans-serif">PED 1 SIGNALS (MAIN E 19/18)</text>
                   <circle id="svgPed1DontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" />
                   <circle id="svgPedDontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" opacity="0" />
                   <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T
@@ -3057,12 +3057,12 @@
                 </g>
 
                 <!-- ============================================================ -->
-                <!-- SIGNAL HEAD 4B: PEDESTRIAN CROSSING 2 (PED2 - Side Stem, GPIO 16/17) -->
+                <!-- SIGNAL HEAD 4B: PEDESTRIAN CROSSING 2 (PED2 - Main Road West, GPIO 16/17) -->
                 <!-- ============================================================ -->
-                <g transform="translate(200, 348)">
+                <g transform="translate(152, 268)">
                   <rect x="0" y="0" width="148" height="58" rx="6" fill="#FFFFFF" stroke="#0F766E" stroke-width="1.5" />
                   <text x="74" y="13" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="800"
-                    font-family="Segoe UI, sans-serif">PED 2 SIGNALS (SIDE 16/17)</text>
+                    font-family="Segoe UI, sans-serif">PED 2 SIGNALS (MAIN W 16/17)</text>
                   <circle id="svgPed2DontWalk" class="svg-lamp" cx="38" cy="32" r="9.5" />
                   <text x="38" y="50" text-anchor="middle" fill="#17212B" font-size="7" font-weight="700">DON'T
                     WALK</text>
@@ -3077,9 +3077,9 @@
                   <text x="63" y="18" text-anchor="middle" fill="#0F766E" font-size="9" font-weight="800"
                     font-family="Segoe UI, sans-serif">PED PUSH-BUTTONS</text>
                   <text x="63" y="38" text-anchor="middle" fill="#17212B" font-size="8"
-                    font-family="Consolas, monospace">P1 (East): GPIO 32</text>
+                    font-family="Consolas, monospace">P1 (Main E): GPIO 32</text>
                   <text x="63" y="54" text-anchor="middle" fill="#17212B" font-size="8"
-                    font-family="Consolas, monospace">P2 (Side): GPIO 4</text>
+                    font-family="Consolas, monospace">P2 (Main W): GPIO 4</text>
                   <line x1="12" y1="64" x2="114" y2="64" stroke="#99F6E4" stroke-width="1" />
                   <text x="63" y="80" text-anchor="middle" fill="#0F766E" font-size="8" font-weight="700">LATCH
                     STATUS</text>
@@ -3329,7 +3329,7 @@
               <div class="signal-group-box">
                 <div class="signal-group-header">
                   <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-                    <span>Pedestrian Crossing 2 (PED2 - Side)</span>
+                    <span>Pedestrian Crossing 2 (PED2 - Main West)</span>
                     <span id="ped2PendingBadge" class="ped-pending-badge" data-pending="NO">IDLE</span>
                   </div>
                   <span class="signal-pin">ULN2003A &bull; Walk 16, DW 17</span>
